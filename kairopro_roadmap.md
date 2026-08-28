@@ -5,6 +5,88 @@ As per the technical strategy, all cloud (AWS) infrastructure has been deferred 
 
 ---
 
+# Detailed Monorepo Directory Structure
+
+Below is the complete target folder and file structure for the KairoPro monorepo. This structure separates concerns between the web frontend, platform core, AI engine, and infrastructure.
+
+```text
+kairopro/
+│
+├── apps/
+│   ├── web/                     # Next.js Frontend
+│   │   ├── app/
+│   │   │   ├── (auth)/          # Login/Signup routes
+│   │   │   ├── dashboard/       # User project listing
+│   │   │   └── projects/        # Workspace routes
+│   │   │       └── [projectId]/
+│   │   │           ├── overview/
+│   │   │           ├── prd/
+│   │   │           ├── design/
+│   │   │           ├── architecture/
+│   │   │           ├── build/
+│   │   │           ├── code/
+│   │   │           ├── preview/
+│   │   │           └── deployments/
+│   │   └── components/          # React components
+│   │       ├── editor/
+│   │       ├── terminal/
+│   │       └── ai-chat/
+│   │
+│   ├── api/                     # Go Platform Core
+│   │   ├── cmd/server/
+│   │   │   └── main.go
+│   │   ├── internal/            # Domain logic
+│   │   │   ├── auth/
+│   │   │   ├── projects/
+│   │   │   ├── workspaces/
+│   │   │   ├── sandbox/
+│   │   │   ├── github/
+│   │   │   └── events/
+│   │   └── pkg/                 # Shared utilities
+│   │       ├── database/
+│   │       ├── storage/
+│   │       └── queue/
+│   │
+│   └── ai/                      # FastAPI AI Engine
+│       ├── app/
+│       │   ├── main.py
+│       │   ├── api/             # AI Endpoints
+│       │   ├── agents/          # Agent Logic
+│       │   │   ├── orchestrator.py
+│       │   │   ├── requirement_agent.py
+│       │   │   ├── prd_agent.py
+│       │   │   ├── architecture_agent.py
+│       │   │   └── developer_agent.py
+│       │   ├── rag/             # Vector processing
+│       │   ├── llm/             # Model wrappers
+│       │   └── documents/       # File parsers
+│       └── requirements.txt
+│
+├── packages/                    # Shared libraries/contracts
+│   ├── schemas/                 # JSON Schemas/Contracts
+│   ├── types/                   # TypeScript interfaces
+│   └── prompts/                 # Core AI instructions
+│
+├── infrastructure/              # Cloud Provisioning (Deferred to Phase 8)
+│   ├── terraform/
+│   └── ecs/
+│
+├── scripts/                     # Local Dev & CI scripts
+│
+└── docker-compose.yml           # Local dev environment
+```
+
+---
+
+# Core Development Principles
+
+To ensure long-term maintainability and scalability, the engineering team must strictly adhere to the following principles throughout development:
+1. **Full Modularity:** Services must be strictly decoupled. The Go platform core, Next.js UI, and FastAPI AI engine must remain completely independent, communicating only through defined schemas and API contracts.
+2. **Separation of Concerns:** Inside each service, domain/business logic must be isolated from infrastructure and routing logic. AI Agents must have single, clearly defined responsibilities.
+3. **Pluggable Architecture:** Third-party integrations (LLM providers, email, vector stores, databases) must be implemented behind interfaces/adapters so they can be swapped out in the future without rewriting core logic.
+
+---
+
 # Phase 1: Foundation & Local Environment
 
 **Phase Name:** Foundation, Local Environment, & Core Services
