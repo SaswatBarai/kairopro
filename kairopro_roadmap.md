@@ -1,21 +1,22 @@
 # KairoPro Development Roadmap
 
 This document outlines the complete hierarchical development roadmap for KairoPro, broken down into Phases, Modules, Tasks, and Subtasks.
+As per the technical strategy, all cloud (AWS) infrastructure has been deferred to the final deployment phase. Development will rely entirely on local tooling (Docker, MinIO, Redis, MailHog) until the platform is ready for production.
 
 ---
 
-# Phase 1: Foundation & Infrastructure
+# Phase 1: Foundation & Local Environment
 
-**Phase Name:** Foundation, Infrastructure, & Core Services
-**Objective:** Establish the foundational monorepo, local development environments, AWS infrastructure, and basic CI/CD pipelines to support future development.
+**Phase Name:** Foundation, Local Environment, & Core Services
+**Objective:** Establish the foundational monorepo, local development environments via Docker, and basic CI pipelines to support future development without relying on the cloud.
 **Dependencies:** None
-**Phase Completion Criteria:** Local development environment successfully spins up all three services (Next.js, Go, FastAPI) with database and cache. CI/CD pipelines deploy infrastructure to AWS staging. 
+**Phase Completion Criteria:** Local development environment successfully spins up all three services (Next.js, Go, FastAPI) with database, cache, and local object storage. CI pipelines run successfully on GitHub. 
 
 ## Modules
 * **Module 1.1: Product and Technical Planning**
 * **Module 1.2: Repository Setup & Local Dev**
-* **Module 1.3: AWS Infrastructure & CI/CD**
-* **Module 1.4: Observability & Security Base**
+* **Module 1.3: Local Infrastructure & CI**
+* **Module 1.4: Observability & Security Base (Local)**
 
 ### Module 1.1: Product and Technical Planning
 * **Module Purpose:** Finalize technical choices, database schemas, and shared contracts between services.
@@ -51,72 +52,64 @@ This document outlines the complete hierarchical development roadmap for KairoPr
     * *Expected result:* Hello-world endpoints/pages for each.
     * *Validation:* Running apps locally responds with 200 OK.
   * **Subtask 1.2.1.2:** Configure Docker Compose for local dev.
-    * *What needs to be implemented:* `docker-compose.yml` including Postgres, Redis, LocalStack (for S3/SQS).
+    * *What needs to be implemented:* `docker-compose.yml` including Postgres, Redis, MinIO (for local S3), and MailHog (for local email).
     * *Expected result:* `docker compose up` starts all dependencies.
     * *Validation:* All containers report healthy.
 
-### Module 1.3: AWS Infrastructure & CI/CD
-* **Module Purpose:** Provision the cloud environment and deployment automation.
+### Module 1.3: Local Infrastructure & CI
+* **Module Purpose:** Set up local equivalents for cloud services and configure continuous integration.
 * **Dependencies:** Module 1.2
 
-#### Task 1.3.1: Terraform Infrastructure Setup
-* **Task Description:** Write Terraform modules for AWS VPC, ECS, RDS, Redis, S3, SQS.
+#### Task 1.3.1: Local Service Configuration
+* **Task Description:** Configure Go and FastAPI to use local services (MinIO for storage, Redis for queues).
 * **Dependencies:** None
-* **Expected Output:** Applied Terraform state in a staging environment.
-* **Completion Criteria:** AWS resources are accessible and healthy.
-* **Testing/Validation Required:** Infrastructure tests (e.g., Terratest).
-  * **Subtask 1.3.1.1:** Provision core network and compute.
-    * *What needs to be implemented:* VPC, Subnets, ECS Clusters, ALB.
-    * *Expected result:* ECS cluster ready for tasks.
-    * *Validation:* AWS Console shows active cluster.
-  * **Subtask 1.3.1.2:** Provision data stores.
-    * *What needs to be implemented:* RDS PostgreSQL, ElastiCache Redis, S3 buckets.
-    * *Expected result:* Databases are accessible from ECS.
-    * *Validation:* Connection tests pass.
+* **Expected Output:** Environment variables and SDK configs pointing to localhost/Docker containers.
+* **Completion Criteria:** Apps can connect to MinIO and Redis successfully.
+* **Testing/Validation Required:** Connection tests on startup.
+  * **Subtask 1.3.1.1:** MinIO & Redis Integration.
+    * *What needs to be implemented:* S3 SDK configured with MinIO endpoint; Redis client setup.
+    * *Expected result:* Services can read/write data locally.
+    * *Validation:* Successful read/write operations on startup.
 
-#### Task 1.3.2: CI/CD Pipeline
-* **Task Description:** Setup GitHub Actions for CI/CD.
+#### Task 1.3.2: CI Pipeline
+* **Task Description:** Setup GitHub Actions for CI (testing only, no CD).
 * **Dependencies:** Task 1.3.1
-* **Expected Output:** Automated workflows for linting, testing, and deployment to ECS.
-* **Completion Criteria:** Code merged to main automatically deploys to staging.
-* **Testing/Validation Required:** Triggering a dummy commit to verify deployment.
+* **Expected Output:** Automated workflows for linting and testing.
+* **Completion Criteria:** Code merged to main must pass all tests.
+* **Testing/Validation Required:** Triggering a dummy commit to verify CI.
   * **Subtask 1.3.2.1:** CI Workflow.
     * *What needs to be implemented:* YAML file for build, lint, and test.
     * *Expected result:* PRs require passing CI.
     * *Validation:* Failed tests block PR merge.
-  * **Subtask 1.3.2.2:** CD Workflow.
-    * *What needs to be implemented:* Docker build, push to ECR, update ECS task.
-    * *Expected result:* New images run on ECS.
-    * *Validation:* API returns new version hash.
 
-### Module 1.4: Observability & Security Base
-* **Module Purpose:** Establish logging, monitoring, and secrets management.
+### Module 1.4: Observability & Security Base (Local)
+* **Module Purpose:** Establish local logging and monitoring.
 * **Dependencies:** Module 1.3
 
-#### Task 1.4.1: Monitoring & Secrets
-* **Task Description:** Setup OpenTelemetry, CloudWatch, and AWS Secrets Manager.
+#### Task 1.4.1: Local Monitoring & Env Vars
+* **Task Description:** Setup OpenTelemetry pointing to a local Jaeger/Zipkin instance and manage local `.env` files.
 * **Dependencies:** None
-* **Expected Output:** Centralized logs and secure configuration injection.
-* **Completion Criteria:** Services emit metrics and logs to CloudWatch.
-* **Testing/Validation Required:** Verify logs appear in AWS console.
+* **Expected Output:** Centralized local traces.
+* **Completion Criteria:** Services emit metrics and logs to the local collector.
+* **Testing/Validation Required:** Verify traces appear in local Jaeger UI.
   * **Subtask 1.4.1.1:** Integrate OpenTelemetry.
-    * *What needs to be implemented:* OTel SDK in Go and Python.
-    * *Expected result:* Traces sent to collector.
-    * *Validation:* Traces visible in backend (e.g., X-Ray or Grafana).
+    * *What needs to be implemented:* OTel SDK in Go and Python configured for local export.
+    * *Expected result:* Traces sent to local collector.
+    * *Validation:* Traces visible in Jaeger UI.
 
 ---
 
 # Phase 2: Platform Backend & User Identity
 
 **Phase Name:** Identity & Platform Core
-**Objective:** Implement user authentication, organizations, project management, and platform billing.
+**Objective:** Implement user authentication, organizations, project management, and platform billing stubs.
 **Dependencies:** Phase 1
-**Phase Completion Criteria:** Users can sign up, create organizations, manage projects, and receive emails.
+**Phase Completion Criteria:** Users can sign up, create organizations, manage projects, and trigger local test emails.
 
 ## Modules
 * **Module 2.1: Authentication & User Management**
 * **Module 2.2: Project & Organization Management**
-* **Module 2.3: Billing, Notifications, & Usage**
+* **Module 2.3: Billing Stubs & Local Notifications**
 
 ### Module 2.1: Authentication & User Management
 * **Module Purpose:** Secure access to the platform via Next.js and Go API.
@@ -156,20 +149,20 @@ This document outlines the complete hierarchical development roadmap for KairoPr
     * *Expected result:* Visual dashboard.
     * *Validation:* UI successfully calls APIs and updates state.
 
-### Module 2.3: Billing, Notifications, & Usage
-* **Module Purpose:** Track usage limits and send transactional emails.
+### Module 2.3: Billing Stubs & Local Notifications
+* **Module Purpose:** Set up billing models and local email testing.
 * **Dependencies:** Module 2.2
 
-#### Task 2.3.1: Billing & Email Integration
-* **Task Description:** Integrate Stripe (or similar) and AWS SES.
-* **Dependencies:** None
-* **Expected Output:** Transactional emails sent on signup, billing usage tracked in DB.
-* **Completion Criteria:** Email delivered to user inbox on signup.
-* **Testing/Validation Required:** Mock Stripe/SES webhooks.
+#### Task 2.3.1: Local Email Integration
+* **Task Description:** Integrate Go email sender with local MailHog.
+* **Dependencies:** MailHog running in Docker
+* **Expected Output:** Transactional emails captured by MailHog.
+* **Completion Criteria:** Signup triggers an email that can be viewed in MailHog UI.
+* **Testing/Validation Required:** Inspect local MailHog interface.
   * **Subtask 2.3.1.1:** Email Service in Go.
-    * *What needs to be implemented:* SES client implementation.
-    * *Expected result:* Ability to send template emails.
-    * *Validation:* Check test inbox.
+    * *What needs to be implemented:* SMTP client pointed to `localhost:1025`.
+    * *Expected result:* Ability to send template emails locally.
+    * *Validation:* Check MailHog UI on `localhost:8025`.
 
 ---
 
@@ -185,19 +178,19 @@ This document outlines the complete hierarchical development roadmap for KairoPr
 * **Module 3.2: Document Processing Pipeline**
 
 ### Module 3.1: File Upload & Storage
-* **Module Purpose:** Securely receive and store user files in S3.
+* **Module Purpose:** Securely receive and store user files locally.
 * **Dependencies:** Go API
 
-#### Task 3.1.1: S3 Upload Flow
-* **Task Description:** Implement presigned URL uploads to S3 via Go API.
-* **Dependencies:** AWS S3 configured
-* **Expected Output:** Files uploaded to S3 buckets, records created in DB.
+#### Task 3.1.1: Local Object Storage Flow
+* **Task Description:** Implement presigned URL uploads to MinIO via Go API.
+* **Dependencies:** MinIO configured
+* **Expected Output:** Files uploaded to local MinIO buckets, records created in DB.
 * **Completion Criteria:** Next.js UI shows uploaded files.
 * **Testing/Validation Required:** Upload test files.
-  * **Subtask 3.1.1.1:** Go Presigned URL Endpoint.
-    * *What needs to be implemented:* API returning S3 upload URL.
-    * *Expected result:* Client can upload directly to S3.
-    * *Validation:* File appears in S3 bucket.
+  * **Subtask 3.1.1.1:** Go MinIO Presigned URL Endpoint.
+    * *What needs to be implemented:* API returning S3-compatible upload URL.
+    * *Expected result:* Client can upload directly to MinIO.
+    * *Validation:* File appears in MinIO console.
 
 ### Module 3.2: Document Processing Pipeline
 * **Module Purpose:** Parse documents, generate embeddings, and populate pgvector.
@@ -205,7 +198,7 @@ This document outlines the complete hierarchical development roadmap for KairoPr
 
 #### Task 3.2.1: FastAPI Document Intelligence
 * **Task Description:** Parse PDF, DOCX, Markdown, and Images, then chunk and embed.
-* **Dependencies:** SQS configured
+* **Dependencies:** Redis configured for queuing (e.g., RQ or Celery)
 * **Expected Output:** Embeddings stored in PostgreSQL pgvector.
 * **Completion Criteria:** A query to the vector DB returns relevant chunks from an uploaded file.
 * **Testing/Validation Required:** Retrieval accuracy tests.
@@ -222,6 +215,7 @@ This document outlines the complete hierarchical development roadmap for KairoPr
 
 # Phase 4: AI Engine: Requirements & Planning
 
+*(No changes to core logic; runs locally)*
 **Phase Name:** AI Engine: Requirements & Planning
 **Objective:** Process inputs into structured requirements, ask clarification questions, and generate a versioned PRD.
 **Dependencies:** Phase 3
@@ -240,7 +234,7 @@ This document outlines the complete hierarchical development roadmap for KairoPr
 * **Task Description:** Implement orchestrator and base agent classes.
 * **Dependencies:** None
 * **Expected Output:** State machine controlling project lifecycle.
-* **Completion Criteria:** Agents can be triggered asynchronously via SQS.
+* **Completion Criteria:** Agents can be triggered asynchronously via local Redis queue.
 * **Testing/Validation Required:** Unit tests for state transitions.
   * **Subtask 4.1.1.1:** Agent State Management.
     * *What needs to be implemented:* DB tables and Python logic for state (e.g. `ANALYZING`, `CLARIFICATION_REQUIRED`).
@@ -289,6 +283,7 @@ This document outlines the complete hierarchical development roadmap for KairoPr
 
 # Phase 5: AI Engine: Design & Architecture
 
+*(No changes to core logic; runs locally)*
 **Phase Name:** AI Engine: Design & Architecture
 **Objective:** Generate design systems and technical architecture based on the approved PRD.
 **Dependencies:** Phase 4
@@ -332,6 +327,7 @@ This document outlines the complete hierarchical development roadmap for KairoPr
 
 # Phase 6: KairoPro IDE & Runtime
 
+*(No changes to core logic; uses local Docker)*
 **Phase Name:** KairoPro IDE & Runtime
 **Objective:** Build the developer workspace, code editor, terminal, sandboxing, and live preview.
 **Dependencies:** Phase 2
@@ -362,43 +358,44 @@ This document outlines the complete hierarchical development roadmap for KairoPr
     * *Validation:* Terminal accurately reflects backend container logs.
 
 ### Module 6.2: Workspace & Sandboxing
-* **Module Purpose:** Provide secure, isolated runtime environments for generated code.
-* **Dependencies:** Docker, Go API
+* **Module Purpose:** Provide secure, isolated runtime environments for generated code locally.
+* **Dependencies:** Local Docker, Go API
 
 #### Task 6.2.1: Container Management via Go
-* **Task Description:** Go API manages Docker containers (create, start, stop, exec).
+* **Task Description:** Go API manages Docker containers (create, start, stop, exec) on the host machine.
 * **Dependencies:** Docker socket/API access
 * **Expected Output:** Isolated sandbox for each active project.
-* **Completion Criteria:** Go API successfully spins up a container, writes files to its volume, and streams logs.
+* **Completion Criteria:** Go API successfully spins up a local container, writes files to its volume, and streams logs.
 * **Testing/Validation Required:** Security isolation tests (preventing sandbox escape).
   * **Subtask 6.2.1.1:** Sandbox Controller.
     * *What needs to be implemented:* Go module interfacing with Docker SDK.
-    * *Expected result:* programmatic control of containers.
+    * *Expected result:* Programmatic control of containers.
     * *Validation:* Unit tests mock Docker SDK.
   * **Subtask 6.2.1.2:** Workspace File Sync.
-    * *What needs to be implemented:* Syncing DB/S3 file state with sandbox volume.
+    * *What needs to be implemented:* Syncing DB/MinIO file state with sandbox volume.
     * *Expected result:* Code generated by AI appears in the sandbox.
     * *Validation:* Files exist inside the container.
 
 ### Module 6.3: Build & Preview Systems
-* **Module Purpose:** Compile code and expose it to the internet securely.
+* **Module Purpose:** Compile code and expose it to localhost securely.
 * **Dependencies:** Module 6.2
 
 #### Task 6.3.1: Live Preview Proxy
-* **Task Description:** Route preview subdomains (e.g., `project-123.preview.kairopro.in`) to the correct sandbox port.
-* **Dependencies:** DNS setup
+* **Task Description:** Route local preview paths (e.g., `localhost:8080/preview/123`) to the correct sandbox port.
+* **Dependencies:** None
 * **Expected Output:** Working preview URL.
-* **Completion Criteria:** User clicks "Preview" and sees the running Next.js/Go app from the sandbox.
+* **Completion Criteria:** User clicks "Preview" and sees the running Next.js/Go app from the local sandbox.
 * **Testing/Validation Required:** Routing tests and proxy load tests.
   * **Subtask 6.3.1.1:** Reverse Proxy Configuration.
     * *What needs to be implemented:* Go-based reverse proxy or dynamic Nginx config.
-    * *Expected result:* Traffic correctly routes to container IPs.
+    * *Expected result:* Traffic correctly routes to local container IPs.
     * *Validation:* HTTP 200 from preview URL.
 
 ---
 
 # Phase 7: AI Engine: Development & Execution
 
+*(No changes to core logic; runs locally)*
 **Phase Name:** AI Engine: Development & Execution
 **Objective:** AI writes, tests, and debugs code within the sandbox environment.
 **Dependencies:** Phase 5, Phase 6
@@ -448,67 +445,87 @@ This document outlines the complete hierarchical development roadmap for KairoPr
 
 ---
 
-# Phase 8: Deployment & Integrations
+# Phase 8: Cloud Infrastructure & Deployment (The Cloud Phase)
 
-**Phase Name:** Deployment & Integrations
-**Objective:** Deploy the finished application to production and sync with GitHub.
+**Phase Name:** Cloud Infrastructure & Production Deployment
+**Objective:** Provision AWS infrastructure, setup CI/CD pipelines for production, deploy KairoPro, and deploy user applications.
 **Dependencies:** Phase 7
-**Phase Completion Criteria:** User can connect GitHub, push code, and deploy their application to a production AWS environment with a custom domain.
+**Phase Completion Criteria:** AWS infrastructure is live, GitHub synchronization is complete, and users can deploy their applications to production AWS environments with custom domains.
 
 ## Modules
-* **Module 8.1: GitHub Integration**
-* **Module 8.2: Production Deployment Engine**
-* **Module 8.3: Domain & Secrets Management**
+* **Module 8.1: AWS Infrastructure Provisioning**
+* **Module 8.2: GitHub Integration**
+* **Module 8.3: Production Deployment Engine**
+* **Module 8.4: Domain & Secrets Management**
 
-### Module 8.1: GitHub Integration
+### Module 8.1: AWS Infrastructure Provisioning
+* **Module Purpose:** Move from local Docker to real cloud services.
+* **Dependencies:** AWS Account
+
+#### Task 8.1.1: Terraform Cloud Setup
+* **Task Description:** Write and apply Terraform modules for AWS VPC, ECS, RDS, Redis, S3, SQS, CloudWatch.
+* **Dependencies:** None
+* **Expected Output:** Applied Terraform state in a production environment.
+* **Completion Criteria:** AWS resources are accessible and healthy; apps configured to use S3/SQS instead of MinIO/Redis queues.
+* **Testing/Validation Required:** Infrastructure tests (e.g., Terratest).
+  * **Subtask 8.1.1.1:** Provision core network and compute.
+    * *What needs to be implemented:* VPC, Subnets, ECS Clusters, ALB.
+    * *Expected result:* ECS cluster ready for tasks.
+    * *Validation:* AWS Console shows active cluster.
+  * **Subtask 8.1.1.2:** Provision data stores and services.
+    * *What needs to be implemented:* RDS PostgreSQL, ElastiCache Redis, S3 buckets, SQS queues.
+    * *Expected result:* Platform operates on cloud services.
+    * *Validation:* Connection tests pass.
+
+### Module 8.2: GitHub Integration
 * **Module Purpose:** Synchronize KairoPro workspaces with user repositories.
 * **Dependencies:** GitHub OAuth App
 
-#### Task 8.1.1: GitHub Sync
+#### Task 8.2.1: GitHub Sync
 * **Task Description:** Push generated code to a user's GitHub repo.
 * **Dependencies:** Go API
 * **Expected Output:** Commits visible on GitHub.
 * **Completion Criteria:** User clicks "Sync to GitHub" and repo is populated.
 * **Testing/Validation Required:** Test with blank GitHub repo.
-  * **Subtask 8.1.1.1:** GitHub API Client.
+  * **Subtask 8.2.1.1:** GitHub API Client.
     * *What needs to be implemented:* Go integration with GitHub APIs to create repos, branches, and commits.
     * *Expected result:* Code securely transferred.
     * *Validation:* Repo contents match workspace.
 
-### Module 8.2: Production Deployment Engine
+### Module 8.3: Production Deployment Engine
 * **Module Purpose:** Move apps from sandbox to production AWS ECS/Fargate.
 * **Dependencies:** AWS infrastructure
 
-#### Task 8.2.1: Deployment Pipeline
+#### Task 8.3.1: Deployment Pipeline
 * **Task Description:** Build production Docker images and deploy to user-specific ECS tasks.
 * **Dependencies:** None
 * **Expected Output:** Application live in production.
 * **Completion Criteria:** Deployment succeeds and live URL is provided.
 * **Testing/Validation Required:** Load test deployed application.
-  * **Subtask 8.2.1.1:** Image Builder.
+  * **Subtask 8.3.1.1:** Image Builder.
     * *What needs to be implemented:* System builds Dockerfile from workspace, pushes to ECR.
     * *Expected result:* Image tagged in ECR.
     * *Validation:* ECR contains image.
-  * **Subtask 8.2.1.2:** ECS Deployer.
+  * **Subtask 8.3.1.2:** ECS Deployer.
     * *What needs to be implemented:* Go API creates/updates ECS service and Task Definition.
     * *Expected result:* App running on Fargate.
     * *Validation:* AWS Console shows running task.
 
-### Module 8.3: Domain & Secrets Management
+### Module 8.4: Domain & Secrets Management
 * **Module Purpose:** Allow custom domains and handle user environment variables.
-* **Dependencies:** Route 53
+* **Dependencies:** Route 53, AWS Secrets Manager
 
-#### Task 8.3.1: Custom Domains & Env Vars
-* **Task Description:** Map user domains to ALB and manage secrets securely.
+#### Task 8.4.1: Custom Domains & Env Vars
+* **Task Description:** Map user domains to ALB and manage secrets securely via AWS.
 * **Dependencies:** None
 * **Expected Output:** App accessible via user's domain.
 * **Completion Criteria:** SSL cert provisioned and custom domain routes to app.
 * **Testing/Validation Required:** DNS resolution tests.
-  * **Subtask 8.3.1.1:** Domain Mapping.
+  * **Subtask 8.4.1.1:** Domain Mapping.
     * *What needs to be implemented:* Route 53/ACM integration via Go.
     * *Expected result:* CNAME verification and SSL.
     * *Validation:* `https://customdomain.com` works.
-  * **Subtask 8.3.1.2:** Secrets UI & Injection.
+  * **Subtask 8.4.1.2:** Secrets UI & Injection.
     * *What needs to be implemented:* UI to add secrets, Go API to store in AWS Secrets Manager and inject into ECS.
     * *Expected result:* Env vars available in production app.
     * *Validation:* App reads secret correctly at runtime.
