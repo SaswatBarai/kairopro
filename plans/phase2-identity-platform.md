@@ -2,345 +2,363 @@
 
 ## Overview
 
-Implement user authentication (JWT + OAuth), organization/project management, and local email integration with MailHog. After this phase, users can sign up, log in, create organizations, manage projects, and receive local test emails.
+Implement user authentication (NextAuth.js), organization/project management via Next.js API routes + Prisma, and local email integration with MailHog.
 
 **Key decisions:**
-- Auth: JWT access + refresh tokens, bcrypt password hashing
-- OAuth: Google + GitHub (Phase 2 MVP)
-- Email: MailHog for local testing (SMTP on port 1025)
-- API versioning: `/api/v1/` prefix on all routes
+- Auth: **NextAuth.js** (Credentials + Google + GitHub providers)
+- Sessions: JWT stored in HTTP-only cookies via NextAuth
+- ORM: **Prisma** for all DB operations
+- Email: **nodemailer** → MailHog locally; Resend/SES in production
+- API: All platform routes are **Next.js App Router API routes** (`/app/api/`)
 
 ---
 
 ## Module 2.1: Authentication & User Management
 
-### 2.1.1 — Database: Users & Auth Tables
+### 2.1.1 — Prisma Schema: Auth Tables
 
-**Files to create/modify:**
-- `apps/api/migrations/00019_create_auth_tables.sql` — users, sessions, oauth_accounts tables
-- `apps/api/migrations/00020_create_organizations.sql` — organizations, organization_members tables
+**File to update:** `apps/web/prisma/schema.prisma`
 
-**Schema:**
-```sql
--- users
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT,
-  full_name TEXT NOT NULL,
-  avatar_url TEXT,
-  email_verified BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+Add NextAuth-compatible models:
+```prisma
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
--- sessions (refresh tokens)
-CREATE TABLE sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  refresh_token TEXT UNIQUE NOT NULL,
-  user_agent TEXT,
-  ip_address INET,
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+  @@unique([provider, providerAccountId])
+}
 
--- oauth_accounts
-CREATE TABLE oauth_accounts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  provider TEXT NOT NULL, -- 'google', 'github'
-  provider_account_id TEXT NOT NULL,
-  access_token TEXT,
-  refresh_token TEXT,
-  expires_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(provider, provider_account_id)
-);
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 
--- organizations
-CREATE TABLE organizations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  owner_id UUID NOT NULL REFERENCES users(id),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
--- organization_members
-CREATE TABLE organization_members (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  role TEXT NOT NULL DEFAULT 'member', -- 'owner', 'admin', 'member'
-  joined_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(organization_id, user_id)
-);
+  @@unique([identifier, token])
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           String       @default("member") // owner, admin, member
+  joinedAt       DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, userId])
+}
 ```
 
-### 2.1.2 — Go Auth API
+Run: `prisma migrate dev --name add-auth-tables`
+
+### 2.1.2 — NextAuth Configuration
 
 **Files to create:**
-- `apps/api/internal/auth/handler.go` — replace stub with full implementation
-- `apps/api/internal/auth/service.go` — auth business logic
-- `apps/api/internal/auth/repository.go` — DB queries for auth
-- `apps/api/internal/auth/middleware.go` — JWT middleware, requireAuth
-- `apps/api/internal/auth/oauth.go` — Google & GitHub OAuth flows
-- `apps/api/internal/auth/validator.go` — input validation
-- `apps/api/pkg/auth/jwt.go` — JWT generation, validation, refresh
-- `apps/api/pkg/auth/hash.go` — bcrypt hashing
-- `apps/api/pkg/email/smtp.go` — MailHog SMTP sender
-- `apps/api/pkg/email/templates.go` — email template rendering
+- `apps/web/app/api/auth/[...nextauth]/route.ts` — NextAuth handler
+- `apps/web/lib/auth.ts` — NextAuth options + session helpers
+- `apps/web/lib/email.ts` — nodemailer SMTP client (MailHog)
 
-**Auth endpoints:**
+**`lib/auth.ts`:**
+```typescript
+import NextAuth, { NextAuthOptions } from 'next-auth'
+import { PrismaAdapter } from '@auth/prisma-adapter'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
+import GitHubProvider from 'next-auth/providers/github'
+import { db } from './db'
+import bcrypt from 'bcryptjs'
+
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(db),
+  providers: [
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: { email: {}, password: {} },
+      async authorize(credentials) {
+        const user = await db.user.findUnique({ where: { email: credentials!.email } })
+        if (!user?.passwordHash) return null
+        const valid = await bcrypt.compare(credentials!.password, user.passwordHash)
+        return valid ? user : null
+      }
+    }),
+    GoogleProvider({ clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET! }),
+    GitHubProvider({ clientId: process.env.GITHUB_CLIENT_ID!, clientSecret: process.env.GITHUB_CLIENT_SECRET! }),
+  ],
+  session: { strategy: 'jwt' },
+  pages: { signIn: '/login', error: '/login' },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) token.userId = user.id
+      return token
+    },
+    async session({ session, token }) {
+      if (token) session.userId = token.userId as string
+      return session
+    },
+  },
+}
 ```
-POST /api/v1/auth/register     — email/password signup
-POST /api/v1/auth/login        — email/password login
-POST /api/v1/auth/refresh      — refresh access token
-POST /api/v1/auth/logout       — invalidate session
-POST /api/v1/auth/oauth/:provider — initiate OAuth flow
-GET  /api/v1/auth/oauth/:provider/callback — OAuth callback
-POST /api/v1/auth/verify-email — verify email address
-POST /api/v1/auth/forgot-password — request password reset
-POST /api/v1/auth/reset-password  — reset password with token
-GET  /api/v1/auth/me            — get current user
+
+**`app/api/auth/[...nextauth]/route.ts`:**
+```typescript
+import NextAuth from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
 ```
 
-**JWT strategy:**
-- Access token: 15-minute expiry, signed with HS256
-- Refresh token: 7-day expiry, stored in DB sessions table
-- Token payload: `{ sub: user_id, email, org_id }`
-
-**OAuth flow:**
-1. Frontend redirects to `/api/v1/auth/oauth/google` (or github)
-2. Go redirects to provider authorization URL
-3. Provider redirects back to callback URL
-4. Go exchanges code for tokens, upserts user in `users` + `oauth_accounts`
-5. Go issues JWT access + refresh tokens
-
-### 2.1.3 — Next.js Auth UI
+### 2.1.3 — Auth UI Pages
 
 **Files to create:**
+- `apps/web/app/(auth)/layout.tsx` — centered auth layout
 - `apps/web/app/(auth)/login/page.tsx` — login form (email/password + OAuth buttons)
 - `apps/web/app/(auth)/signup/page.tsx` — signup form
-- `apps/web/app/(auth)/forgot-password/page.tsx` — forgot password form
-- `apps/web/app/(auth)/reset-password/page.tsx` — reset password form
-- `apps/web/app/(auth)/verify-email/page.tsx` — email verification page
-- `apps/web/app/(auth)/layout.tsx` — auth layout (centered card, no sidebar)
-- `apps/web/lib/auth.ts` — auth client utilities (login, signup, token storage)
-- `apps/web/lib/api-client.ts` — authenticated fetch wrapper with token refresh
-- `apps/web/middleware.ts` — Next.js middleware for route protection
+- `apps/web/app/(auth)/forgot-password/page.tsx`
+- `apps/web/app/(auth)/reset-password/page.tsx`
 - `apps/web/components/auth/login-form.tsx`
 - `apps/web/components/auth/signup-form.tsx`
 - `apps/web/components/auth/oauth-buttons.tsx`
-- `apps/web/components/auth/forgot-password-form.tsx`
 
-**Auth flow in Next.js:**
-- Store access token in memory (not localStorage — XSS risk)
-- Store refresh token in httpOnly cookie (set by Go API)
-- `middleware.ts` checks for valid session, redirects to `/login` if not authenticated
-- `api-client.ts` auto-refreshes tokens on 401 responses
+### 2.1.4 — Next.js Middleware (Route Protection)
+
+**File:** `apps/web/middleware.ts`
+
+```typescript
+import { withAuth } from 'next-auth/middleware'
+
+export default withAuth({
+  pages: { signIn: '/login' },
+})
+
+export const config = {
+  matcher: ['/dashboard/:path*', '/projects/:path*'],
+}
+```
+
+### 2.1.5 — Signup API Route
+
+**File:** `apps/web/app/api/auth/signup/route.ts`
+
+- Accept `{ email, password, name }`
+- Hash password with bcrypt
+- Create user in Prisma
+- Send welcome email via nodemailer → MailHog
+- Return 201
 
 ---
 
-## Module 2.2: Project & Organization Management
+## Module 2.2: Organization & Project Management
 
-### 2.2.1 — Database: Projects Table
+### 2.2.1 — Prisma Schema: Projects & Orgs
+
+**File to update:** `apps/web/prisma/schema.prisma`
+
+```prisma
+model Project {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  description    String?
+  state          String   @default("draft")
+  createdById    String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  members        ProjectMember[]
+  documents      Document[]
+  agentRuns      AgentRun[]
+  workspace      Workspace?
+  deployments    Deployment[]
+  prdVersions    PRDVersion[]
+  requirements   Requirement[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, slug])
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("member") // owner, admin, developer, designer, viewer
+  project   Project  @relation(fields: [projectId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+}
+```
+
+Run: `prisma migrate dev --name add-projects`
+
+### 2.2.2 — Next.js API Routes: Projects & Orgs
 
 **Files to create:**
-- `apps/api/migrations/00021_create_projects.sql`
 
-**Schema:**
-```sql
-CREATE TABLE projects (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  slug TEXT NOT NULL,
-  description TEXT,
-  status TEXT NOT NULL DEFAULT 'draft', -- draft, analyzing, clarification, prd_ready, designing, design_ready, architecture_ready, approved, developing, testing, preview, ready_to_deploy, deploying, live, analysis_failed, build_failed, test_failed, deployment_failed
-  created_by UUID NOT NULL REFERENCES users(id),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(organization_id, slug)
-);
+**`apps/web/app/api/projects/route.ts`**
+- `GET` — list user's projects (filter by org, paginate)
+- `POST` — create project; auto-create org if none; return 201
 
-CREATE TABLE project_members (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  role TEXT NOT NULL DEFAULT 'member', -- 'owner', 'admin', 'member'
-  joined_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(project_id, user_id)
-);
-```
+**`apps/web/app/api/projects/[id]/route.ts`**
+- `GET` — get project (check member access)
+- `PATCH` — update project name/description/state
+- `DELETE` — archive/soft-delete project
 
-### 2.2.2 — Go Projects/Orgs API
+**`apps/web/app/api/orgs/route.ts`**
+- `GET` — list user's orgs
+- `POST` — create org
 
-**Files to create:**
-- `apps/api/internal/projects/handler.go` — replace stub with full implementation
-- `apps/api/internal/projects/service.go` — project business logic
-- `apps/api/internal/projects/repository.go` — DB queries for projects
-- `apps/api/internal/workspaces/handler.go` — replace stub with workspace endpoints
+**`apps/web/app/api/orgs/[id]/route.ts`**
+- `GET`, `PATCH`, `DELETE`
 
-**Project endpoints:**
-```
-POST   /api/v1/projects                    — create project
-GET    /api/v1/projects                   — list user's projects
-GET    /api/v1/projects/:id               — get project
-PATCH  /api/v1/projects/:id               — update project
-DELETE /api/v1/projects/:id               — archive/delete project
-POST   /api/v1/projects/:id/members       — add member
-DELETE /api/v1/projects/:id/members/:uid   — remove member
-```
+**`apps/web/app/api/orgs/[id]/members/route.ts`**
+- `GET` — list members
+- `POST` — invite member (send invite email)
+- `DELETE` — remove member
 
-**Organization endpoints:**
-```
-POST   /api/v1/orgs                        — create organization
-GET    /api/v1/orgs                        — list user's orgs
-GET    /api/v1/orgs/:id                    — get organization
-PATCH  /api/v1/orgs/:id                    — update organization
-DELETE /api/v1/orgs/:id                    — delete organization
-POST   /api/v1/orgs/:id/members            — invite member
-DELETE /api/v1/orgs/:id/members/:uid       — remove member
-PATCH  /api/v1/orgs/:id/members/:uid       — update member role
+**Auth helper used in every route:**
+```typescript
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+export async function GET(req: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session) return new Response('Unauthorized', { status: 401 })
+  // ...
+}
 ```
 
 ### 2.2.3 — Dashboard UI
 
 **Files to create:**
-- `apps/web/app/dashboard/page.tsx` — replace placeholder with full dashboard
-- `apps/web/app/dashboard/layout.tsx` — dashboard layout (sidebar + header)
+- `apps/web/app/dashboard/page.tsx` — project listing
+- `apps/web/app/dashboard/layout.tsx` — sidebar + header layout
 - `apps/web/components/dashboard/project-card.tsx`
 - `apps/web/components/dashboard/create-project-modal.tsx`
 - `apps/web/components/dashboard/sidebar.tsx`
 - `apps/web/components/dashboard/header.tsx`
 - `apps/web/components/dashboard/organization-switcher.tsx`
-- `apps/web/lib/projects.ts` — project API client
-
-**Dashboard features:**
-- List projects with status badges (LIVE, BUILDING, DRAFT, etc.)
-- Create new project modal
-- Organization switcher dropdown
-- Search/filter projects
-- Project card shows: name, status, last updated
+- `apps/web/lib/projects.ts` — typed fetch wrappers for project API
 
 ---
 
-## Module 2.3: Billing Stubs & Local Notifications
+## Module 2.3: Email Notifications & Billing Stubs
 
-### 2.3.1 — Local Email Integration
+### 2.3.1 — Local Email (MailHog)
 
-**Files to create:**
-- `apps/api/pkg/email/smtp.go` — SMTP client pointed to MailHog `localhost:1025`
-- `apps/api/pkg/email/templates/welcome.html` — welcome email template
-- `apps/api/pkg/email/templates/verify-email.html` — email verification template
-- `apps/api/pkg/email/templates/reset-password.html` — password reset template
-- `apps/api/pkg/email/templates/invite.html` — org invitation template
-- `apps/api/pkg/email/renderer.go` — template rendering with Go html/template
+**File:** `apps/web/lib/email.ts`
 
-**Email events:**
-- User signup → welcome + verify email
-- Password reset → reset link email
+```typescript
+import nodemailer from 'nodemailer'
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST ?? 'localhost',
+  port: Number(process.env.SMTP_PORT ?? 1025),
+  secure: false,
+})
+
+export async function sendEmail(to: string, subject: string, html: string) {
+  await transporter.sendMail({
+    from: 'KairoPro <noreply@kairopro.in>',
+    to,
+    subject,
+    html,
+  })
+}
+```
+
+Email events:
+- Signup → welcome + verify email
+- Password reset → reset link
 - Org invitation → invite email
-- Project status change → notification email (stub)
+- Project state change → notification (Phase 4+)
 
 ### 2.3.2 — Billing Stubs
 
-**Files to create:**
-- `apps/api/internal/billing/handler.go` — billing endpoint stubs
-- `apps/api/internal/billing/service.go` — billing service stub
-- `apps/api/migrations/00022_create_billing_tables.sql`
+**File:** `apps/web/prisma/schema.prisma` — add billing models:
 
-**Schema (stubs):**
-```sql
-CREATE TABLE subscription_plans (
-  id TEXT PRIMARY KEY, -- 'free', 'pro', 'team', 'enterprise'
-  name TEXT NOT NULL,
-  price_cents INTEGER NOT NULL DEFAULT 0,
-  ai_credits INTEGER NOT NULL,
-  build_minutes INTEGER NOT NULL,
-  storage_mb INTEGER NOT NULL,
-  max_projects INTEGER NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+```prisma
+model SubscriptionPlan {
+  id           String   @id  // 'free', 'pro', 'team', 'enterprise'
+  name         String
+  priceCents   Int      @default(0)
+  aiCredits    Int
+  buildMinutes Int
+  storageMb    Int
+  maxProjects  Int
+  createdAt    DateTime @default(now())
+}
 
-CREATE TABLE subscriptions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-  plan_id TEXT NOT NULL REFERENCES subscription_plans(id),
-  status TEXT NOT NULL DEFAULT 'active', -- active, past_due, canceled
-  current_period_start TIMESTAMPTZ NOT NULL,
-  current_period_end TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Seed free plan
-INSERT INTO subscription_plans (id, name, price_cents, ai_credits, build_minutes, storage_mb, max_projects)
-VALUES ('free', 'Free', 0, 100, 60, 500, 3);
+model Subscription {
+  id                  String   @id @default(cuid())
+  organizationId      String   @unique
+  planId              String
+  status              String   @default("active")
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  organization        Organization        @relation(fields: [organizationId], references: [id])
+  plan                SubscriptionPlan    @relation(fields: [planId], references: [id])
+  createdAt           DateTime @default(now())
+}
 ```
 
-**Billing endpoints (stubs):**
-```
-GET  /api/v1/billing/plans           — list available plans
-GET  /api/v1/billing/subscription    — get org's current subscription
-POST /api/v1/billing/subscribe       — subscribe to plan (stub: returns 501)
-```
+**File:** `apps/web/app/api/billing/plans/route.ts` — `GET` returns available plans
+**File:** `apps/web/app/api/billing/subscribe/route.ts` — `POST` returns 501 Not Implemented (stub)
 
 ---
 
 ## TypeScript Types Updates
 
-**Files to create/modify:**
-- `packages/types/src/auth.ts` — User, Session, LoginRequest, SignupRequest, TokenResponse
+**Files to create/update:**
+- `packages/types/src/auth.ts` — User, SignupRequest, LoginRequest, SessionUser
 - `packages/types/src/organization.ts` — Organization, OrganizationMember, CreateOrgRequest
-- `packages/types/src/project.ts` — update with full Project type, ProjectStatus enum
-- `packages/types/src/billing.ts` — Plan, Subscription types
-
----
-
-## JSON Schema Updates
-
-**Files to create:**
-- `packages/schemas/auth.schema.json` — auth request/response schemas
-- `packages/schemas/organization.schema.json` — org schemas
-- `packages/schemas/billing.schema.json` — billing schemas
-
----
-
-## OpenAPI Spec Updates
-
-**Files to modify:**
-- `apps/api/api-spec.yaml` — add auth, org, project, billing endpoints
+- `packages/types/src/project.ts` — Project, ProjectStatus, ProjectMember
+- `packages/types/src/billing.ts` — Plan, Subscription
 
 ---
 
 ## Verification Steps
 
-1. **Auth flow:** Register user → receive verification email in MailHog → verify email → login → receive JWT
-2. **OAuth flow:** Click "Sign in with Google" → OAuth redirect → callback → JWT issued
-3. **Protected routes:** Access `/api/v1/projects` without token → 401; with token → 200
-4. **Token refresh:** Access token expires → auto-refresh via refresh token → new access token
-5. **Organization:** Create org → invite member → member receives email in MailHog
-6. **Project CRUD:** Create project → list projects → update project → archive project
-7. **Dashboard UI:** Login → see dashboard → create project → project appears in list
-8. **Billing stubs:** GET `/api/v1/billing/plans` → returns free plan; POST `/api/v1/billing/subscribe` → 501
+1. **Signup:** `POST /api/auth/signup` → user created in DB → welcome email in MailHog at `localhost:8025`
+2. **Login (credentials):** `POST /api/auth/signin` → session JWT set in cookie
+3. **OAuth:** Click Google sign-in → OAuth redirect → callback → session created
+4. **Protected route:** Access `/dashboard` without session → redirect to `/login`
+5. **Projects CRUD:** Create project → list → update → archive via API
+6. **Dashboard UI:** Login → see project list → create project → appears in grid
+7. **Billing stub:** `GET /api/billing/plans` → returns free plan; `POST /api/billing/subscribe` → 501
 
 ---
 
 ## Implementation Order
 
-1. Database migrations (auth, orgs, projects, billing tables)
-2. Go auth package (JWT, hashing, middleware)
-3. Go auth handlers (register, login, refresh, OAuth)
-4. Go email package (SMTP + templates)
-5. Go org/project handlers (CRUD)
-6. Go billing stubs
-7. Next.js auth UI (login, signup, forgot password, OAuth)
-8. Next.js auth middleware + API client
-9. Next.js dashboard UI (project list, create modal, org switcher)
-10. TypeScript types + JSON schemas
-11. OpenAPI spec updates
-12. End-to-end verification
+1. Prisma schema updates (auth, org, project, billing tables) + `prisma migrate dev`
+2. NextAuth configuration (`lib/auth.ts`, `[...nextauth]/route.ts`)
+3. Signup API route (email + bcrypt)
+4. Email lib (nodemailer → MailHog)
+5. Org + project API routes (CRUD)
+6. Billing stub API routes
+7. Next.js middleware (route protection)
+8. Auth UI (login, signup, forgot password, OAuth buttons)
+9. Dashboard UI (project list, create modal, org switcher)
+10. TypeScript types
+11. End-to-end verification

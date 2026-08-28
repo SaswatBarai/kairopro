@@ -2,127 +2,183 @@
 
 ## Overview
 
-Enable file uploads, document parsing (PDF, DOCX, MD, images), text chunking, embedding generation, and vector storage in pgvector. After this phase, users can upload documents which are parsed, embedded, and stored in a project's vector knowledge base for RAG queries.
+Enable file uploads via Next.js API routes, process documents in FastAPI workers, embed content, and store in pgvector. After this phase, users can upload documents which are parsed, embedded, and stored in a project's vector knowledge base.
 
 **Key decisions:**
-- File uploads: Presigned URLs to MinIO via Go API
-- Document parsing: Python (PyPDF2, python-docx, Pillow/OCR)
-- Embeddings: OpenAI `text-embedding-3-small` (pluggable via LLM module)
+- File uploads: Presigned URLs via **Next.js API route** → MinIO/S3
+- Job queue: **BullMQ** (Redis) — Next.js enqueues, FastAPI worker consumes
+- Document parsing: **FastAPI** (PyPDF2, python-docx, pytesseract)
+- Embeddings: OpenAI `text-embedding-3-small` (pluggable)
 - Vector storage: PostgreSQL + pgvector
-- Processing queue: Redis (RQ or Celery)
 
 ---
 
 ## Module 3.1: File Upload & Storage
 
-### 3.1.1 — Database: Documents & Chunks Tables
+### 3.1.1 — Prisma Schema: Documents
 
-**Files to create:**
-- `apps/api/migrations/00023_create_documents.sql`
+**File to update:** `apps/web/prisma/schema.prisma`
 
-**Schema:**
+```prisma
+model Document {
+  id               String   @id @default(cuid())
+  projectId        String
+  uploadedById     String
+  filename         String
+  originalFilename String
+  contentType      String   // 'pdf', 'docx', 'md', 'txt', 'png', 'jpg'
+  storagePath      String   // MinIO object key
+  fileSize         BigInt
+  processingStatus String   @default("pending") // pending, processing, completed, failed
+  extractedText    String?
+  metadata         Json     @default("{}")
+  project          Project  @relation(fields: [projectId], references: [id])
+  uploadedBy       User     @relation(fields: [uploadedById], references: [id])
+  chunks           DocumentChunk[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model DocumentChunk {
+  id         String   @id @default(cuid())
+  documentId String
+  projectId  String
+  chunkIndex Int
+  content    String
+  tokenCount Int?
+  metadata   Json     @default("{}")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  // embedding vector(1536) added via raw SQL: migrations/pgvector_chunks.sql
+}
+```
+
+Raw SQL for pgvector column (run after `prisma migrate`):
 ```sql
-CREATE TABLE documents (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  uploaded_by UUID NOT NULL REFERENCES users(id),
-  filename TEXT NOT NULL,
-  original_filename TEXT NOT NULL,
-  content_type TEXT NOT NULL, -- 'pdf', 'docx', 'md', 'txt', 'png', 'jpg', 'jpeg'
-  storage_path TEXT NOT NULL, -- MinIO object key
-  file_size BIGINT NOT NULL,
-  processing_status TEXT NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed
-  extracted_text TEXT,
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE document_chunks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  chunk_index INTEGER NOT NULL,
-  content TEXT NOT NULL,
-  embedding vector(1536), -- OpenAI text-embedding-3-small dimension
-  token_count INTEGER,
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_documents_project ON documents(project_id);
-CREATE INDEX idx_documents_status ON documents(processing_status);
-CREATE INDEX idx_document_chunks_project ON document_chunks(project_id);
-CREATE INDEX idx_document_chunks_embedding ON document_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+ALTER TABLE "DocumentChunk" ADD COLUMN IF NOT EXISTS embedding vector(1536);
+CREATE INDEX IF NOT EXISTS idx_chunks_embedding
+  ON "DocumentChunk" USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
-### 3.1.2 — Go File Upload API
+### 3.1.2 — Next.js File Upload API Routes
 
 **Files to create:**
-- `apps/api/internal/projects/files_handler.go` — file upload endpoints
-- `apps/api/internal/projects/files_service.go` — file upload business logic
-- `apps/api/pkg/storage/minio.go` — update with presigned URL generation
 
-**File upload endpoints:**
-```
-POST /api/v1/projects/:id/files/presign  — get presigned upload URL
-POST /api/v1/projects/:id/files          — confirm upload, create document record
-GET  /api/v1/projects/:id/files          — list project files
-GET  /api/v1/projects/:id/files/:fileId  — get file metadata
-DELETE /api/v1/projects/:id/files/:fileId — delete file
-```
+**`apps/web/app/api/projects/[id]/files/presign/route.ts`**
+- `POST` — accepts `{ filename, contentType }`
+- Generates MinIO presigned PUT URL (15-min expiry)
+- Returns `{ uploadUrl, objectKey }`
+
+**`apps/web/app/api/projects/[id]/files/route.ts`**
+- `GET` — list project documents with status
+- `POST` — confirm upload: create `Document` record in Prisma, enqueue BullMQ job
+
+**`apps/web/app/api/projects/[id]/files/[fileId]/route.ts`**
+- `GET` — get document metadata
+- `DELETE` — soft-delete document, remove from MinIO
 
 **Upload flow:**
-1. Client calls `POST /presign` with filename + content type
-2. Go generates a presigned MinIO URL (PUT, 15-minute expiry)
-3. Client uploads file directly to MinIO using presigned URL
-4. Client calls `POST /files` to confirm upload
-5. Go creates `documents` record with status `pending`
-6. Go enqueues processing job to Redis queue
-7. Go returns document metadata
+```
+Client → POST /api/projects/:id/files/presign  (Next.js API)
+  ↓
+Next.js returns presigned URL
+  ↓
+Client → PUT {presignedUrl}  (direct to MinIO)
+  ↓
+Client → POST /api/projects/:id/files  { objectKey, filename, contentType, size }
+  ↓
+Next.js: create Document in Prisma (status=pending)
+Next.js: enqueue BullMQ job { documentId, projectId }
+  ↓
+Return document metadata
+```
 
-**MinIO bucket setup:**
-- Bucket name: `kairopro-uploads`
-- Path pattern: `{project_id}/{document_id}/{filename}`
-- On startup, Go creates bucket if it doesn't exist
+**`apps/web/lib/storage.ts`** (update):
+```typescript
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+
+export async function getPresignedUploadUrl(key: string, contentType: string) {
+  const command = new PutObjectCommand({
+    Bucket: process.env.MINIO_BUCKET!,
+    Key: key,
+    ContentType: contentType,
+  })
+  return getSignedUrl(storage, command, { expiresIn: 900 })
+}
+```
 
 ### 3.1.3 — Next.js File Upload UI
 
 **Files to create:**
-- `apps/web/app/projects/[projectId]/overview/page.tsx` — update with file upload area
-- `apps/web/components/upload/file-upload-zone.tsx` — drag-and-drop upload component
-- `apps/web/components/upload/file-list.tsx` — list uploaded files with status
-- `apps/web/components/upload/file-progress.tsx` — upload progress indicator
-- `apps/web/lib/upload.ts` — presigned URL upload client logic
+- `apps/web/components/upload/file-upload-zone.tsx` — drag-and-drop upload
+- `apps/web/components/upload/file-list.tsx` — files with processing status
+- `apps/web/components/upload/file-progress.tsx` — upload progress bar
+- `apps/web/lib/upload.ts` — presigned URL upload client
 
 **Upload UI flow:**
-1. User drags files or clicks upload area
-2. Frontend requests presigned URL for each file
-3. Frontend uploads directly to MinIO
-4. Frontend confirms upload via POST /files
-5. File list shows processing status (pending → processing → completed/failed)
+1. Drag files to upload zone
+2. Frontend calls `POST .../presign` per file
+3. Frontend uploads directly to MinIO using presigned URL
+4. Frontend calls `POST .../files` to confirm
+5. File list polls status: `pending → processing → completed/failed`
 
 ---
 
 ## Module 3.2: Document Processing Pipeline
 
-### 3.2.1 — FastAPI Document Processing
+### 3.2.1 — BullMQ Worker (Next.js side)
+
+**File:** `apps/web/lib/workers/document-worker.ts`
+
+```typescript
+import { Worker } from 'bullmq'
+import { redis } from '../redis'
+import { callAI } from '../ai-client'
+import { db } from '../db'
+
+export const documentWorker = new Worker(
+  'document-processing',
+  async (job) => {
+    const { documentId, projectId } = job.data
+
+    // Update status to processing
+    await db.document.update({ where: { id: documentId }, data: { processingStatus: 'processing' } })
+
+    try {
+      // Call FastAPI to process document
+      await callAI('/ai/documents/process', { documentId, projectId })
+      await db.document.update({ where: { id: documentId }, data: { processingStatus: 'completed' } })
+    } catch (err) {
+      await db.document.update({ where: { id: documentId }, data: { processingStatus: 'failed' } })
+      throw err
+    }
+  },
+  { connection: redis }
+)
+```
+
+Workers start in a separate Next.js process or a background script:
+```bash
+# scripts/start-workers.ts
+import '@/lib/workers/document-worker'
+```
+
+### 3.2.2 — FastAPI Document Processing
 
 **Files to create:**
-- `apps/ai/app/documents/parser.py` — document parser dispatcher
-- `apps/ai/app/documents/pdf_parser.py` — PDF extraction (PyPDF2)
-- `apps/ai/app/documents/docx_parser.py` — DOCX extraction (python-docx)
-- `apps/ai/app/documents/markdown_parser.py` — Markdown extraction
-- `apps/ai/app/documents/image_parser.py` — Image OCR (Pillow + pytesseract)
+- `apps/ai/app/documents/parser.py` — dispatcher (routes to correct parser by content type)
+- `apps/ai/app/documents/pdf_parser.py` — PyPDF2 + pdfminer
+- `apps/ai/app/documents/docx_parser.py` — python-docx
+- `apps/ai/app/documents/markdown_parser.py`
+- `apps/ai/app/documents/image_parser.py` — Pillow + pytesseract + GPT Vision
 - `apps/ai/app/documents/chunker.py` — text chunking with overlap
-- `apps/ai/app/documents/__init__.py` — update with exports
 
 **Parser interface:**
 ```python
 class DocumentParser(ABC):
     @abstractmethod
-    async def parse(self, file_path: str) -> ParsedDocument:
-        """Extract text, metadata, and structure from document."""
+    async def parse(self, content: bytes, filename: str) -> ParsedDocument:
         pass
 
 @dataclass
@@ -136,110 +192,57 @@ class ParsedDocument:
 class DocumentSection:
     title: str | None
     content: str
-    page_number: int | None = None
     section_type: str  # "heading", "paragraph", "table", "code", "image"
 ```
 
 **Chunking strategy:**
-- Chunk size: 512 tokens (~2000 characters)
-- Overlap: 50 tokens (~200 characters)
-- Preserve section boundaries where possible
-- Each chunk stores: content, source document, page number, section title
+- Chunk size: 512 tokens (~2000 chars)
+- Overlap: 50 tokens
+- Preserve section boundaries
 
-### 3.2.2 — Embedding & Vector Storage
+### 3.2.3 — FastAPI Embedding & Vector Storage
 
 **Files to create:**
-- `apps/ai/app/rag/embedder.py` — embedding generation (OpenAI)
-- `apps/ai/app/rag/vector_store.py` — pgvector query interface
+- `apps/ai/app/rag/embedder.py` — OpenAI `text-embedding-3-small`
+- `apps/ai/app/rag/vector_store.py` — pgvector insert + search
 - `apps/ai/app/rag/retriever.py` — RAG retrieval with relevance scoring
-- `apps/ai/app/rag/__init__.py` — update with exports
+- `apps/ai/app/api/documents.py` — document processing endpoints
 
-**Embedding pipeline:**
+**Vector store:**
 ```python
-class Embedder:
-    """Generate embeddings using OpenAI text-embedding-3-small."""
-    
-    async def embed_texts(self, texts: list[str]) -> list[list[float]]:
-        """Batch embed multiple texts."""
-        pass
-    
-    async def embed_query(self, query: str) -> list[float]:
-        """Embed a single query for retrieval."""
-        pass
-
 class VectorStore:
-    """Interface to pgvector for similarity search."""
-    
-    async def store_chunks(self, project_id: str, chunks: list[DocumentChunk]) -> None:
-        """Store embedded chunks in pgvector."""
+    async def store_chunks(self, project_id: str, doc_id: str, chunks: list[EmbeddedChunk]) -> None:
+        # Batch insert into document_chunks via psycopg2 with pgvector
         pass
-    
+
     async def search(self, project_id: str, query_embedding: list[float], limit: int = 10) -> list[SearchResult]:
-        """Find most similar chunks to query embedding."""
-        pass
-    
-    async def delete_document_chunks(self, document_id: str) -> None:
-        """Remove all chunks for a document."""
+        # SELECT ... ORDER BY embedding <=> %s::vector LIMIT %s
         pass
 ```
 
-### 3.2.3 — Processing Queue Worker
+**FastAPI document endpoints (called by Next.js only):**
+```
+POST /ai/documents/process   — download from MinIO, parse, chunk, embed, store
+GET  /ai/documents/:id/status
+POST /ai/documents/:id/reprocess
+DELETE /ai/documents/:id
+```
+
+### 3.2.4 — Knowledge Base Search API
 
 **Files to create:**
-- `apps/ai/app/worker.py` — Redis queue worker (RQ)
-- `apps/ai/app/tasks.py` — task definitions for document processing
-- `apps/ai/app/api/documents.py` — document processing API endpoints
+- `apps/web/app/api/projects/[id]/knowledge/search/route.ts` — Next.js search endpoint
+- `apps/web/app/api/projects/[id]/knowledge/route.ts` — list knowledge entries
 
-**Processing flow:**
-1. Go API enqueues job to Redis: `{ "task": "process_document", "document_id": "...", "project_id": "..." }`
-2. FastAPI worker picks up job
-3. Worker downloads file from MinIO
-4. Worker parses document based on content type
-5. Worker chunks extracted text
-6. Worker generates embeddings for each chunk
-7. Worker stores chunks + embeddings in pgvector
-8. Worker updates `documents.processing_status` to `completed` or `failed`
-
-**Document processing endpoints (internal, called by Go):**
+**Search flow:**
 ```
-POST /ai/v1/documents/process    — trigger document processing
-GET  /ai/v1/documents/:id/status — get processing status
-POST /ai/v1/documents/:id/reprocess — reprocess failed document
-DELETE /ai/v1/documents/:id      — delete document and chunks
-```
-
-### 3.2.4 — Go → FastAPI Communication
-
-**Files to create:**
-- `apps/api/pkg/queue/redis.go` — update with job enqueue logic
-- `apps/api/internal/ai/client.go` — HTTP client for calling FastAPI
-
-**Communication pattern:**
-- Go → Redis queue: enqueue processing jobs
-- Go → FastAPI HTTP: synchronous calls for status checks
-- FastAPI → Go: callback webhook when processing completes (or Go polls status)
-
-### 3.2.5 — Knowledge Base Query API
-
-**Files to create:**
-- `apps/api/internal/projects/kb_handler.go` — knowledge base query endpoints
-- `apps/api/internal/projects/kb_service.go` — knowledge base business logic
-
-**Knowledge base endpoints:**
-```
-POST /api/v1/projects/:id/knowledge/search  — search project knowledge base
-GET  /api/v1/projects/:id/knowledge/stats   — get knowledge base statistics
-GET  /api/v1/projects/:id/knowledge         — list all knowledge entries
-```
-
-**Search request:**
-```json
-{
-  "query": "authentication requirements",
-  "limit": 10,
-  "min_confidence": 0.7,
-  "content_types": ["pdf", "docx"]
-}
+Client → POST /api/projects/:id/knowledge/search { query, limit }
+  ↓
+Next.js → POST /ai/search { projectId, query, limit }  (FastAPI)
+  ↓
+FastAPI: embed query → pgvector cosine search → return ranked chunks
+  ↓
+Next.js returns results to client
 ```
 
 **Search response:**
@@ -247,12 +250,12 @@ GET  /api/v1/projects/:id/knowledge         — list all knowledge entries
 {
   "results": [
     {
-      "chunk_id": "...",
-      "document_id": "...",
-      "document_filename": "PRD.pdf",
+      "chunkId": "...",
+      "documentId": "...",
+      "documentFilename": "PRD.pdf",
       "content": "Users must authenticate via email/password...",
       "score": 0.92,
-      "metadata": { "page": 5, "section": "Authentication" }
+      "metadata": { "section": "Authentication" }
     }
   ]
 }
@@ -260,64 +263,56 @@ GET  /api/v1/projects/:id/knowledge         — list all knowledge entries
 
 ---
 
-## TypeScript Types & Schemas
+## TypeScript Types
 
-**Files to create/modify:**
+**Files to create/update:**
 - `packages/types/src/document.ts` — Document, DocumentChunk, UploadRequest, UploadResponse
-- `packages/types/src/knowledge-base.ts` — SearchRequest, SearchResult, KnowledgeStats
-- `packages/schemas/document.schema.json` — document upload/processing schemas
-- `packages/schemas/knowledge-base.schema.json` — knowledge base search schemas
-
----
-
-## OpenAPI Spec Updates
-
-**Files to modify:**
-- `apps/api/api-spec.yaml` — add file upload, knowledge base endpoints
-- `apps/ai/api-spec.yaml` — add document processing endpoints
+- `packages/types/src/knowledge-base.ts` — SearchRequest, SearchResult
 
 ---
 
 ## Docker Compose Updates
 
-**Files to modify:**
-- `docker-compose.yml` — add FastAPI worker service
-
-**New service:**
+Add FastAPI worker service:
 ```yaml
 ai-worker:
   build: ./apps/ai
   command: python -m app.worker
   depends_on: [redis, postgres, minio]
-  env_file: .env
+  environment:
+    - DATABASE_URL=${DATABASE_URL}
+    - REDIS_URL=${REDIS_URL}
+    - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+    - AI_SERVICE_TOKEN=${AI_SERVICE_TOKEN}
+    - OPENAI_API_KEY=${OPENAI_API_KEY}
 ```
 
 ---
 
 ## Verification Steps
 
-1. **File upload:** Upload a PDF via presigned URL → file appears in MinIO console → document record created
-2. **Processing:** Document status transitions from `pending` → `processing` → `completed`
-3. **Parsing:** Upload PDF, DOCX, MD, PNG → each extracts text correctly
-4. **Chunking:** Document is split into ~512-token chunks with overlap
-5. **Embedding:** Chunks have embeddings stored in pgvector
-6. **Search:** Query knowledge base → returns relevant chunks with confidence scores
-7. **UI:** Upload file in dashboard → see processing status → search knowledge base
-8. **Error handling:** Upload unsupported file type → 400 error; processing failure → status `failed`, can reprocess
+1. Upload a PDF via presigned URL → file appears in MinIO console
+2. `Document` record created in Prisma with `status=pending`
+3. BullMQ job enqueued → FastAPI worker picks up → status transitions `pending → processing → completed`
+4. PostgreSQL: `document_chunks` table populated with vector embeddings
+5. Search endpoint returns relevant chunks with similarity scores ≥ 0.7
+6. Upload failure (unsupported type) → 400; processing failure → status `failed`, can reprocess
+7. UI: Upload file → see status badge change → knowledge search returns results
 
 ---
 
 ## Implementation Order
 
-1. Database migrations (documents, document_chunks tables)
-2. Go file upload API (presigned URLs, CRUD)
-3. Next.js file upload UI (drag-and-drop, progress, status)
-4. FastAPI document parsers (PDF, DOCX, MD, image)
-5. FastAPI chunking + embedding pipeline
-6. FastAPI processing worker (RQ)
-7. Go → FastAPI communication (Redis queue + HTTP client)
-8. Knowledge base query API
-9. TypeScript types + JSON schemas
-10. OpenAPI spec updates
-11. Docker Compose worker service
-12. End-to-end verification
+1. Prisma schema update (Document, DocumentChunk) + migrate + pgvector raw SQL
+2. Next.js presigned URL API route
+3. Next.js file confirm + list API routes
+4. Next.js file upload UI (drag-drop, progress, status)
+5. BullMQ document worker (Next.js side)
+6. FastAPI document parsers (PDF, DOCX, MD, image)
+7. FastAPI chunker + embedder
+8. FastAPI vector store (pgvector insert + search)
+9. FastAPI document processing endpoint
+10. Next.js knowledge search API route
+11. TypeScript types
+12. Docker Compose worker service
+13. End-to-end verification

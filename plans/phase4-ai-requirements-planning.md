@@ -5,83 +5,76 @@
 Build the AI orchestration framework, requirement analysis agent, clarification loop, and PRD generation with versioned editing. After this phase, KairoPro can analyze a vague prompt + uploaded documents, ask clarification questions, and produce a structured, editable PRD.
 
 **Key decisions:**
-- Agent framework: Custom state machine in Python (no LangChain dependency for orchestration)
-- LLM: OpenAI GPT-4o (pluggable via LLM module)
-- State machine: PostgreSQL-backed project states
-- PRD editor: TipTap (rich text editor) in Next.js
-- PRD versioning: Full version history with diff
+- Agent framework: Custom state machine in FastAPI (Python), no LangChain dependency
+- State persistence: PostgreSQL via Prisma (managed by Next.js API)
+- LLM: OpenAI GPT-4o (pluggable via provider abstraction)
+- Event streaming: Redis pub/sub → Next.js SSE route → browser
+- PRD editor: TipTap in Next.js
+- All agent triggering: Browser → Next.js API route → FastAPI (never browser → FastAPI directly)
 
 ---
 
 ## Module 4.1: AI Orchestration Framework
 
-### 4.1.1 — Database: Agent State Tables
+### 4.1.1 — Prisma Schema: Agent Tables
 
-**Files to create:**
-- `apps/api/migrations/00024_create_agent_tables.sql`
+**File to update:** `apps/web/prisma/schema.prisma`
 
-**Schema:**
-```sql
--- Agent run tracking
-CREATE TABLE agent_runs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  agent_type TEXT NOT NULL, -- 'requirement', 'prd', 'design', 'architecture', 'developer', 'testing', 'debugging'
-  status TEXT NOT NULL DEFAULT 'pending', -- pending, running, completed, failed, cancelled
-  input JSONB NOT NULL DEFAULT '{}',
-  output JSONB,
-  error TEXT,
-  started_at TIMESTAMPTZ,
-  completed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+```prisma
+model AgentRun {
+  id          String    @id @default(cuid())
+  projectId   String
+  agentType   String    // requirement, prd, design, architecture, developer, testing, debug
+  status      String    @default("pending") // pending, running, completed, failed, cancelled
+  input       Json      @default("{}")
+  output      Json?
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  project     Project   @relation(fields: [projectId], references: [id])
+  messages    AgentMessage[]
+  events      AgentEvent[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
 
-CREATE TABLE agent_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  agent_run_id UUID NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
-  role TEXT NOT NULL, -- 'system', 'user', 'assistant', 'tool'
-  content TEXT NOT NULL,
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+model AgentMessage {
+  id         String   @id @default(cuid())
+  agentRunId String
+  role       String   // system, user, assistant, tool
+  content    String
+  metadata   Json     @default("{}")
+  agentRun   AgentRun @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
 
-CREATE TABLE agent_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  agent_run_id UUID NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
-  event_type TEXT NOT NULL, -- 'agent.started', 'agent.thinking', 'file.created', 'file.updated', 'command.started', 'command.completed', 'test.started', 'test.failed', 'test.passed', 'build.started', 'build.completed', 'deployment.started', 'deployment.completed'
-  data JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Project state tracking
-ALTER TABLE projects ADD COLUMN current_state TEXT NOT NULL DEFAULT 'draft';
--- States: draft, analyzing, clarification, prd_ready, designing, design_ready, architecture_ready, approved, developing, testing, preview, ready_to_deploy, deploying, live, analysis_failed, build_failed, test_failed, deployment_failed
-
-CREATE INDEX idx_agent_runs_project ON agent_runs(project_id);
-CREATE INDEX idx_agent_runs_status ON agent_runs(status);
-CREATE INDEX idx_agent_messages_run ON agent_messages(agent_run_id);
-CREATE INDEX idx_agent_events_run ON agent_events(agent_run_id);
+model AgentEvent {
+  id         String   @id @default(cuid())
+  agentRunId String
+  eventType  String   // agent.started, agent.thinking, file.created, test.passed, etc.
+  data       Json     @default("{}")
+  agentRun   AgentRun @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
 ```
+
+Run: `prisma migrate dev --name add-agent-tables`
 
 ### 4.1.2 — FastAPI Orchestrator
 
 **Files to create:**
-- `apps/ai/app/agents/orchestrator.py` — replace stub with full implementation
-- `apps/ai/app/agents/base_agent.py` — abstract base agent class
-- `apps/ai/app/agents/state_machine.py` — project state machine
-- `apps/ai/app/llm/provider.py` — LLM provider abstraction
-- `apps/ai/app/llm/openai_provider.py` — OpenAI implementation
-- `apps/ai/app/llm/__init__.py` — update with exports
+- `apps/ai/app/agents/orchestrator.py` — full implementation
+- `apps/ai/app/agents/base_agent.py` — abstract base class
+- `apps/ai/app/agents/state_machine.py` — allowed state transitions
+- `apps/ai/app/llm/provider.py` — pluggable LLM interface
+- `apps/ai/app/llm/openai_provider.py` — OpenAI GPT-4o implementation
 
 **Orchestrator:**
 ```python
 class Orchestrator:
-    """Manages agent lifecycle and project state transitions."""
-    
-    def __init__(self, db, redis, llm_provider):
-        self.db = db
-        self.redis = redis
+    def __init__(self, db_url: str, redis_url: str, llm_provider: LLMProvider):
+        self.db = AsyncPrismaClient(db_url)  # or psycopg2
+        self.redis = Redis.from_url(redis_url)
         self.llm = llm_provider
         self.agents = {
             "requirement": RequirementAgent(llm_provider),
@@ -90,343 +83,296 @@ class Orchestrator:
             "architecture": ArchitectureAgent(llm_provider),
             "developer": DeveloperAgent(llm_provider),
         }
-    
-    async def start_analysis(self, project_id: str) -> str:
-        """Start requirement analysis for a project."""
-        pass
-    
-    async def process_clarification_answers(self, project_id: str, answers: list) -> str:
-        """Process user answers to clarification questions."""
-        pass
-    
-    async def generate_prd(self, project_id: str) -> str:
-        """Generate PRD from locked requirements."""
-        pass
-    
-    async def transition_state(self, project_id: str, new_state: str) -> None:
-        """Transition project to new state with validation."""
-        pass
+
+    async def start_analysis(self, project_id: str, run_id: str) -> AgentResult:
+        await self.emit_event(run_id, "agent.started", {})
+        result = await self.agents["requirement"].run(AgentContext(project_id=project_id, run_id=run_id))
+        await self.emit_event(run_id, "agent.completed", {"result": result.model_dump()})
+        return result
+
+    async def emit_event(self, run_id: str, event_type: str, data: dict):
+        """Publish to Redis channel, Next.js SSE route subscribes."""
+        payload = json.dumps({"runId": run_id, "type": event_type, "data": data})
+        await self.redis.publish(f"project-events:{run_id}", payload)
 ```
 
 **Base agent:**
 ```python
 class BaseAgent(ABC):
-    """Abstract base class for all AI agents."""
-    
-    def __init__(self, llm_provider: LLMProvider):
-        self.llm = llm_provider
-    
+    def __init__(self, llm: LLMProvider):
+        self.llm = llm
+
     @abstractmethod
     async def run(self, context: AgentContext) -> AgentResult:
-        """Execute the agent's task."""
-        pass
-    
-    async def emit_event(self, run_id: str, event_type: str, data: dict):
-        """Emit an event to the agent_events table and SSE stream."""
         pass
 ```
 
 **State machine transitions:**
 ```
-draft → analyzing (on "start analysis")
-analyzing → clarification (if low confidence)
-analyzing → prd_ready (if high confidence)
-clarification → analyzing (on user answers)
-prd_ready → designing (on "start design")
-designing → design_ready (on design complete)
-design_ready → architecture_ready (on architecture complete)
-architecture_ready → approved (on user approval)
-approved → developing (on "start development")
-... etc
+draft → analyzing → clarification → prd_ready → designing →
+design_ready → architecture_ready → approved → developing →
+testing → preview → deploying → live
 ```
 
-### 4.1.3 — Go Agent Run API
+### 4.1.3 — Next.js API Routes: Agent Runs
 
 **Files to create:**
-- `apps/api/internal/projects/agent_handler.go` — agent run endpoints
-- `apps/api/internal/projects/agent_service.go` — agent run business logic
-- `apps/api/internal/ai/client.go` — update with agent run methods
 
-**Agent endpoints:**
-```
-POST /api/v1/projects/:id/analyze           — start requirement analysis
-POST /api/v1/projects/:id/clarify            — submit clarification answers
-POST /api/v1/projects/:id/generate-prd       — trigger PRD generation
-GET  /api/v1/projects/:id/agent-runs          — list agent runs
-GET  /api/v1/projects/:id/agent-runs/:runId   — get agent run details
-GET  /api/v1/projects/:id/events             — SSE stream of agent events
-```
+**`apps/web/app/api/projects/[id]/analyze/route.ts`**
+- `POST` — create AgentRun record, enqueue BullMQ `ai-analysis` job
+- Job calls `callAI('/ai/analyze', { projectId, runId, ... })`
 
-**Communication flow:**
-1. Client calls Go API endpoint (e.g., `POST /analyze`)
-2. Go creates `agent_runs` record with status `pending`
-3. Go enqueues job to Redis or calls FastAPI directly
-4. FastAPI agent picks up job, updates status to `running`
-5. Agent emits events to `agent_events` table
-6. Go SSE endpoint streams events to client
-7. Agent completes, Go updates project state
+**`apps/web/app/api/projects/[id]/agent-runs/route.ts`**
+- `GET` — list agent runs for project
+
+**`apps/web/app/api/projects/[id]/agent-runs/[runId]/route.ts`**
+- `GET` — get agent run details + events
+
+**`apps/web/app/api/projects/[id]/events/route.ts`** — SSE stream
+```typescript
+export async function GET(req: Request, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions)
+  if (!session) return new Response('Unauthorized', { status: 401 })
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const subscriber = redis.duplicate()
+      // Subscribe to all agent runs for this project
+      await subscriber.subscribe(`project-events:${params.id}`)
+      subscriber.on('message', (_, message) => {
+        controller.enqueue(`data: ${message}\n\n`)
+      })
+    }
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    }
+  })
+}
+```
 
 ---
 
 ## Module 4.2: Requirement Analysis & Clarification
 
-### 4.2.1 — Database: Requirements Table
+### 4.2.1 — Prisma Schema: Requirements
 
-**Files to create:**
-- `apps/api/migrations/00025_create_requirements.sql`
-
-**Schema:**
-```sql
-CREATE TABLE requirements (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  category TEXT NOT NULL, -- 'business', 'functional', 'non_functional', 'ui', 'security', 'data', 'integration', 'deployment'
-  priority TEXT NOT NULL DEFAULT 'medium', -- 'critical', 'high', 'medium', 'low'
-  confidence FLOAT NOT NULL DEFAULT 0.0, -- 0.0 to 1.0
-  source TEXT NOT NULL, -- 'user_input', 'document', 'ai_inference'
-  source_document_id UUID REFERENCES documents(id),
-  status TEXT NOT NULL DEFAULT 'draft', -- 'draft', 'clarifying', 'locked', 'approved'
-  clarification_question TEXT,
-  clarification_options JSONB, -- array of options for multiple choice
-  user_answer TEXT,
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE requirement_sources (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  requirement_id UUID NOT NULL REFERENCES requirements(id) ON DELETE CASCADE,
-  document_id UUID REFERENCES documents(id),
-  chunk_id UUID REFERENCES document_chunks(id),
-  relevance_score FLOAT,
-  excerpt TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_requirements_project ON requirements(project_id);
-CREATE INDEX idx_requirements_status ON requirements(status);
-CREATE INDEX idx_requirements_confidence ON requirements(confidence);
+```prisma
+model Requirement {
+  id                   String   @id @default(cuid())
+  projectId            String
+  title                String
+  description          String
+  category             String   // business, functional, non_functional, ui, security, data, integration
+  priority             String   @default("medium") // critical, high, medium, low
+  confidence           Float    @default(0)       // 0.0 to 1.0
+  source               String   // user_input, document, ai_inference
+  sourceDocumentId     String?
+  status               String   @default("draft") // draft, clarifying, locked, approved
+  clarificationQuestion String?
+  clarificationOptions Json?
+  userAnswer           String?
+  metadata             Json     @default("{}")
+  project              Project  @relation(fields: [projectId], references: [id])
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
 ```
 
-### 4.2.2 — Requirement Agent
+Run: `prisma migrate dev --name add-requirements`
+
+### 4.2.2 — FastAPI Requirement Agent
 
 **Files to create:**
-- `apps/ai/app/agents/requirement_agent.py` — replace stub with full implementation
-- `apps/ai/app/rag/retriever.py` — update with requirement-specific retrieval
-- `apps/ai/app/api/requirements.py` — update with full endpoints
+- `apps/ai/app/agents/requirement_agent.py` — full implementation
 
-**Requirement agent flow:**
 ```python
 class RequirementAgent(BaseAgent):
     async def run(self, context: AgentContext) -> AgentResult:
-        # 1. Gather all project context
-        documents = await self.get_project_documents(context.project_id)
-        knowledge = await self.search_knowledge_base(context.project_id, context.problem_statement)
-        
-        # 2. Extract requirements from documents + problem statement
-        requirements = await self.extract_requirements(context.problem_statement, knowledge, documents)
-        
-        # 3. Assess confidence for each requirement
-        for req in requirements:
-            req.confidence = await self.assess_confidence(req, knowledge)
-        
-        # 4. Generate clarification questions for low-confidence requirements
-        clarifications = await self.generate_clarifications(requirements)
-        
+        await self.emit_event(context.run_id, "agent.thinking", {"step": "retrieving context"})
+
+        # 1. Search knowledge base for relevant chunks
+        knowledge = await self.search_knowledge(context.project_id, context.problem_statement)
+
+        await self.emit_event(context.run_id, "agent.thinking", {"step": "extracting requirements"})
+
+        # 2. Extract requirements via LLM (structured output)
+        requirements = await self.llm.complete(
+            system=REQUIREMENT_EXTRACTION_PROMPT,
+            user=f"Problem: {context.problem_statement}\n\nContext: {knowledge}",
+            response_model=list[Requirement],
+        )
+
+        # 3. Generate clarifications for low-confidence requirements
+        clarifications = [r for r in requirements if r.confidence < 0.7]
+
+        state = "clarification" if clarifications else "prd_ready"
+
         return AgentResult(
             requirements=requirements,
             clarifications=clarifications,
-            state_transition="clarification" if clarifications else "prd_ready"
+            stateTransition=state,
         )
 ```
 
-**Requirement extraction prompt strategy:**
-- System prompt instructs LLM to analyze input and extract structured requirements
-- Each requirement includes: title, description, category, priority, confidence, source
-- Low-confidence requirements (< 0.7) generate clarification questions
-- Requirements are linked to source documents via `requirement_sources`
+**FastAPI requirement endpoints (internal):**
+```
+POST /ai/analyze        — run requirement analysis
+POST /ai/clarify        — process user answers, re-analyze
+```
 
-**Clarification question types:**
-- Multiple choice: "Which authentication method?" with options
-- Open-ended: "What specific features does the admin need?"
-- Confirmation: "Should this feature be included?"
+### 4.2.3 — Next.js Requirement API Routes
 
-### 4.2.3 — Clarification UI
+**`apps/web/app/api/projects/[id]/requirements/route.ts`**
+- `GET` — list requirements
+- `PATCH` — update requirement (lock, approve, submit user answer)
+
+**`apps/web/app/api/projects/[id]/clarify/route.ts`**
+- `POST` — submit clarification answers → enqueue re-analysis job
+
+### 4.2.4 — Clarification UI
 
 **Files to create:**
-- `apps/web/app/projects/[projectId]/overview/page.tsx` — update with analysis trigger
-- `apps/web/components/ai/clarification-panel.tsx` — clarification question/answer UI
-- `apps/web/components/ai/requirement-list.tsx` — requirement display with confidence scores
-- `apps/web/components/ai/analysis-progress.tsx` — analysis progress indicator
-- `apps/web/lib/ai.ts` — AI API client for agent interactions
+- `apps/web/components/ai/clarification-panel.tsx` — question/answer UI
+- `apps/web/components/ai/requirement-list.tsx` — requirements with confidence badges
+- `apps/web/components/ai/analysis-progress.tsx` — live progress via SSE
 
-**Clarification UI flow:**
-1. User enters problem statement + uploads files
-2. Clicks "Analyze Requirements"
-3. Analysis progress shows (streaming events via SSE)
-4. If clarification needed: questions appear in panel
-5. User answers questions (multiple choice or free text)
-6. Answers submitted → agent re-analyzes
-7. Requirements displayed with confidence scores
-8. User can lock requirements when satisfied
+**UI flow:**
+1. User enters problem statement + uploads files → clicks "Analyze"
+2. Frontend calls `POST /api/projects/:id/analyze`
+3. SSE events stream agent progress to UI
+4. Clarification questions appear in panel
+5. User answers → `POST /api/projects/:id/clarify`
+6. Requirements shown with confidence scores
+7. User locks requirements when satisfied
 
 ---
 
 ## Module 4.3: PRD Generation & Editing
 
-### 4.3.1 — Database: PRD Versions Table
+### 4.3.1 — Prisma Schema: PRD Versions
 
-**Files to create:**
-- `apps/api/migrations/00026_create_prd_versions.sql`
+```prisma
+model PRDVersion {
+  id              String    @id @default(cuid())
+  projectId       String
+  version         Int
+  content         Json      // structured PRD JSON
+  contentMarkdown String
+  generatedBy     String    @default("ai") // ai, user
+  changeSummary   String?
+  parentVersionId String?
+  project         Project   @relation(fields: [projectId], references: [id])
+  createdAt       DateTime  @default(now())
 
-**Schema:**
-```sql
-CREATE TABLE prd_versions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  version INTEGER NOT NULL,
-  content JSONB NOT NULL, -- structured PRD content
-  content_markdown TEXT NOT NULL, -- markdown version
-  generated_by TEXT NOT NULL DEFAULT 'ai', -- 'ai', 'user'
-  change_summary TEXT,
-  parent_version_id UUID REFERENCES prd_versions(id),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(project_id, version)
-);
-
-CREATE INDEX idx_prd_versions_project ON prd_versions(project_id);
-```
-
-**PRD content structure (JSONB):**
-```json
-{
-  "title": "Employee Management System",
-  "overview": { "problem": "...", "target_audience": "...", "goals": ["..."] },
-  "personas": [
-    { "role": "Admin", "needs": ["..."], "journeys": ["..."] }
-  ],
-  "features": [
-    {
-      "id": "feat-1",
-      "title": "User Authentication",
-      "description": "...",
-      "user_story": "As a user, I want to...",
-      "acceptance_criteria": ["..."],
-      "priority": "high",
-      "dependencies": []
-    }
-  ],
-  "business_rules": ["..."],
-  "functional_requirements": ["..."],
-  "non_functional_requirements": ["..."],
-  "security_requirements": ["..."],
-  "integration_requirements": ["..."]
+  @@unique([projectId, version])
 }
 ```
 
-### 4.3.2 — PRD Agent
+### 4.3.2 — FastAPI PRD Agent
 
-**Files to create:**
-- `apps/ai/app/agents/prd_agent.py` — replace stub with full implementation
-- `apps/ai/app/api/prd.py` — update with full endpoints
+**File:** `apps/ai/app/agents/prd_agent.py`
 
-**PRD agent flow:**
 ```python
 class PRDAgent(BaseAgent):
     async def run(self, context: AgentContext) -> AgentResult:
-        # 1. Gather locked requirements
-        requirements = await self.get_locked_requirements(context.project_id)
-        
-        # 2. Gather relevant knowledge base entries
-        knowledge = await self.search_knowledge_base(context.project_id, "PRD generation")
-        
-        # 3. Generate structured PRD
-        prd = await self.generate_prd(requirements, knowledge)
-        
-        # 4. Store PRD version
-        version = await self.store_prd_version(context.project_id, prd)
-        
-        return AgentResult(prd_version=version, state_transition="prd_ready")
+        requirements = context.locked_requirements
+        knowledge = await self.search_knowledge(context.project_id, "product requirements")
+
+        prd = await self.llm.complete(
+            system=PRD_GENERATION_PROMPT,
+            user=f"Requirements: {requirements}\n\nContext: {knowledge}",
+            response_model=PRDDocument,
+        )
+
+        return AgentResult(prd=prd, stateTransition="prd_ready")
 ```
 
-### 4.3.3 — PRD Editor (Next.js)
+PRD content schema:
+```json
+{
+  "title": "Employee Management System",
+  "overview": { "problem": "...", "targetAudience": "...", "goals": [] },
+  "personas": [{ "role": "Admin", "needs": [], "journeys": [] }],
+  "features": [{
+    "id": "feat-1",
+    "title": "User Authentication",
+    "userStory": "As a user, I want to...",
+    "acceptanceCriteria": [],
+    "priority": "high",
+    "dependencies": []
+  }],
+  "businessRules": [],
+  "functionalRequirements": [],
+  "nonFunctionalRequirements": [],
+  "securityRequirements": []
+}
+```
+
+### 4.3.3 — Next.js PRD API Routes
+
+**`apps/web/app/api/projects/[id]/prd/route.ts`**
+- `GET` — get current (latest) PRD version
+- `POST` — trigger PRD generation (enqueue BullMQ job)
+
+**`apps/web/app/api/projects/[id]/prd/versions/route.ts`**
+- `GET` — list all PRD versions
+
+**`apps/web/app/api/projects/[id]/prd/approve/route.ts`**
+- `POST` — approve PRD, update project state to `design_ready`
+
+### 4.3.4 — PRD Editor (Next.js)
 
 **Files to create:**
-- `apps/web/app/projects/[projectId]/prd/page.tsx` — PRD editor page
+- `apps/web/app/projects/[projectId]/prd/page.tsx`
 - `apps/web/components/editor/prd-editor.tsx` — TipTap rich text editor
-- `apps/web/components/editor/prd-toolbar.tsx` — editor toolbar
+- `apps/web/components/editor/prd-toolbar.tsx`
 - `apps/web/components/editor/prd-sidebar.tsx` — section navigation
-- `apps/web/components/editor/version-history.tsx` — version diff viewer
-- `apps/web/components/editor/ai-edit-panel.tsx` — AI modification panel
-- `apps/web/lib/prd.ts` — PRD API client
+- `apps/web/components/editor/version-history.tsx` — diff viewer + restore
+- `apps/web/components/editor/ai-edit-panel.tsx` — "ask AI to modify" panel
+- `apps/web/lib/prd.ts` — typed API client for PRD routes
 
-**PRD editor features:**
-- TipTap editor with markdown support
-- Section-by-section navigation sidebar
-- AI edit panel: "Modify this section" → sends to AI → updates PRD
-- Version history: view previous versions, compare diffs, restore
-- Auto-save on changes (creates new version on significant edits)
+**Features:**
+- TipTap editor with markdown support + structured section nav
+- AI edit: send selected section to `POST /ai/prd/edit` → update PRD
+- Version history with diff view and restore
 - Export to PDF/Markdown
-
-**PRD endpoints:**
-```
-GET  /api/v1/projects/:id/prd             — get current PRD
-GET  /api/v1/projects/:id/prd/versions    — list PRD versions
-GET  /api/v1/projects/:id/prd/versions/:v — get specific version
-POST /api/v1/projects/:id/prd/ai-edit    — request AI modification
-POST /api/v1/projects/:id/prd/approve    — approve PRD, transition state
-```
-
----
-
-## TypeScript Types & Schemas
-
-**Files to create/modify:**
-- `packages/types/src/requirement.ts` — update with full Requirement, ClarificationQuestion types
-- `packages/types/src/prd.ts` — update with PRD, PRDVersion, PRDSection types
-- `packages/types/src/agent.ts` — update with AgentRun, AgentEvent, AgentMessage types
-- `packages/schemas/requirement.schema.json` — update
-- `packages/schemas/prd.schema.json` — update
-
----
-
-## OpenAPI Spec Updates
-
-**Files to modify:**
-- `apps/api/api-spec.yaml` — add agent run, requirement, PRD endpoints
-- `apps/ai/api-spec.yaml` — add requirement analysis, PRD generation endpoints
+- Auto-save (debounced, creates new version on significant changes)
 
 ---
 
 ## Verification Steps
 
-1. **Requirement analysis:** Enter problem statement → agent extracts requirements with confidence scores
-2. **Clarification loop:** Low-confidence requirements generate questions → user answers → requirements updated
-3. **Requirement locking:** All requirements at ≥0.7 confidence → lock requirements
-4. **PRD generation:** Locked requirements → PRD agent generates structured PRD
-5. **PRD editing:** Open PRD in editor → edit sections → save as new version
-6. **AI modification:** Request AI to modify section → PRD updated
-7. **Version history:** View version list → compare versions → restore previous version
-8. **State transitions:** Project state correctly transitions through: draft → analyzing → clarification → prd_ready
-9. **SSE streaming:** Agent events stream to frontend in real-time
+1. **Analysis:** Enter problem statement → `POST /api/projects/:id/analyze` → SSE events stream to UI
+2. **Clarification:** Low-confidence requirements show questions; user submits answers via `POST .../clarify`; agent re-runs
+3. **Requirements:** All requirements ≥ 0.7 confidence → user locks → state transitions to `prd_ready`
+4. **PRD generation:** `POST .../prd` → FastAPI PRD agent runs → PRD JSON stored in DB
+5. **Editor:** Open PRD → TipTap renders it → edits save as new version
+6. **AI edit:** Ask AI to modify a section → PRD updated
+7. **Version history:** View list → compare two versions → restore previous
+8. **State transitions:** Verified: `draft → analyzing → clarification → prd_ready`
+9. **SSE streaming:** Agent events appear in browser in real time (check DevTools Network → EventStream)
 
 ---
 
 ## Implementation Order
 
-1. Database migrations (agent_runs, agent_messages, agent_events, requirements, prd_versions)
-2. FastAPI orchestrator + base agent + state machine
-3. FastAPI LLM provider (OpenAI)
-4. FastAPI requirement agent
+1. Prisma schema (AgentRun, AgentMessage, AgentEvent, Requirement, PRDVersion) + migrate
+2. FastAPI LLM provider (OpenAI, pluggable interface)
+3. FastAPI base agent + orchestrator
+4. FastAPI requirement agent (RAG + structured output)
 5. FastAPI PRD agent
-6. Go agent run API + SSE streaming
-7. Go requirement + PRD API endpoints
-8. Next.js analysis UI (problem statement, trigger analysis, progress)
-9. Next.js clarification UI (questions, answers, confidence display)
-10. Next.js PRD editor (TipTap, versioning, AI edit)
-11. TypeScript types + JSON schemas
-12. OpenAPI spec updates
-13. End-to-end verification
+6. BullMQ AI analysis worker (Next.js side)
+7. Next.js agent run API routes (analyze, clarify, agent-runs)
+8. Next.js SSE events route (Redis pub/sub → SSE)
+9. Next.js requirement API routes (list, update, lock)
+10. Next.js PRD API routes (generate, get, versions, approve)
+11. Next.js analysis progress UI (SSE listener)
+12. Next.js clarification UI
+13. Next.js PRD editor (TipTap + version history + AI edit)
+14. TypeScript types
+15. End-to-end verification

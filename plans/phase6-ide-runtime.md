@@ -2,212 +2,281 @@
 
 ## Overview
 
-Build the browser-based IDE (Monaco editor + file tree + terminal), workspace sandboxing (Docker containers managed by Go), and live preview proxy. After this phase, users have a Replit-like IDE where they can view files, see terminal output, and preview running applications.
+Build the browser-based IDE (Monaco editor + file tree + terminal), workspace sandboxing (Docker containers managed by **Next.js API routes**), and live preview proxy. After this phase, users have a Replit-like IDE where they can view files, see terminal output, and preview running applications.
 
 **Key decisions:**
-- Code editor: Monaco Editor (VS Code's editor core)
-- Terminal: Xterm.js connected via WebSocket to container shell
-- Sandbox: Docker containers per project, managed by Go Docker SDK
-- Preview: Go reverse proxy routing to container ports
-- File sync: Go API reads/writes files in container volumes
+- Code editor: Monaco Editor
+- Terminal: Xterm.js connected via WebSocket to Next.js API route
+- Sandbox: Docker containers per project, managed by **Next.js API routes** using `dockerode`
+- Preview: Next.js middleware reverse proxy → sandbox container port
+- File sync: Next.js API reads/writes files in container volumes via `dockerode`
+- **No Go service** — all sandbox control is in `apps/web/lib/docker.ts` + API routes
 
 ---
 
 ## Module 6.1: Web IDE UI
 
-### 6.1.1 — Database: Workspaces & Files Tables
+### 6.1.1 — Prisma Schema: Workspaces & Builds
 
-**Files to create:**
-- `apps/api/migrations/00029_create_workspaces.sql`
+**File to update:** `apps/web/prisma/schema.prisma`
 
-**Schema:**
-```sql
-CREATE TABLE workspaces (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  container_id TEXT, -- Docker container ID
-  status TEXT NOT NULL DEFAULT 'stopped', -- starting, running, stopped, error
-  port INTEGER, -- assigned preview port
-  docker_image TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+```prisma
+model Workspace {
+  id           String    @id @default(cuid())
+  projectId    String    @unique
+  containerId  String?   // Docker container ID
+  status       String    @default("stopped") // starting, running, stopped, error
+  port         Int?      // assigned preview port
+  dockerImage  String?
+  project      Project   @relation(fields: [projectId], references: [id])
+  files        WorkspaceFile[]
+  builds       Build[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
 
-CREATE TABLE workspace_files (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-  path TEXT NOT NULL, -- relative path within workspace
-  content TEXT, -- file content (for small files)
-  is_directory BOOLEAN NOT NULL DEFAULT FALSE,
-  last_modified TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(workspace_id, path)
-);
+model WorkspaceFile {
+  id          String    @id @default(cuid())
+  projectId   String
+  workspaceId String
+  path        String    // relative path within workspace
+  content     String?
+  isDirectory Boolean   @default(false)
+  lastModified DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-CREATE INDEX idx_workspaces_project ON workspaces(project_id);
-CREATE INDEX idx_workspace_files_workspace ON workspace_files(workspace_id);
-CREATE INDEX idx_workspace_files_path ON workspace_files(path);
+  @@unique([workspaceId, path])
+}
+
+model Build {
+  id           String    @id @default(cuid())
+  projectId    String
+  workspaceId  String
+  status       String    @default("pending") // pending, running, success, failed
+  buildCommand String
+  logs         String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  testRuns     TestRun[]
+  createdAt    DateTime  @default(now())
+}
+
+model TestRun {
+  id           String    @id @default(cuid())
+  projectId    String
+  buildId      String?
+  agentRunId   String?
+  status       String    @default("pending") // pending, running, passed, failed
+  totalTests   Int       @default(0)
+  passedTests  Int       @default(0)
+  failedTests  Int       @default(0)
+  output       String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  build        Build?    @relation(fields: [buildId], references: [id])
+  createdAt    DateTime  @default(now())
+}
 ```
+
+Run: `prisma migrate dev --name add-workspace-build`
 
 ### 6.1.2 — Monaco Editor & File Tree
 
 **Files to create:**
-- `apps/web/app/projects/[projectId]/code/page.tsx` — IDE page layout
-- `apps/web/components/editor/ide-layout.tsx` — main IDE layout (sidebar + editor + preview)
-- `apps/web/components/editor/file-tree.tsx` — file navigation tree
-- `apps/web/components/editor/monaco-editor.tsx` — Monaco editor wrapper
+- `apps/web/app/projects/[projectId]/code/page.tsx` — IDE page
+- `apps/web/components/editor/ide-layout.tsx` — 3-column layout
+- `apps/web/components/editor/file-tree.tsx` — file navigation
+- `apps/web/components/editor/monaco-editor.tsx` — Monaco wrapper
 - `apps/web/components/editor/editor-tabs.tsx` — open file tabs
-- `apps/web/components/editor/file-search.tsx` — Ctrl+P file search
 - `apps/web/lib/workspace.ts` — workspace API client
 
 **IDE layout:**
 ```
-┌────────────┬──────────────────────┬───────────────┐
-│ File Tree  │ Code Editor          │ Live Preview  │
-│            │                      │               │
-│ frontend/  │ app/page.tsx        │               │
-│ backend/   │                      │   Application │
-│ database/  │                      │               │
-│ tests/     │                      │               │
-├────────────┴──────────────────────┴───────────────┤
-│ Terminal / Logs / AI Activity                     │
-└───────────────────────────────────────────────────┘
+┌────────────┬──────────────────────┬────────────────┐
+│ File Tree  │ Monaco Code Editor   │ Live Preview   │
+│            │                      │                │
+│ app/       │ app/page.tsx         │   Running App  │
+│ api/       │                      │                │
+│ prisma/    │                      │                │
+├────────────┴──────────────────────┴────────────────┤
+│ Terminal (Xterm.js) / AI Activity / Logs            │
+└─────────────────────────────────────────────────────┘
 ```
 
-**Monaco editor features:**
-- Syntax highlighting for TS, Go, Python, SQL, YAML, JSON, Markdown
-- Multiple open files via tabs
-- File search (Ctrl+P)
-- Read-only mode (default) with edit toggle
-- Diff view (for AI changes)
-- Auto-save on change (debounced)
+**Monaco features:** Syntax highlighting (TS, Python, SQL, JSON, YAML), multi-tab, file search (Ctrl+P), read-only mode with edit toggle, diff view for AI changes.
 
-**File tree features:**
-- Expand/collapse directories
-- File icons by type
-- Right-click context menu (new file, new folder, rename, delete)
-- Search within files
-- Synced with workspace container
-
-**Workspace file endpoints:**
+**Workspace file API routes:**
 ```
-GET    /api/v1/projects/:id/workspace/files          — list all files (tree structure)
-GET    /api/v1/projects/:id/workspace/files?path=... — get file content
-PUT    /api/v1/projects/:id/workspace/files?path=... — update file content
-POST   /api/v1/projects/:id/workspace/files           — create file/directory
-DELETE /api/v1/projects/:id/workspace/files?path=... — delete file/directory
+GET    /api/projects/:id/workspace/files         — file tree
+GET    /api/projects/:id/workspace/files?path=.. — file content
+PUT    /api/projects/:id/workspace/files?path=.. — update content
+POST   /api/projects/:id/workspace/files         — create file/dir
+DELETE /api/projects/:id/workspace/files?path=.. — delete
 ```
 
-### 6.1.3 — Terminal & Live Streaming
+### 6.1.3 — Terminal & WebSocket
 
 **Files to create:**
-- `apps/web/components/terminal/xterm-terminal.tsx` — Xterm.js terminal component
-- `apps/web/components/terminal/terminal-tabs.tsx` — multiple terminal tabs
-- `apps/web/lib/websocket.ts` — WebSocket client for terminal + events
+- `apps/web/components/terminal/xterm-terminal.tsx` — Xterm.js wrapper
+- `apps/web/components/terminal/terminal-tabs.tsx`
+- `apps/web/lib/websocket.ts` — WebSocket client
 
-**Terminal features:**
-- Xterm.js connected to container shell via WebSocket
-- Multiple terminal tabs
-- Terminal output streaming (build logs, test output)
-- Copy/paste support
-- Terminal resize sync
+**WebSocket terminal route:**
+- `apps/web/app/api/projects/[id]/terminal/route.ts`
 
-**Terminal WebSocket endpoints:**
+```typescript
+// Next.js App Router WebSocket (via custom server or Next.js 14 WebSocket support)
+export async function GET(req: Request, { params }: Params) {
+  const session = await getServerSession(authOptions)
+  if (!session) return new Response('Unauthorized', { status: 401 })
+
+  // Upgrade to WebSocket
+  const { socket, response } = Deno.upgradeWebSocket(req)  // or ws library with custom server
+  const workspace = await db.workspace.findUnique({ where: { projectId: params.id } })
+
+  socket.onopen = async () => {
+    const exec = await docker.getContainer(workspace.containerId).exec({
+      Cmd: ['/bin/sh'], AttachStdin: true, AttachStdout: true, AttachStderr: true, Tty: true
+    })
+    // Pipe exec stream ↔ WebSocket
+  }
+  return response
+}
 ```
-WS /api/v1/projects/:id/terminal     — interactive shell
-WS /api/v1/projects/:id/events       — SSE for agent events
-```
 
-**Go WebSocket handler:**
-- `apps/api/internal/sandbox/terminal_handler.go` — WebSocket terminal handler
-- `apps/api/internal/sandbox/exec.go` — Docker exec wrapper
+> Note: Next.js App Router WebSocket support is via a custom `server.ts` (using `ws` library) for local dev, or via a dedicated WebSocket handler in production.
 
 ---
 
-## Module 6.2: Workspace & Sandboxing
+## Module 6.2: Sandbox Management (Next.js + dockerode)
 
-### 6.2.1 — Go Docker Sandbox Controller
+### 6.2.1 — Docker Client Library
 
-**Files to create:**
-- `apps/api/internal/sandbox/handler.go` — replace stub with full implementation
-- `apps/api/internal/sandbox/service.go` — sandbox business logic
-- `apps/api/internal/sandbox/controller.go` — Docker container management
-- `apps/api/internal/sandbox/exec.go` — Docker exec commands
-- `apps/api/internal/sandbox/files.go` — file operations in container
-- `apps/api/pkg/docker/client.go` — Docker SDK client wrapper
-- `apps/api/pkg/docker/config.go` — Docker configuration
+**File:** `apps/web/lib/docker.ts`
 
-**Sandbox controller:**
-```go
-type SandboxController struct {
-    dockerClient *docker.Client
-    config       *DockerConfig
+```typescript
+import Docker from 'dockerode'
+
+export const docker = new Docker({ socketPath: '/var/run/docker.sock' })
+
+export const SANDBOX_CONFIG = {
+  Image: 'kairopro/sandbox:latest',
+  CpuPeriod: 100000,
+  CpuQuota: 200000,   // 2 vCPU max
+  Memory: 2 * 1024 * 1024 * 1024,  // 2 GB
+  NetworkMode: 'bridge',
 }
 
-type DockerConfig struct {
-    BaseImage       string
-    CPULimit        float64  // CPU units (e.g., 2.0)
-    MemoryLimitMB   int      // Memory in MB
-    DiskLimitGB     int      // Disk quota in GB
-    NetworkMode     string   // "bridge" or "host"
-    TimeoutMinutes  int      // Max runtime
+export async function createSandbox(projectId: string): Promise<string> {
+  const container = await docker.createContainer({
+    ...SANDBOX_CONFIG,
+    name: `kairopro-${projectId}`,
+    Volumes: { [`/workspace`]: {} },
+    HostConfig: {
+      Binds: [`kairopro-vol-${projectId}:/workspace`],
+      Memory: SANDBOX_CONFIG.Memory,
+    },
+  })
+  await container.start()
+  return container.id
 }
 
-func (c *SandboxController) CreateWorkspace(ctx context.Context, projectID string) (*Workspace, error)
-func (c *SandboxController) StartWorkspace(ctx context.Context, workspaceID string) error
-func (c *SandboxController) StopWorkspace(ctx context.Context, workspaceID string) error
-func (c *SandboxController) RemoveWorkspace(ctx context.Context, workspaceID string) error
-func (c *SandboxController) ExecCommand(ctx context.Context, workspaceID string, cmd []string) (ExecResult, error)
-func (c *SandboxController) CopyFiles(ctx context.Context, workspaceID string, files map[string]string) error
-func (c *SandboxController) GetFile(ctx context.Context, workspaceID string, path string) (string, error)
-func (c *SandboxController) StreamLogs(ctx context.Context, workspaceID string) (<-chan string, error)
+export async function execInSandbox(containerId: string, cmd: string[]): Promise<{ stdout: string; stderr: string }> {
+  const container = docker.getContainer(containerId)
+  const exec = await container.exec({ Cmd: cmd, AttachStdout: true, AttachStderr: true })
+  const stream = await exec.start({})
+  // demux stdout/stderr and return
+}
+
+export async function writeFile(containerId: string, path: string, content: string): Promise<void> {
+  // Use docker cp via tar stream
+}
+
+export async function readFile(containerId: string, path: string): Promise<string> {
+  // Use exec cat
+}
+
+export async function listFiles(containerId: string, dir: string = '/workspace'): Promise<FileNode[]> {
+  // Use exec find
+}
 ```
 
-**Sandbox resource limits:**
-- CPU: 2 cores max
-- Memory: 2GB max
-- Disk: 5GB max
-- Network: bridge mode (isolated)
-- Timeout: 30 minutes idle, 2 hours active
-
-**Workspace lifecycle:**
-1. User opens project → Go creates Docker container
-2. Container starts with base image (Node.js + Go + Python)
-3. Project files synced to container volume
-4. Container assigned a preview port (e.g., 8080 + offset)
-5. User closes project → container stops after idle timeout
-6. Container data persisted in Docker volume
-
-**Sandbox endpoints:**
-```
-POST   /api/v1/projects/:id/workspace/start    — start workspace container
-POST   /api/v1/projects/:id/workspace/stop     — stop workspace container
-GET    /api/v1/projects/:id/workspace/status    — get workspace status
-POST   /api/v1/projects/:id/workspace/exec     — execute command in container
-GET    /api/v1/projects/:id/workspace/logs      — stream container logs
-WS     /api/v1/projects/:id/workspace/terminal — interactive terminal
-```
-
-### 6.2.2 — Workspace File Sync
+### 6.2.2 — Sandbox API Routes
 
 **Files to create:**
-- `apps/api/internal/sandbox/files.go` — file read/write operations in container
 
-**File sync strategy:**
-- Initial sync: Copy all project files from MinIO to container volume on workspace start
-- Read operations: Go reads files from container via `docker cp` or exec `cat`
-- Write operations: Go writes files to container via `docker cp` or exec `tee`
-- AI writes: When AI agent modifies files, Go copies them to container and updates DB
-- Periodic sync: Container files synced back to MinIO on save
+**`apps/web/app/api/projects/[id]/sandbox/route.ts`**
+- `POST` — create + start sandbox container
+- `DELETE` — stop + remove container
 
-**Docker base image:**
-- Custom image with Node.js 20, Go 1.22, Python 3.12, PostgreSQL client
-- Pre-installed: git, curl, common build tools
-- Published to local Docker registry or built from Dockerfile
+**`apps/web/app/api/projects/[id]/sandbox/status/route.ts`**
+- `GET` — return workspace status
 
-**Files to create:**
-- `infrastructure/docker/sandbox/Dockerfile` — sandbox base image
-- `infrastructure/docker/sandbox/entrypoint.sh` — sandbox entrypoint script
+**`apps/web/app/api/projects/[id]/sandbox/exec/route.ts`**
+- `POST` — execute command in container, stream stdout/stderr via SSE
+
+```typescript
+// POST /api/projects/:id/sandbox/exec
+export async function POST(req: Request, { params }: Params) {
+  const { command } = await req.json()
+  const workspace = await db.workspace.findUnique({ where: { projectId: params.id } })
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const { stdout, stderr } = await execInSandbox(workspace.containerId!, command)
+      // Stream output
+      controller.enqueue(`data: ${JSON.stringify({ type: 'stdout', data: stdout })}\n\n`)
+      controller.close()
+    }
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' }
+  })
+}
+```
+
+**FastAPI agents call this endpoint** to run commands, tests, builds — they do not have direct Docker access.
+
+### 6.2.3 — Sandbox Dockerfile
+
+**File:** `infrastructure/docker/sandbox/Dockerfile`
+
+```dockerfile
+FROM node:20-slim
+
+# Install Python, git, common tools
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip git curl build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+CMD ["/bin/sh", "-c", "tail -f /dev/null"]
+```
+
+### 6.2.4 — Workspace File API Routes
+
+**`apps/web/app/api/projects/[id]/workspace/files/route.ts`**
+```typescript
+// GET — list file tree
+// POST — create file or directory
+export async function GET(req: Request, { params }: Params) {
+  const workspace = await db.workspace.findUnique({ where: { projectId: params.id } })
+  if (!workspace?.containerId) return Response.json({ files: [] })
+
+  const files = await listFiles(workspace.containerId)
+  return Response.json({ files })
+}
+
+export async function PUT(req: Request, { params }: Params) {
+  const { path: filePath, content } = await req.json()
+  const workspace = await db.workspace.findUnique({ where: { projectId: params.id } })
+  await writeFile(workspace.containerId!, filePath, content)
+  return Response.json({ success: true })
+}
+```
 
 ---
 
@@ -215,126 +284,105 @@ WS     /api/v1/projects/:id/workspace/terminal — interactive terminal
 
 ### 6.3.1 — Live Preview Proxy
 
-**Files to create:**
-- `apps/api/internal/sandbox/proxy.go` — reverse proxy to container
-- `apps/api/internal/sandbox/proxy_handler.go` — HTTP handler for preview routes
+**File:** `apps/web/middleware.ts` (update)
 
-**Preview proxy:**
-```go
-func (h *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    // Extract project ID from path
-    // Look up workspace container and port
-    // Proxy request to container
-    // Example: /preview/abc123/* → http://container:3000/*
+```typescript
+import { NextResponse } from 'next/server'
+
+export function middleware(req: NextRequest) {
+  const host = req.headers.get('host') ?? ''
+  const previewMatch = host.match(/^([a-z0-9]+)\.preview\.kairopro\.in$/)
+
+  if (previewMatch) {
+    const projectId = previewMatch[1]
+    // Look up container port from Redis/DB (cached)
+    // Rewrite to container: http://localhost:{port}/...
+    return NextResponse.rewrite(new URL(`http://localhost:${containerPort}${req.nextUrl.pathname}`))
+  }
+
+  return NextResponse.next()
 }
 ```
 
-**Preview endpoints:**
-```
-GET /api/v1/projects/:id/preview/* — proxy to workspace container
-```
+Preview URL pattern:
+- Local: `http://localhost:3000/api/projects/{id}/preview/`
+- Production: `https://{id}.preview.kairopro.in`
 
-**Preview URL pattern:**
-- Local: `http://localhost:8080/api/v1/projects/{id}/preview/`
-- Production: `https://{project-slug}.preview.kairopro.in`
+### 6.3.2 — Build System
 
-**Hot reload:**
-- When AI modifies code in container, the container's dev server auto-reloads
-- Next.js dev server has built-in hot reload
-- Go and Python services need manual restart (or file watcher)
+**`apps/web/app/api/projects/[id]/build/route.ts`**
+- `POST` — trigger build in sandbox, create `Build` record, stream logs via SSE
 
-### 6.3.2 — Build System (Stub)
+```typescript
+export async function POST(req: Request, { params }: Params) {
+  const workspace = await db.workspace.findUnique({ where: { projectId: params.id } })
+  const build = await db.build.create({
+    data: { projectId: params.id, workspaceId: workspace!.id, buildCommand: 'npm run build', status: 'running' }
+  })
 
-**Files to create:**
-- `apps/api/internal/sandbox/build_handler.go` — build trigger endpoints
-- `apps/api/internal/sandbox/build_service.go` — build orchestration logic
+  const stream = new ReadableStream({
+    async start(controller) {
+      const { stdout, stderr } = await execInSandbox(workspace!.containerId!, ['npm', 'run', 'build'])
+      controller.enqueue(`data: ${stdout}\n\n`)
 
-**Build endpoints (stubs for Phase 6, full in Phase 7):**
-```
-POST /api/v1/projects/:id/build       — trigger build in workspace
-GET  /api/v1/projects/:id/build/status — get build status
-GET  /api/v1/projects/:id/build/logs   — stream build logs
-```
+      const status = stderr ? 'failed' : 'success'
+      await db.build.update({ where: { id: build.id }, data: { status, logs: stdout + stderr, completedAt: new Date() } })
+      controller.close()
+    }
+  })
 
-**Build flow (basic):**
-1. User or AI triggers build
-2. Go executes build command in container (e.g., `npm run build`)
-3. Go streams build logs via SSE
-4. Build status stored in `builds` table
-5. On success: preview available; on failure: logs available for debugging
-
-**Database:**
-```sql
-CREATE TABLE builds (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  workspace_id UUID NOT NULL REFERENCES workspaces(id),
-  status TEXT NOT NULL DEFAULT 'pending', -- pending, running, success, failed
-  build_command TEXT NOT NULL,
-  logs TEXT,
-  started_at TIMESTAMPTZ,
-  completed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_builds_project ON builds(project_id);
-CREATE INDEX idx_builds_status ON builds(status);
+  return new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } })
+}
 ```
 
-Migration file: `apps/api/migrations/00030_create_builds.sql`
-
----
-
-## TypeScript Types & Schemas
-
-**Files to create/modify:**
-- `packages/types/src/workspace.ts` — Workspace, WorkspaceFile, Build types
-- `packages/schemas/workspace.schema.json` — workspace file/build schemas
-
----
-
-## OpenAPI Spec Updates
-
-**Files to modify:**
-- `apps/api/api-spec.yaml` — add workspace, file, terminal, preview, build endpoints
-
----
-
-## Docker Compose Updates
-
-**Files to modify:**
-- `docker-compose.yml` — add Docker socket volume mount for Go API
-- `infrastructure/docker/sandbox/Dockerfile` — sandbox base image
+**`apps/web/app/api/projects/[id]/test/route.ts`**
+- `POST` — run tests in sandbox, create `TestRun` record
 
 ---
 
 ## Verification Steps
 
-1. **Workspace start:** POST `/workspace/start` → Docker container created → status `running`
-2. **File tree:** GET `/workspace/files` → returns file tree from container
-3. **File read/write:** GET/PUT `/workspace/files?path=app/page.tsx` → read/write works
-4. **Terminal:** WebSocket connection → interactive shell in container
-5. **Live preview:** GET `/preview/{id}/` → proxies to container's running app
-6. **Build:** POST `/build` → build runs in container → logs stream back
-7. **Resource limits:** Container respects CPU/memory/disk limits
-8. **Cleanup:** Stop workspace → container stops → restart resumes state
+1. `POST /api/projects/:id/sandbox` → Docker container created → `status = running`
+2. `GET /api/projects/:id/workspace/files` → file tree from container returned
+3. `PUT /api/projects/:id/workspace/files` → file written to container
+4. WebSocket terminal → interactive shell in container
+5. `POST /api/projects/:id/sandbox/exec { command: ["npm", "install"] }` → output streams via SSE
+6. Preview URL → proxied to container app (200 OK)
+7. `POST /api/projects/:id/build` → build runs → logs stream back → Build record updated
+
+---
+
+## Docker Compose Updates
+
+Add Docker socket volume mount so Next.js can control containers:
+```yaml
+web:
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+```
+
+Add sandbox base image build:
+```yaml
+sandbox-builder:
+  build: ./infrastructure/docker/sandbox
+  image: kairopro/sandbox:latest
+```
 
 ---
 
 ## Implementation Order
 
-1. Database migrations (workspaces, workspace_files, builds)
-2. Go Docker SDK client + sandbox controller
-3. Go workspace API (start, stop, status, exec, files)
-4. Go terminal WebSocket handler
-5. Go preview proxy
-6. Go build system (basic)
-7. Sandbox Dockerfile
-8. Next.js IDE layout (file tree + editor + preview + terminal)
-9. Monaco editor integration
-10. Xterm.js terminal integration
-11. File tree + file operations
-12. TypeScript types + schemas
-13. OpenAPI spec updates
-14. Docker Compose updates
-15. End-to-end verification
+1. Prisma schema (Workspace, WorkspaceFile, Build, TestRun) + migrate
+2. `apps/web/lib/docker.ts` — dockerode client + helpers (createSandbox, exec, read/write file, list files)
+3. Sandbox Dockerfile (`infrastructure/docker/sandbox/`)
+4. Next.js sandbox API routes (start, stop, exec/SSE)
+5. Next.js workspace file API routes (list, get, put, delete)
+6. Next.js WebSocket terminal route (custom server or ws library)
+7. Next.js build + test API routes
+8. Next.js middleware preview proxy
+9. Next.js IDE page layout (3-column)
+10. Monaco Editor integration
+11. File tree component
+12. Xterm.js terminal component
+13. Docker Compose updates (socket mount, sandbox image)
+14. End-to-end verification
