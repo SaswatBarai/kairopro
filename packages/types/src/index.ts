@@ -4,3 +4,5 @@ export * from "./prd";
 export * from "./task";
 export * from "./auth";
 export * from "./billing";
+export * from "./document";
+export * from "./knowledge-base";
