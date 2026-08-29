@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { PRDEditor } from "@/components/editor/prd-editor";
-import { Loader2, CheckCircle, FileText, Check } from "lucide-react";
+import { Loader2, CheckCircle, FileText, Check, Sparkles, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { use } from "react";
-
 import { VersionHistory } from "@/components/editor/version-history";
+import { Button } from "@/components/ui/button";
 
 export default function PRDPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
@@ -14,6 +13,7 @@ export default function PRDPage({ params }: { params: Promise<{ projectId: strin
 
   const [prd, setPrd] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
 
   useEffect(() => {
@@ -34,12 +34,43 @@ export default function PRDPage({ params }: { params: Promise<{ projectId: strin
     }
   };
 
+  const handleGeneratePrd = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/prd`, { method: "POST" });
+      if (res.ok) {
+        // Poll for completion
+        let count = 0;
+        const interval = setInterval(async () => {
+          count++;
+          const checkRes = await fetch(`/api/projects/${projectId}/prd`);
+          if (checkRes.ok) {
+            const data = await checkRes.json();
+            if (data.prd) {
+              setPrd(data.prd);
+              setGenerating(false);
+              clearInterval(interval);
+            }
+          }
+          if (count > 20) {
+            setGenerating(false);
+            clearInterval(interval);
+          }
+        }, 3000);
+      } else {
+        setGenerating(false);
+      }
+    } catch (err) {
+      setGenerating(false);
+    }
+  };
+
   const handleApprove = async () => {
     setIsApproving(true);
     try {
       const res = await fetch(`/api/projects/${projectId}/prd/approve`, { method: "POST" });
       if (res.ok) {
-        router.push(`/projects/${projectId}`);
+        router.push(`/projects/${projectId}/design`);
       }
     } finally {
       setIsApproving(false);
@@ -47,15 +78,38 @@ export default function PRDPage({ params }: { params: Promise<{ projectId: strin
   };
 
   if (loading) {
-    return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>;
+    return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
   if (!prd) {
     return (
-      <div className="max-w-4xl mx-auto py-20 text-center">
-        <FileText className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">No PRD Generated Yet</h2>
-        <p className="text-slate-400">Complete the requirement analysis phase to generate a PRD.</p>
+      <div className="max-w-2xl mx-auto py-20 text-center space-y-6">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary">
+          <FileText className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-foreground">No PRD Generated Yet</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            Click below to run the AI PRD Agent to transform extracted requirements into a comprehensive Product Requirements Document.
+          </p>
+        </div>
+        <Button
+          onClick={handleGeneratePrd}
+          disabled={generating}
+          className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 px-6"
+        >
+          {generating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              Generating PRD with DeepSeek AI...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Generate PRD with AI
+            </>
+          )}
+        </Button>
       </div>
     );
   }
@@ -71,24 +125,24 @@ export default function PRDPage({ params }: { params: Promise<{ projectId: strin
   `;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex justify-between items-center bg-slate-900/60 p-6 rounded-2xl border border-slate-800 backdrop-blur-xl">
+    <div className="max-w-6xl mx-auto space-y-6 p-8">
+      <div className="flex justify-between items-center bg-card/60 p-6 rounded-2xl border border-border/60 backdrop-blur-xl">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <FileText className="w-6 h-6 text-indigo-400" />
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <FileText className="w-6 h-6 text-primary" />
             Product Requirements Document
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Version {prd.version} • Generated by {prd.generatedBy}</p>
+          <p className="text-sm text-muted-foreground mt-1">Version {prd.version} • Generated by {prd.generatedBy}</p>
         </div>
         
-        <button
+        <Button
           onClick={handleApprove}
           disabled={isApproving}
-          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 flex items-center gap-2 transition-all disabled:opacity-50"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 flex items-center gap-2"
         >
           {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          Approve PRD
-        </button>
+          Approve PRD & Continue
+        </Button>
       </div>
 
       <PRDEditor 

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   FileText, Palette, Server, Code2, Cpu, Rocket, Eye,
-  Play, Clock, CheckCircle2, AlertCircle, Loader2, ArrowRight,
+  Play, Clock, CheckCircle2, AlertCircle, Loader2, ArrowRight, Sparkles, HelpCircle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 const phaseInfo = [
-  { key: "prd", label: "Product Requirements", icon: FileText, href: "prd", desc: "AI-generated PRD from your description" },
+  { key: "prd", label: "Product Requirements", icon: FileText, href: "prd", desc: "AI-generated PRD and extracted requirements" },
   { key: "design", label: "Design System", icon: Palette, href: "design", desc: "Color palette, typography, and component specs" },
   { key: "architecture", label: "Architecture", icon: Server, href: "architecture", desc: "Tech stack, data models, API structure" },
   { key: "code", label: "IDE & Files", icon: Code2, href: "code", desc: "Browse and edit generated code files" },
@@ -22,7 +22,7 @@ const phaseInfo = [
   { key: "preview", label: "Live Preview", icon: Eye, href: "preview", desc: "Preview the running application" },
 ];
 
-const stateOrder = ["draft", "analyzing", "prd_ready", "designing", "architecture_ready", "approved", "developing", "testing", "preview", "live", "failed"];
+const stateOrder = ["draft", "analyzing", "clarification", "prd_ready", "designing", "architecture_ready", "approved", "developing", "testing", "preview", "live", "failed"];
 
 export default function ProjectOverviewPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -32,6 +32,10 @@ export default function ProjectOverviewPage() {
   const [starting, setStarting] = useState(false);
 
   useEffect(() => {
+    fetchData();
+  }, [projectId]);
+
+  const fetchData = () => {
     Promise.all([
       fetch(`/api/projects/${projectId}`).then((r) => r.json()),
       fetch(`/api/projects/${projectId}/agent-runs`).then((r) => r.json()).catch(() => ({ runs: [] })),
@@ -40,7 +44,7 @@ export default function ProjectOverviewPage() {
       setAgentRuns(runsData.runs || []);
       setLoading(false);
     });
-  }, [projectId]);
+  };
 
   const handleStartAnalysis = async () => {
     setStarting(true);
@@ -54,8 +58,8 @@ export default function ProjectOverviewPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        // Immediately update state locally
         setProject((p: any) => ({ ...p, state: "analyzing" }));
+        setTimeout(fetchData, 3000);
       } else {
         alert(data.error || "Failed to start analysis");
       }
@@ -72,18 +76,45 @@ export default function ProjectOverviewPage() {
     );
   }
 
-  const stateIdx = stateOrder.indexOf(project?.state ?? "draft");
-  const progressPct = Math.round(((stateIdx + 1) / stateOrder.length) * 100);
+  const currentState = project?.state ?? "draft";
+  const stateIdx = Math.max(0, stateOrder.indexOf(currentState));
+  const progressPct = Math.min(100, Math.round(((stateIdx + 1) / stateOrder.length) * 100));
 
   return (
     <div className="p-8 max-w-5xl space-y-8">
+      {/* Action Banner for Clarification / PRD Ready */}
+      {(currentState === "clarification" || currentState === "prd_ready") && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/30 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
+              <Sparkles className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">
+                {currentState === "clarification" ? "Requirements & Clarifications Ready!" : "PRD Successfully Generated!"}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {currentState === "clarification"
+                  ? "AI has extracted project requirements and prepared clarification questions."
+                  : "Product requirements document is ready for your review."}
+              </p>
+            </div>
+          </div>
+          <Link href={`/projects/${projectId}/prd`}>
+            <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-md">
+              View PRD <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Hero */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-foreground">{project?.name}</h1>
           <p className="text-sm text-muted-foreground max-w-xl">{project?.description || "No description provided."}</p>
         </div>
-        {project?.state === "draft" && (
+        {currentState === "draft" && (
           <Button
             onClick={handleStartAnalysis}
             disabled={starting}
@@ -109,7 +140,7 @@ export default function ProjectOverviewPage() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs capitalize">
-            {project?.state?.replace(/_/g, " ") ?? "Draft"}
+            {currentState.replace(/_/g, " ")}
           </Badge>
           <span className="text-xs text-muted-foreground">Current stage</span>
         </div>
@@ -122,20 +153,21 @@ export default function ProjectOverviewPage() {
         <h2 className="text-sm font-semibold text-foreground mb-4">Build Phases</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {phaseInfo.map(({ key, label, icon: Icon, href, desc }, i) => {
-            const phaseIdx = stateOrder.findIndex((s) => s.includes(key.replace("prd", "prd").replace("code", "developing")));
             const isComplete = stateIdx > i + 1;
-            const isActive = stateIdx === i + 1;
+            const isActive = stateIdx === i + 1 || (key === "prd" && (currentState === "clarification" || currentState === "prd_ready"));
 
             return (
               <Link key={key} href={`/projects/${projectId}/${href}`}>
                 <Card className={`group border-border/60 hover:border-primary/40 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 cursor-pointer ${isActive ? "border-primary/40 bg-primary/5" : ""}`}>
                   <CardHeader className="pb-3 flex flex-row items-center gap-3 space-y-0">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isComplete ? "bg-emerald-500/15" : isActive ? "bg-primary/15" : "bg-muted"}`}>
-                      {isComplete
-                        ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        : isActive
-                        ? <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                        : <Icon className="w-4 h-4 text-muted-foreground" />}
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isComplete ? "bg-emerald-500/15 text-emerald-400" : isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {isComplete ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      ) : isActive ? (
+                        <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                      ) : (
+                        <Icon className="w-4 h-4" />
+                      )}
                     </div>
                     <div className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">{label}</div>
                     <ArrowRight className="w-3.5 h-3.5 text-muted-foreground ml-auto group-hover:text-primary transition-colors" />

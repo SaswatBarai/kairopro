@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { aiAnalysisQueue } from "@/lib/queue";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   req: Request,
@@ -36,9 +36,9 @@ export async function POST(
 
     const { id: projectId } = await params;
 
-    // Get locked requirements to pass to PRD agent
+    // Get requirements to pass to PRD agent
     const requirements = await db.requirement.findMany({
-      where: { projectId, status: { in: ["locked", "approved"] } }
+      where: { projectId }
     });
 
     const agentRun = await db.agentRun.create({
@@ -51,15 +51,31 @@ export async function POST(
       },
     });
 
-    await aiAnalysisQueue.add("run-prd-agent", {
-      projectId,
-      runId: agentRun.id,
-      agentType: "prd",
-      input: { requirements }
+    const fastApiUrl = process.env.AI_ENGINE_URL || "http://localhost:8000";
+    const serviceToken = process.env.AI_SERVICE_TOKEN || "";
+
+    const aiRes = await fetch(`${fastApiUrl}/ai/prd/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Service-Token": serviceToken,
+      },
+      body: JSON.stringify({
+        projectId,
+        runId: agentRun.id,
+        requirements,
+      }),
     });
+
+    if (!aiRes.ok) {
+      const errText = await aiRes.text();
+      logger.error(`FastAPI PRD generation failed: ${errText}`);
+      return NextResponse.json({ error: "Failed to start PRD generation" }, { status: 502 });
+    }
 
     return NextResponse.json({ runId: agentRun.id, status: "started" });
   } catch (error) {
+    logger.error("Error starting PRD generation:", error);
     return NextResponse.json({ error: "Failed to start PRD generation" }, { status: 500 });
   }
 }

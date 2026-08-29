@@ -28,6 +28,8 @@ class Settings(BaseSettings):
 
     # LLM
     OPENAI_API_KEY: str = ""
+    OPENAI_BASE_URL: str = "https://api.deepseek.com/v1"
+    OPENAI_MODEL: str = "deepseek-chat"
     ANTHROPIC_API_KEY: str = ""
 
     # OTel

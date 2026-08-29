@@ -1,19 +1,21 @@
 import os
 import json
 import psycopg
-from pgvector.psycopg import register_vector
+from pgvector.psycopg import register_vector_async
 from app.documents.chunker import EmbeddedChunk
 from typing import List, Dict, Any
 
+from app.config import settings
+
 class VectorStore:
     def __init__(self):
-        self.db_url = os.getenv("DATABASE_URL")
+        self.db_url = settings.DATABASE_URL
         
     async def get_connection(self):
         # We use psycopg 3 async connection
         conn = await psycopg.AsyncConnection.connect(self.db_url)
         # Register pgvector types
-        await register_vector(conn)
+        await register_vector_async(conn)
         return conn
 
     async def store_chunks(self, project_id: str, doc_id: str, chunks: List[EmbeddedChunk]) -> None:
