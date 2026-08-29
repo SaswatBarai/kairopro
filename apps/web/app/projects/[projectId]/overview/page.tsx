@@ -45,8 +45,20 @@ export default function ProjectOverviewPage() {
   const handleStartAnalysis = async () => {
     setStarting(true);
     try {
-      await fetch(`/api/projects/${projectId}/analyze`, { method: "POST" });
-      window.location.reload();
+      const res = await fetch(`/api/projects/${projectId}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          problemStatement: project?.description || project?.name
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Immediately update state locally
+        setProject((p: any) => ({ ...p, state: "analyzing" }));
+      } else {
+        alert(data.error || "Failed to start analysis");
+      }
     } finally {
       setStarting(false);
     }

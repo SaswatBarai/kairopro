@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:worker": "tsx lib/workers/start.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

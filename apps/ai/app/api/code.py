@@ -1,11 +1,10 @@
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks
 from pydantic import BaseModel
 from typing import Dict, Any, List
-from app.api.auth import ServiceTokenMiddleware
 from app.agents.orchestrator import Orchestrator
 from app.agents.base_agent import AgentContext
 
-router = APIRouter(dependencies=[Depends(ServiceTokenMiddleware())])
+router = APIRouter()
 orchestrator = Orchestrator()
 
 class DevelopRequest(BaseModel):

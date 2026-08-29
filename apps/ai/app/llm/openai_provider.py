@@ -10,9 +10,11 @@ T = TypeVar('T', bound=BaseModel)
 
 class OpenAIProvider(LLMProvider):
     def __init__(self):
+        api_key = os.getenv("OPENAI_API_KEY") or "dummy-key-for-dev"
+        base_url = os.getenv("OPENAI_BASE_URL") or None
         self.client = AsyncOpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("OPENAI_BASE_URL")
+            api_key=api_key,
+            base_url=base_url
         )
         self.model = os.getenv("OPENAI_MODEL", "gpt-4o")
 
