@@ -40,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn(inter.variable, jetbrainsMono.variable, "font-sans", geist.variable)}>
+    <html lang="en" className={cn(inter.variable, jetbrainsMono.variable, "font-sans", geist.variable, "dark")}>
       <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
