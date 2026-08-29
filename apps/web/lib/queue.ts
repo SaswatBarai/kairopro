@@ -16,10 +16,15 @@ export const documentQueue = new Queue("document-processing", {
   connection: redis,
   defaultJobOptions: {
     attempts: 3,
-    backoff: {
-      type: "exponential",
-      delay: 1000,
-    },
+    backoff: { type: "exponential", delay: 1000 },
+    removeOnComplete: true,
+  },
+});
+
+export const aiAnalysisQueue = new Queue("ai-analysis", {
+  connection: redis,
+  defaultJobOptions: {
+    attempts: 1, // Let user retry manually instead of background backoff
     removeOnComplete: true,
   },
 });

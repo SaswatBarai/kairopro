@@ -1,40 +1,55 @@
-"""Agent stubs — full implementations in Phases 4–7."""
+import json
+import os
+import redis.asyncio as redis
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any
+from typing import Optional, Dict, Any, List
+from pydantic import BaseModel
 
+from app.llm.provider import LLMProvider
+from app.rag.embedder import Embedder
+from app.rag.vector_store import VectorStore
 
-@dataclass
-class AgentContext:
+class AgentContext(BaseModel):
     project_id: str
     run_id: str
-    problem_statement: str = ""
-    approved_prd: dict | None = None
-    approved_design: dict | None = None
-    architecture: dict | None = None
-    locked_requirements: list[dict] | None = None
-    test_failures: list[dict] | None = None
+    input_data: Dict[str, Any]
+    # For requirement agent
+    problem_statement: Optional[str] = None
+    # For PRD agent
+    locked_requirements: Optional[List[Dict[str, Any]]] = None
 
-
-@dataclass
-class AgentResult:
-    state_transition: str
-    data: dict | None = None
-    error: str | None = None
-
+class AgentResult(BaseModel):
+    stateTransition: str
+    data: Dict[str, Any] = {}
 
 class BaseAgent(ABC):
-    """Abstract base class for all KairoPro AI agents."""
+    def __init__(self, llm: LLMProvider):
+        self.llm = llm
+        self.redis = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
-    def __init__(self, llm_provider: Any = None):
-        self.llm = llm_provider
+    async def emit_event(self, run_id: str, event_type: str, data: dict):
+        """Publish to Redis channel, Next.js SSE route subscribes."""
+        payload = json.dumps({"runId": run_id, "type": event_type, "data": data})
+        await self.redis.publish(f"project-events:{run_id}", payload)
+
+    async def search_knowledge(self, project_id: str, query: str) -> str:
+        """Helper to query the project's knowledge base."""
+        embedder = Embedder()
+        store = VectorStore()
+        
+        try:
+            query_emb = await embedder.embed_query(query)
+            results = await store.search(project_id, query_emb, limit=5)
+            
+            # Combine content
+            context_text = "\n\n---\n\n".join(
+                [f"Document: {r['documentFilename']}\nContent: {r['content']}" for r in results]
+            )
+            return context_text
+        except Exception as e:
+            print(f"Knowledge search failed: {e}")
+            return "No additional context available."
 
     @abstractmethod
     async def run(self, context: AgentContext) -> AgentResult:
-        """Execute the agent's task."""
-        ...
-
-    async def emit_event(self, run_id: str, event_type: str, data: dict):
-        """Publish event to Redis — Next.js SSE stream picks it up."""
-        # Implemented fully in Phase 4
         pass

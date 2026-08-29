@@ -54,6 +54,15 @@ class MarkdownParser(DocumentParser):
 class ParserFactory:
     @staticmethod
     def get_parser(filename: str, content_type: str) -> DocumentParser:
-        # In a real app, this would route to PDFParser, DocxParser, ImageParser, etc.
-        # Fallback to Markdown/Text parser for this phase's foundation
-        return MarkdownParser()
+        from app.documents.pdf_parser import PDFParser
+        from app.documents.docx_parser import DocxParser
+        from app.documents.image_parser import ImageParser
+        
+        if content_type == "application/pdf" or filename.endswith(".pdf"):
+            return PDFParser()
+        elif "word" in content_type or filename.endswith(".docx"):
+            return DocxParser()
+        elif content_type.startswith("image/"):
+            return ImageParser()
+        else:
+            return MarkdownParser()
