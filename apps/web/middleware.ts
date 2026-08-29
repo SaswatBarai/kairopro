@@ -1,7 +1,10 @@
-// Middleware placeholder — full auth protection added in Phase 2
-// (NextAuth withAuth middleware)
+import { withAuth } from "next-auth/middleware";
 
-export { default } from "next-auth/middleware";
+export default withAuth({
+  pages: {
+    signIn: "/login",
+  },
+});
 
 export const config = {
   matcher: ["/dashboard/:path*", "/projects/:path*"],
