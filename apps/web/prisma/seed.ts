@@ -1,9 +1,10 @@
 import { PrismaClient } from "@prisma/client";
+import { logger } from "../lib/logger";
 
 const db = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding database...");
+  logger.info("🌱 Seeding database...");
 
   // Create free subscription plan
   await db.subscriptionPlan.upsert({
@@ -34,12 +35,12 @@ async function main() {
     },
   });
 
-  console.log("✅ Seed complete.");
+  logger.info("✅ Seed complete.");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    logger.error("Seeding failed:", e);
     process.exit(1);
   })
   .finally(() => db.$disconnect());
