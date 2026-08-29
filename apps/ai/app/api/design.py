@@ -1,16 +1,29 @@
-"""Design generation router — stub for Phase 5."""
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from pydantic import BaseModel
+from typing import Dict, Any, List
+from app.agents.orchestrator import Orchestrator
 
-router = APIRouter()
+router = APIRouter(prefix="/design", tags=["design"])
 
-
-class DesignRequest(BaseModel):
+class GenerateDesignRequest(BaseModel):
     projectId: str
     runId: str
+    prd: Dict[str, Any]
 
+@router.post("/generate")
+async def generate_design(req: GenerateDesignRequest, background_tasks: BackgroundTasks):
+    orchestrator = Orchestrator()
+    
+    async def task():
+        try:
+            await orchestrator.run_agent(
+                req.projectId, 
+                req.runId, 
+                "design", 
+                {"prd": req.prd}
+            )
+        except Exception as e:
+            print(f"Design Agent failed: {e}")
 
-@router.post("/design")
-async def generate_design(body: DesignRequest):
-    """Generate 3 design options. Phase 5."""
-    return {"status": "stub", "message": f"Design generation stub for project {body.projectId}."}
+    background_tasks.add_task(task)
+    return {"success": True, "message": "Design generation started"}
