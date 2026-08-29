@@ -1,28 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle } from "lucide-react";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+    
+    if (!token) {
+      setError("Missing reset token in URL.");
+      return;
+    }
+
     setError("");
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to reset password");
+      } else {
+        setSuccess(true);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred.");
+    } finally {
       setLoading(false);
-      setSuccess(true);
-    }, 1000);
+    }
   };
 
   return (
@@ -46,6 +72,12 @@ export default function ResetPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!token && (
+            <div className="p-3 text-sm text-amber-400 bg-amber-950/50 border border-amber-800 rounded-lg">
+              Warning: No reset token found in URL. You must click the link in your email.
+            </div>
+          )}
+          
           {error && (
             <div className="p-3 text-sm text-red-400 bg-red-950/50 border border-red-800 rounded-lg">
               {error}
@@ -80,7 +112,7 @@ export default function ResetPasswordPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !token}
             className="w-full flex items-center justify-center py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Reset password"}
@@ -88,5 +120,13 @@ export default function ResetPasswordPage() {
         </form>
       )}
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin text-indigo-500 mx-auto" /></div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
