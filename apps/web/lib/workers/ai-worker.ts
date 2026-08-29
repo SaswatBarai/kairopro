@@ -18,6 +18,12 @@ export const aiWorker = new Worker(
         await callAI("/ai/design/generate", { projectId, runId, prd: input.prd });
       } else if (agentType === "architecture") {
         await callAI("/ai/architecture/generate", { projectId, runId, prd: input.prd, design: input.design });
+      } else if (agentType === "developer") {
+        await callAI("/ai/code/develop", { projectId, runId, architecture: input.architecture, prd: input.prd, design: input.design });
+      } else if (agentType === "testing") {
+        await callAI("/ai/code/test", { projectId, runId, input });
+      } else if (agentType === "chat") {
+        await callAI("/ai/chat", { projectId, runId, input });
       }
       logger.info(`Successfully dispatched agent ${agentType} for run ${runId}`);
     } catch (error) {

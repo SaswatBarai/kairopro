@@ -9,6 +9,9 @@ from app.agents.requirement_agent import RequirementAgent
 from app.agents.prd_agent import PRDAgent
 from app.agents.design_agent import DesignAgent
 from app.agents.architecture_agent import ArchitectureAgent
+from app.agents.developer_agent import DeveloperAgent
+from app.agents.testing_agent import TestingAgent
+from app.agents.debug_agent import DebuggingAgent
 
 class Orchestrator:
     def __init__(self):
@@ -20,6 +23,9 @@ class Orchestrator:
             "prd": PRDAgent(self.llm_provider),
             "design": DesignAgent(self.llm_provider),
             "architecture": ArchitectureAgent(self.llm_provider),
+            "developer": DeveloperAgent(self.llm_provider),
+            "testing": TestingAgent(self.llm_provider),
+            "debugging": DebuggingAgent(self.llm_provider),
         }
 
     async def get_connection(self):

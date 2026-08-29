@@ -1,23 +1,42 @@
-"""Code generation router — stub for Phase 7."""
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel
+from typing import Dict, Any, List
+from app.api.auth import ServiceTokenMiddleware
+from app.agents.orchestrator import Orchestrator
+from app.agents.base_agent import AgentContext
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(ServiceTokenMiddleware())])
+orchestrator = Orchestrator()
 
-
-class CodeRequest(BaseModel):
+class DevelopRequest(BaseModel):
     projectId: str
     runId: str
-    taskId: str
+    architecture: Dict[str, Any]
+    prd: Dict[str, Any]
+    design: Dict[str, Any]
 
+@router.post("/develop")
+async def start_development(req: DevelopRequest, background_tasks: BackgroundTasks):
+    context = AgentContext(
+        project_id=req.projectId,
+        run_id=req.runId,
+        input_data={
+            "architecture": req.architecture,
+            "prd": req.prd,
+            "design": req.design
+        }
+    )
+    
+    # Run Developer Agent in background
+    background_tasks.add_task(orchestrator.run_agent, "developer", context)
+    return {"status": "started", "runId": req.runId}
 
-@router.post("/code")
-async def generate_code(body: CodeRequest):
-    """Generate code for a task. Phase 7."""
-    return {"status": "stub", "message": f"Code generation stub for task {body.taskId}."}
+class TestRequest(BaseModel):
+    projectId: str
+    runId: str
 
-
-@router.post("/plan")
-async def plan_tasks(body: dict):
-    """Generate task graph from architecture. Phase 7."""
-    return {"status": "stub", "message": "Task planning stub."}
+@router.post("/test")
+async def start_testing(req: TestRequest, background_tasks: BackgroundTasks):
+    context = AgentContext(project_id=req.projectId, run_id=req.runId, input_data={})
+    background_tasks.add_task(orchestrator.run_agent, "testing", context)
+    return {"status": "started", "runId": req.runId}
