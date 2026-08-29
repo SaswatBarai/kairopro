@@ -1,6 +1,9 @@
 "use client";
 
 import { Plus, Search, Bell } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface HeaderProps {
   onNewProject: () => void;
@@ -8,34 +11,35 @@ interface HeaderProps {
 
 export function Header({ onNewProject }: HeaderProps) {
   return (
-    <header className="h-16 border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-30">
-      <div className="flex items-center gap-4 w-96">
-        <div className="relative w-full">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search projects or documents..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-900/80 border border-slate-800/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-          />
-        </div>
+    <header className="h-14 border-b border-border bg-background/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30">
+      <div className="relative w-72">
+        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search projects..."
+          className="pl-9 h-8 text-xs bg-muted/50 border-border/60 focus-visible:ring-primary/40"
+        />
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 transition-colors relative"
-          title="Notifications"
-        >
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full" />
-        </button>
+      <div className="flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger>
+            <button className="relative h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Notifications</TooltipContent>
+        </Tooltip>
 
-        <button
+        <Button
           onClick={onNewProject}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/20 transition-all"
+          size="sm"
+          className="h-8 text-xs bg-primary hover:bg-primary/90 shadow-md shadow-primary/25"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5 mr-1.5" />
           New Project
-        </button>
+        </Button>
       </div>
     </header>
   );

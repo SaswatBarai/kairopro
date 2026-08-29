@@ -6,7 +6,9 @@ import { Header } from "@/components/dashboard/header";
 import { ProjectCard } from "@/components/dashboard/project-card";
 import { CreateProjectModal } from "@/components/dashboard/create-project-modal";
 import { ProjectData, fetchProjects, deleteProject } from "@/lib/projects";
-import { FolderKanban, Plus, Sparkles, Layers, CheckCircle2, Loader2 } from "lucide-react";
+import { FolderKanban, Layers, CheckCircle2, Loader2, Sparkles, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
   const [selectedOrgId, setSelectedOrgId] = useState<string | undefined>();
@@ -14,124 +16,97 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    loadProjects();
-  }, [selectedOrgId]);
+  useEffect(() => { loadProjects(); }, [selectedOrgId]);
 
   const loadProjects = async () => {
     setLoading(true);
-    try {
-      const data = await fetchProjects(selectedOrgId);
-      setProjects(data);
-    } catch (err) {
-      console.error("Failed to load projects:", err);
-    } finally {
-      setLoading(false);
-    }
+    try { setProjects(await fetchProjects(selectedOrgId)); }
+    catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   const handleDeleteProject = async (id: string) => {
     try {
       await deleteProject(id);
       setProjects((prev) => prev.filter((p) => p.id !== id));
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  const activeProjectsCount = projects.filter((p) => p.state !== "draft").length;
+  const activeCount = projects.filter((p) => p.state !== "draft").length;
+
+  const stats = [
+    { icon: FolderKanban, label: "Total Projects", value: projects.length, color: "text-primary", bg: "bg-primary/10" },
+    { icon: Layers, label: "Active Builds", value: activeCount, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    { icon: CheckCircle2, label: "Uptime", value: "100%", color: "text-violet-400", bg: "bg-violet-500/10" },
+  ];
 
   return (
-    <div className="flex w-full min-h-screen">
+    <div className="flex w-full min-h-screen bg-background">
       <Sidebar selectedOrgId={selectedOrgId} onSelectOrg={setSelectedOrgId} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <Header onNewProject={() => setIsModalOpen(true)} />
 
-        <main className="flex-1 p-8 space-y-8 overflow-y-auto">
-          {/* Welcome Banner & Stats */}
+        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+          {/* Page header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Your Projects</h1>
-              <p className="text-xs text-slate-400 mt-1">
-                Build, manage, and monitor your AI-generated full-stack web applications.
-              </p>
+              <h1 className="text-xl font-bold text-foreground tracking-tight">Your Projects</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">Build and manage AI-generated full-stack applications</p>
             </div>
-
-            <button
+            <Button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/25 transition-all"
+              className="bg-primary hover:bg-primary/90 shadow-md shadow-primary/25 h-9 text-xs"
             >
-              <Sparkles className="w-4 h-4 text-amber-300" />
+              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-amber-300" />
               New Application
-            </button>
+            </Button>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl flex items-center gap-4">
-              <div className="p-3 bg-indigo-600/15 text-indigo-400 rounded-xl">
-                <FolderKanban className="w-5 h-5" />
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {stats.map(({ icon: Icon, label, value, color, bg }) => (
+              <div key={label} className="flex items-center gap-4 p-4 rounded-xl border border-border/60 bg-card">
+                <div className={`p-2.5 rounded-lg ${bg}`}>
+                  <Icon className={`w-4 h-4 ${color}`} />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-foreground">{value}</div>
+                  <div className="text-xs text-muted-foreground">{label}</div>
+                </div>
               </div>
-              <div>
-                <span className="block text-2xl font-bold text-white">{projects.length}</span>
-                <span className="text-xs text-slate-400">Total Projects</span>
-              </div>
-            </div>
-
-            <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl flex items-center gap-4">
-              <div className="p-3 bg-emerald-600/15 text-emerald-400 rounded-xl">
-                <Layers className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="block text-2xl font-bold text-white">{activeProjectsCount}</span>
-                <span className="text-xs text-slate-400">Active Builds</span>
-              </div>
-            </div>
-
-            <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl flex items-center gap-4">
-              <div className="p-3 bg-purple-600/15 text-purple-400 rounded-xl">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="block text-2xl font-bold text-white">100%</span>
-                <span className="text-xs text-slate-400">Local Dev Health</span>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Project Grid */}
+          {/* Projects grid */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 space-y-3">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-              <p className="text-xs font-medium">Loading your workspace projects...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-border/60 p-5 space-y-3">
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+              ))}
             </div>
           ) : projects.length === 0 ? (
-            <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl p-12 text-center space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600/15 text-indigo-400 flex items-center justify-center mx-auto">
-                <FolderKanban className="w-6 h-6" />
+            <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <FolderKanban className="w-7 h-7 text-primary" />
               </div>
-              <div className="max-w-md mx-auto space-y-1">
-                <h3 className="text-base font-bold text-white">No projects found</h3>
-                <p className="text-xs text-slate-400">
-                  Get started by creating your first AI web application project.
-                </p>
+              <div>
+                <h3 className="font-semibold text-foreground">No projects yet</h3>
+                <p className="text-sm text-muted-foreground mt-1">Create your first AI-powered application to get started</p>
               </div>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/20"
-              >
-                <Plus className="w-4 h-4" /> Create Project
-              </button>
+              <Button onClick={() => setIsModalOpen(true)} className="bg-primary hover:bg-primary/90 mt-2">
+                <Plus className="w-4 h-4 mr-2" /> Create Project
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onDelete={handleDeleteProject}
-                />
+                <ProjectCard key={project.id} project={project} onDelete={handleDeleteProject} />
               ))}
             </div>
           )}
