@@ -7,6 +7,8 @@ from app.llm.openai_provider import OpenAIProvider
 from app.agents.base_agent import AgentContext, AgentResult
 from app.agents.requirement_agent import RequirementAgent
 from app.agents.prd_agent import PRDAgent
+from app.agents.design_agent import DesignAgent
+from app.agents.architecture_agent import ArchitectureAgent
 
 class Orchestrator:
     def __init__(self):
@@ -16,6 +18,8 @@ class Orchestrator:
         self.agents = {
             "requirement": RequirementAgent(self.llm_provider),
             "prd": PRDAgent(self.llm_provider),
+            "design": DesignAgent(self.llm_provider),
+            "architecture": ArchitectureAgent(self.llm_provider),
         }
 
     async def get_connection(self):

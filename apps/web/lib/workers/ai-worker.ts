@@ -14,6 +14,10 @@ export const aiWorker = new Worker(
         await callAI("/ai/analyze", { projectId, runId, input });
       } else if (agentType === "prd") {
         await callAI("/ai/generate", { projectId, runId, requirements: input.requirements });
+      } else if (agentType === "design") {
+        await callAI("/ai/design/generate", { projectId, runId, prd: input.prd });
+      } else if (agentType === "architecture") {
+        await callAI("/ai/architecture/generate", { projectId, runId, prd: input.prd, design: input.design });
       }
       logger.info(`Successfully dispatched agent ${agentType} for run ${runId}`);
     } catch (error) {

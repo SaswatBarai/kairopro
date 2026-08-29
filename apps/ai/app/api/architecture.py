@@ -51,3 +51,18 @@ async def modify_architecture(req: ModifyArchRequest):
         return {"updatedArchitecture": updated}
     except Exception as e:
         return {"updatedArchitecture": {"error": "Failed to modify", "raw": raw}}
+
+class ExplainArchRequest(BaseModel):
+    currentArch: Dict[str, Any]
+    question: str
+
+@router.post("/explain")
+async def explain_architecture(req: ExplainArchRequest):
+    from app.llm.openai_provider import OpenAIProvider
+    llm = OpenAIProvider()
+    
+    system = "You are a Principal Cloud Architect. Explain the reasoning behind a specific part of the provided architecture in a clear, concise paragraph."
+    user = f"Architecture:\n{req.currentArch}\n\nQuestion: {req.question}"
+    
+    explanation = await llm.complete(system=system, user=user)
+    return {"explanation": explanation}
