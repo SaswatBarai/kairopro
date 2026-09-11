@@ -1,0 +1,30 @@
+{
+  "name": "@kairopro/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@kairopro/contracts": "workspace:*",
+    "@kairopro/db": "workspace:*",
+    "dockerode": "^5.0.1",
+    "dotenv": "^17.4.2",
+    "mammoth": "^1.12.2",
+    "pdf-parse": "^2.4.5",
+    "pino": "^10.3.1",
+    "simple-git": "^3.36.0",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^4.0.1",
+    "@types/node": "^22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

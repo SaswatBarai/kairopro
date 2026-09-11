@@ -1,0 +1,55 @@
+# ─── Dependencies ────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ─── Build output ────────────────────────────────────────────────────────────
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# ─── Prisma ──────────────────────────────────────────────────────────────────
+# Generated client — recreated by `pnpm db:generate`.
+# `dependsOn: ["^build"]` in turbo.json guarantees it exists before typecheck.
+packages/db/src/generated/
+
+# ─── Environment ─────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Runtime data ────────────────────────────────────────────────────────────
+# Project workspaces, uploads, and logs live outside the repo by default
+# (KAIROPRO_WORKSPACE_ROOT). These catch a local override.
+/var/
+workspaces/
+uploads/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+
+# ─── Editors / OS ────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# ─── Tooling artifacts ───────────────────────────────────────────────────────
+.commandcode/
+
+# ─── Test output ─────────────────────────────────────────────────────────────
+coverage/
+playwright-report/
+test-results/
+
+# ─── IMPORTANT ───────────────────────────────────────────────────────────────
+# Do NOT add rules for packages/templates/**. The template's skeleton is a
+# real source artifact and must be committed. It is excluded from type-check
+# and lint by virtue of not being referenced by any tsconfig — not by gitignore.

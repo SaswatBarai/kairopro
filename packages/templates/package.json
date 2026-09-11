@@ -1,0 +1,12 @@
+{
+  "name": "@kairopro/templates",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Scaffolding for generated applications. Data, not code — the skeleton is copied verbatim into a project workspace and is never type-checked or linted by this workspace.",
+  "exports": {
+    "./nextjs-shadcn/template.json": "./nextjs-shadcn/template.json",
+    "./nextjs-shadcn/skeleton": "./nextjs-shadcn/skeleton"
+  },
+  "files": ["nextjs-shadcn"]
+}

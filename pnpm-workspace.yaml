@@ -1,0 +1,23 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 11+ errors on unapproved dependency install scripts.
+#
+# Do NOT change `packages/*` to `packages/**` — a double-star glob would match
+# packages/templates/nextjs-shadcn/skeleton, which has its own package.json,
+# and pnpm would treat the generated-app template as a workspace member.
+allowBuilds:
+  esbuild: true
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+  # msw postinstall installs the mock service worker into the app's public/
+  msw: true
+  # transitive deps of dockerode (optional ssh transport)
+  ssh2: true
+  cpu-features: true
+  protobufjs: true
+
+minimumReleaseAgeExclude:
+  - zod@4.6.2
