@@ -11,16 +11,20 @@ import {
   FileDiff,
   FilePlus,
   Loader2,
+  RotateCcw,
   Terminal,
   X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { AgentPlanGate } from "./agent-plan-gate";
 
 interface AgentPanelProps {
   width: number;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
   className?: string;
+  onOpenDiff?: () => void;
+  onDock?: () => void;
 }
 
 const TIMELINE = [
@@ -33,8 +37,9 @@ const TIMELINE = [
 ] as const;
 
 type Message =
-  | { role: "user"; text: string }
+  | { role: "user"; text: string; time?: string }
   | { role: "agent"; text: string }
+  | { role: "gate" }
   | {
       role: "tool";
       tool: "created" | "modified" | "ran";
@@ -43,12 +48,17 @@ type Message =
     };
 
 const INITIAL_MESSAGES: Message[] = [
-  { role: "user", text: "Add subtasks to tasks." },
+  { role: "user", text: "Add a due date field to tasks", time: "10:41 AM" },
+  { role: "gate" },
+];
+
+const APPLY_SEQUENCE: Message[] = [
   {
     role: "agent",
-    text: "I'll update the Prisma schema, API routes, and task UI.",
+    text: "Applying 5 changes — migration queued, tests re-running.",
   },
-  { role: "tool", tool: "created", label: "prisma/schema.prisma" },
+  { role: "tool", tool: "modified", label: "prisma/schema.prisma" },
+  { role: "tool", tool: "created", label: "prisma/migrations" },
   { role: "tool", tool: "modified", label: "app/api/tasks/route.ts" },
   { role: "tool", tool: "ran", label: "npm test", detail: "✓ 24 passed" },
 ];
@@ -81,11 +91,18 @@ function ToolVerb({ tool }: { tool: "created" | "modified" | "ran" }) {
   return "ran";
 }
 
-export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
+export function AgentPanel({
+  width,
+  inputRef,
+  className,
+  onOpenDiff,
+  onDock,
+}: AgentPanelProps) {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
   const [replyIndex, setReplyIndex] = useState(0);
+  const [gateApplied, setGateApplied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -98,7 +115,11 @@ export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
   const submit = () => {
     const text = input.trim();
     if (!text) return;
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    const time = new Date().toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    setMessages((prev) => [...prev, { role: "user", text, time }]);
     setInput("");
     setAttachments([]);
     scrollToBottom();
@@ -108,6 +129,31 @@ export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
       setMessages((prev) => [...prev, { role: "agent", text: reply }]);
       scrollToBottom();
     }, 600);
+  };
+
+  const handleApply = () => {
+    setGateApplied(true);
+    APPLY_SEQUENCE.forEach((message, i) => {
+      setTimeout(
+        () => {
+          setMessages((prev) => [...prev, message]);
+          scrollToBottom();
+        },
+        350 * (i + 1),
+      );
+    });
+  };
+
+  const handleEditPlan = () => {
+    setInput("Adjust the plan: ");
+    inputRef?.current?.focus();
+  };
+
+  const resetSession = () => {
+    setMessages(INITIAL_MESSAGES);
+    setGateApplied(false);
+    setInput("");
+    setAttachments([]);
   };
 
   const attach = () => {
@@ -138,6 +184,30 @@ export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-cyan" />
           Working
         </span>
+        <span className="mx-0.5 h-4 w-px bg-white/10" />
+        <button
+          type="button"
+          title="Restart session"
+          onClick={resetSession}
+          className="flex h-6 w-6 items-center justify-center rounded-[3px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Dock settings"
+          className="flex h-6 w-6 items-center justify-center rounded-[3px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+        >
+          <Ellipsis className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Close panel"
+          onClick={() => onDock?.()}
+          className="flex h-6 w-6 items-center justify-center rounded-[3px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
@@ -185,7 +255,20 @@ export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
 
         <div className="flex flex-col gap-2.5 px-3 py-3">
           {messages.map((message, i) =>
-            message.role === "tool" ? (
+            message.role === "gate" ? (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <AgentPlanGate
+                  applied={gateApplied}
+                  onApply={handleApply}
+                  onOpenDiff={() => onOpenDiff?.()}
+                  onEditPlan={handleEditPlan}
+                />
+              </motion.div>
+            ) : message.role === "tool" ? (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 4 }}
@@ -204,8 +287,8 @@ export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
-                  "flex",
-                  message.role === "user" ? "justify-end" : "justify-start",
+                  "flex flex-col",
+                  message.role === "user" ? "items-end gap-1" : "items-start",
                 )}
               >
                 <p
@@ -218,6 +301,11 @@ export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
                 >
                   {message.text}
                 </p>
+                {message.role === "user" && message.time && (
+                  <span className="px-1 font-mono-tech text-[10px] text-zinc-600">
+                    {message.time} • User
+                  </span>
+                )}
               </motion.div>
             ),
           )}
@@ -252,7 +340,7 @@ export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
           ref={inputRef}
           value={input}
           rows={2}
-          placeholder="Ask Kairo to change the application..."
+          placeholder="Describe a change or ask a question..."
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
@@ -262,6 +350,9 @@ export function AgentPanel({ width, inputRef, className }: AgentPanelProps) {
           }}
           className="w-full resize-none bg-transparent text-[13px] leading-relaxed text-zinc-200 outline-none placeholder:text-zinc-600"
         />
+        <p className="mt-1 text-center font-mono-tech text-[10px] text-zinc-600">
+          The agent will show you a plan before changing anything.
+        </p>
         <div className="mt-1.5 flex items-center gap-0.5">
           <button
             type="button"

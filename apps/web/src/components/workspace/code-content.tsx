@@ -787,6 +787,11 @@ export const DIFF = {
   after: { lines: DIFF_AFTER, marks: [9] },
 };
 
+export const TARGET_MARKS: Record<number, "target" | "candidate"> = {
+  24: "target",
+  25: "candidate",
+};
+
 export function basename(path: string) {
   return path.split("/").pop() ?? path;
 }

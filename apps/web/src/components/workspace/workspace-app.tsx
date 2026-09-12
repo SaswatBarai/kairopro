@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { ACTIVE_TAB, DEFAULT_TABS, basename } from "./code-content";
+import {
+  ACTIVE_TAB,
+  DEFAULT_TABS,
+  MODIFIED_TAB,
+  basename,
+} from "./code-content";
 import { ActivityRail } from "./activity-rail";
 import { AgentPanel } from "./agent-panel";
 import { CodeEditor } from "./code-editor";
@@ -263,6 +268,11 @@ export function WorkspaceApp() {
               width={agentWidth}
               inputRef={agentInputRef}
               className="hidden md:flex"
+              onOpenDiff={() => {
+                setActiveTab(MODIFIED_TAB);
+                setDiffMode(true);
+              }}
+              onDock={() => setAgentOpen(false)}
             />
           </>
         )}

@@ -2,7 +2,15 @@
 
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
-import { Eye, FileDiff, FolderOpen, Save, Share, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Eye,
+  FileDiff,
+  FolderOpen,
+  Save,
+  Share,
+  X,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -11,6 +19,7 @@ import {
   FILES,
   MODIFIED_TAB,
   NEW_FILE_LINES,
+  TARGET_MARKS,
   basename,
   fileTone,
 } from "./code-content";
@@ -38,9 +47,11 @@ const lineVariants = {
 function CodePane({
   lines,
   activeLine,
+  marks,
 }: {
   lines: ReactNode[];
   activeLine?: number;
+  marks?: Record<number, "target" | "candidate">;
 }) {
   return (
     <motion.div
@@ -52,33 +63,55 @@ function CodePane({
     >
       {lines.map((line, i) => {
         const isActive = activeLine === i + 1;
+        const mark = marks?.[i + 1];
         return (
           <motion.div
             key={i}
             variants={lineVariants}
             className={cn(
-              "flex whitespace-pre select-text",
-              isActive
-                ? "border-l-2 border-brand-purple bg-brand-purple/[0.08]"
-                : "border-l-2 border-transparent",
+              "flex select-text whitespace-pre border-l-2",
+              isActive && "border-brand-purple bg-brand-purple/[0.08]",
+              mark === "target" && "border-brand-cyan/70 bg-brand-cyan/[0.08]",
+              mark === "candidate" &&
+                "border-brand-green/70 bg-brand-green/[0.08]",
+              !isActive && !mark && "border-transparent",
             )}
           >
             <span
               className={cn(
                 "w-10 shrink-0 select-none pr-3 text-right",
-                isActive ? "text-brand-purple-light" : "text-zinc-600",
+                isActive
+                  ? "text-brand-purple-light"
+                  : mark === "target"
+                    ? "font-bold text-brand-cyan"
+                    : mark === "candidate"
+                      ? "font-bold text-brand-green"
+                      : "text-zinc-600",
               )}
             >
               {i + 1}
             </span>
-            <span
-              className={cn(
-                "pr-6",
-                isActive ? "text-zinc-100" : "text-zinc-300",
-              )}
-            >
-              {line}
-            </span>
+            {mark === "target" ? (
+              <span className="flex flex-1 items-center justify-between gap-3 pr-6 text-zinc-100">
+                <span>{line}</span>
+                <span className="shrink-0 rounded-[2px] bg-brand-cyan/15 px-1 py-px font-mono-tech text-[9px] font-semibold uppercase tracking-wider text-brand-cyan">
+                  Target insertion
+                </span>
+              </span>
+            ) : (
+              <span
+                className={cn(
+                  "pr-6",
+                  isActive
+                    ? "text-zinc-100"
+                    : mark === "candidate"
+                      ? "text-brand-green/90"
+                      : "text-zinc-300",
+                )}
+              >
+                {line}
+              </span>
+            )}
           </motion.div>
         );
       })}
@@ -298,8 +331,28 @@ export function CodeEditor({
               <CodePane
                 lines={lines}
                 activeLine={isRoute ? ACTIVE_LINE : undefined}
+                marks={isRoute ? TARGET_MARKS : undefined}
               />
             )}
+          </div>
+
+          <div className="flex h-7 shrink-0 select-none items-center justify-between border-t border-white/[0.07] bg-brand-surface px-3 font-mono-tech text-[10px] text-zinc-500">
+            <div className="flex items-center gap-3">
+              <span>TypeScript</span>
+              <span className="hidden sm:inline">UTF-8</span>
+              <span>Ln {isRoute ? ACTIVE_LINE : 1}, Col 22</span>
+              <span className="hidden sm:inline">2 spaces</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1 font-semibold uppercase tracking-wider text-brand-green">
+                <CheckCircle2 className="h-3 w-3" />
+                <span className="hidden sm:inline">Prettier ok</span>
+              </span>
+              <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-brand-cyan">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-cyan" />
+                Agent sync: ready
+              </span>
+            </div>
           </div>
         </>
       ) : (
