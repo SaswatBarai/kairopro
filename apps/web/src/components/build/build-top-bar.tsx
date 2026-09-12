@@ -9,7 +9,11 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-export function BuildTopBar() {
+export function BuildTopBar({
+  onRequestCancel,
+}: {
+  onRequestCancel: () => void;
+}) {
   const [elapsed, setElapsed] = useState(INITIAL_SECONDS);
 
   useEffect(() => {
@@ -59,6 +63,7 @@ export function BuildTopBar() {
           <button
             className="flex items-center gap-1.5 rounded-[3px] border border-white/[0.1] bg-brand-surface-muted px-3 py-1 text-xs text-zinc-400 transition-colors hover:border-zinc-500/50 hover:text-zinc-100"
             type="button"
+            onClick={onRequestCancel}
           >
             <X className="h-3.5 w-3.5 text-zinc-500" />
             <span>Cancel build</span>

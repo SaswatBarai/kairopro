@@ -1,14 +1,14 @@
 import { Footer } from "@/components/landing/footer";
 import { Navbar } from "@/components/landing/navbar";
 
-import { BuildWorkspace } from "./build-workspace";
+import { BuildCompleteWorkspace } from "./build-complete-workspace";
 
-export function BuildPage() {
+export function BuildCompletePage() {
   return (
     <>
       <Navbar />
       <main className="relative w-full pt-[92px]">
-        <BuildWorkspace />
+        <BuildCompleteWorkspace />
       </main>
       <Footer />
     </>
