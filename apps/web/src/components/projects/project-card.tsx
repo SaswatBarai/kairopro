@@ -12,6 +12,7 @@ import {
   Play,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export interface Project {
   preview: ReactNode;
   activityValue: string;
   url?: { display: string; full: string };
+  href?: string;
   agentStep?: string;
   worker?: string;
   architect?: string;
@@ -99,7 +101,16 @@ export function ProjectCard({ project }: { project: Project }) {
               className={cn("h-[18px] w-[18px]", project.iconClass)}
             />
             <h2 className="text-[15px] font-semibold tracking-tight text-zinc-100">
-              {project.name}
+              {project.href ? (
+                <Link
+                  href={project.href}
+                  className="transition-colors hover:text-brand-purple-light"
+                >
+                  {project.name}
+                </Link>
+              ) : (
+                project.name
+              )}
             </h2>
           </div>
           <div

@@ -24,6 +24,7 @@ export const SEED_PROJECTS: Project[] = [
     preview: <KanbanPreview />,
     activityValue: "Deployed 2 days ago",
     url: { display: "taskflow.kairopro.app", full: "taskflow.kairopro.app" },
+    href: "/projects/taskflow",
     stack: "Next.js 15 • PostgreSQL",
     footerRef: "main @ 7e2f1a",
   },
