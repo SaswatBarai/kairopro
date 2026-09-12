@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { CircleAlert, Eye, EyeOff } from "lucide-react";
 
 import { GoogleIcon } from "@/components/common/google-icon";
@@ -20,6 +21,7 @@ function validateEmail(value: string): string | null {
 }
 
 export function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -29,6 +31,7 @@ export function LoginForm() {
     event.preventDefault();
     const error = validateEmail(email);
     setEmailError(error);
+    if (!error) router.push("/dashboard");
   };
 
   return (

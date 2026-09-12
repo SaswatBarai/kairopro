@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -54,6 +55,7 @@ const checklist = [
 ] as const;
 
 export function RegisterForm() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -78,6 +80,9 @@ export function RegisterForm() {
     setPasswordError(
       password.length >= 8 ? null : "Password must be at least 8 characters.",
     );
+    if (nameValid && emailValid && password.length >= 8) {
+      router.push("/dashboard");
+    }
   };
 
   return (
