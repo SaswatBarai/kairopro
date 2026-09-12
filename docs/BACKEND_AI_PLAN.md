@@ -20,16 +20,16 @@ Integration gates (`I-1` … `I-8`) appear inline, immediately after the phases 
 
 The AI track is blocked by backend work **eight times**:
 
-| AI phase | Blocked by | Needs |
-|----------|-----------|-------|
-| AI-1 | BE-2 | `ContainerRuntime` seam, error types |
-| AI-2 | BE-2 | `WorkspaceStore`, `ContainerRuntime` |
-| AI-4 | BE-4 | A real workspace to index |
-| AI-5 | BE-6 | Spec storage |
-| AI-6 | BE-9 | Somewhere for generated code to run |
-| AI-7 | BE-10 | A build to fail, and a stream to report on |
-| AI-8 | BE-9 | Tests must execute |
-| AI-9 | BE-8 | Versioning for applied changes |
+| AI phase | Blocked by | Needs                                      |
+| -------- | ---------- | ------------------------------------------ |
+| AI-1     | BE-2       | `ContainerRuntime` seam, error types       |
+| AI-2     | BE-2       | `WorkspaceStore`, `ContainerRuntime`       |
+| AI-4     | BE-4       | A real workspace to index                  |
+| AI-5     | BE-6       | Spec storage                               |
+| AI-6     | BE-9       | Somewhere for generated code to run        |
+| AI-7     | BE-10      | A build to fail, and a stream to report on |
+| AI-8     | BE-9       | Tests must execute                         |
+| AI-9     | BE-8       | Versioning for applied changes             |
 
 Built sequentially, the AI track idles for most of the project. Built in parallel without coordination, the two halves integrate badly — mismatched interfaces, two owners for the same file, duplicated work.
 
@@ -46,20 +46,20 @@ No `cookies()`, `headers()`, `revalidatePath()`, or `NextResponse` inside a serv
 ```ts
 // apps/web/src/app/api/projects/route.ts  — transport only
 export async function getRequestContext(): Promise<RequestContext> {
-  const session = await getServerSession(authOptions)   // ← web owns session access
-  if (!session) throw new UnauthorizedError()
-  return { userId: session.user.id, orgId: session.user.orgId }
+  const session = await getServerSession(authOptions); // ← web owns session access
+  if (!session) throw new UnauthorizedError();
+  return { userId: session.user.id, orgId: session.user.orgId };
 }
 
 export async function GET() {
-  const ctx = await getRequestContext()
-  const projects = await projectService.list(ctx)
-  return Response.json(projects)
+  const ctx = await getRequestContext();
+  const projects = await projectService.list(ctx);
+  return Response.json(projects);
 }
 
 // packages/core/src/modules/project/project.service.ts  — domain only
 export async function list(ctx: RequestContext): Promise<Project[]> {
-  return repo.listByOrg(ctx.orgId)
+  return repo.listByOrg(ctx.orgId);
 }
 ```
 
@@ -92,19 +92,19 @@ Iterations, retries, tokens, and wall-clock all have hard caps. An unbounded loo
 
 Merge conflicts arise when two tracks edit the same file. The split is by directory.
 
-| Path | Owner | Rule |
-|------|-------|------|
-| `packages/core/src/platform/**` | **Backend** | AI imports interfaces; never modifies them |
-| `packages/core/src/modules/build/**` | **Backend** | Build record, SSE, cancel flag, log persistence |
-| `packages/core/src/modules/spec/**` | **Backend** | Storage and versioning |
-| `packages/core/src/modules/version/**` | **Backend** | Git operations |
-| `packages/core/src/modules/execution/**` | **Backend** | Containers, terminal, preview |
-| `packages/core/src/modules/usage/**` | **Backend** | Metering |
-| `packages/core/src/modules/credential/**` | **Backend** | Encryption and injection |
-| `packages/core/src/modules/agent/**` | **AI** | Everything under this tree, entirely |
-| `packages/contracts/src/**` | **Shared** | Change requires agreement from both |
-| `packages/core/src/lib/errors.ts` | **Shared** | Change requires agreement from both |
-| `packages/templates/**` | **AI** | Template and conventions |
+| Path                                      | Owner       | Rule                                            |
+| ----------------------------------------- | ----------- | ----------------------------------------------- |
+| `packages/core/src/platform/**`           | **Backend** | AI imports interfaces; never modifies them      |
+| `packages/core/src/modules/build/**`      | **Backend** | Build record, SSE, cancel flag, log persistence |
+| `packages/core/src/modules/spec/**`       | **Backend** | Storage and versioning                          |
+| `packages/core/src/modules/version/**`    | **Backend** | Git operations                                  |
+| `packages/core/src/modules/execution/**`  | **Backend** | Containers, terminal, preview                   |
+| `packages/core/src/modules/usage/**`      | **Backend** | Metering                                        |
+| `packages/core/src/modules/credential/**` | **Backend** | Encryption and injection                        |
+| `packages/core/src/modules/agent/**`      | **AI**      | Everything under this tree, entirely            |
+| `packages/contracts/src/**`               | **Shared**  | Change requires agreement from both             |
+| `packages/core/src/lib/errors.ts`         | **Shared**  | Change requires agreement from both             |
+| `packages/templates/**`                   | **AI**      | Template and conventions                        |
 
 ### The one genuinely shared boundary: the build workflow
 
@@ -114,22 +114,22 @@ AI owns `packages/core/src/modules/agent/workflow/steps/**` — the implementati
 ```ts
 // packages/core/src/modules/build/workflow.ts  — OWNED BY BACKEND
 const STEPS: WorkflowStep[] = [
-  { name: 'generate-data-model',    run: generateDataModel    },  // ← AI-owned impl
-  { name: 'generate-app-structure', run: generateAppStructure },
-  { name: 'generate-code',          run: generateCode, canCancel: true },
+  { name: "generate-data-model", run: generateDataModel }, // ← AI-owned impl
+  { name: "generate-app-structure", run: generateAppStructure },
+  { name: "generate-code", run: generateCode, canCancel: true },
   // ...
-]
+];
 
 export async function run(buildId: string, ctx: BuildContext) {
   for (const step of STEPS) {
-    if (await isCancelled(buildId)) return checkpoint(step)   // backend
-    const result = await step.run(ctx)                        // AI
-    await logStep(buildId, step.name, result.status)          // backend
+    if (await isCancelled(buildId)) return checkpoint(step); // backend
+    const result = await step.run(ctx); // AI
+    await logStep(buildId, step.name, result.status); // backend
   }
 }
 ```
 
-**Rule:** backend owns *when* and *in what order*; AI owns *how*. Neither edits the other's side. `WorkflowStep` is the shared contract.
+**Rule:** backend owns _when_ and _in what order_; AI owns _how_. Neither edits the other's side. `WorkflowStep` is the shared contract.
 
 ---
 
@@ -139,15 +139,15 @@ export async function run(buildId: string, ctx: BuildContext) {
 
 Every interface the AI track consumes gets a working stub in an early backend phase. The AI track develops against the stub and swaps to the real implementation when it lands — with no AI code changes, because the interface never changed.
 
-| Seam | Stub arrives | Real impl | AI phase that consumes it |
-|------|-------------|-----------|---------------------------|
-| `WorkspaceStore` | BE-2 | BE-2 (local impl **is** the real one in V1) | AI-2 |
-| `ContainerRuntime` | BE-2 | BE-9 (Docker) | AI-2, AI-6, AI-8 |
-| `EventBus` | BE-2 | BE-2 | AI-7 |
-| `UsageService.emit()` | BE-4 (logs a no-op) | BE-4 (writes rows) | AI-1 |
-| `SpecRepository` | BE-6 | BE-6 | AI-5 |
-| `BuildLogWriter` | BE-10 | BE-10 | AI-6, AI-7 |
-| `InternalErrorWriter` | BE-1 (schema) | AI-7 | AI-7 |
+| Seam                  | Stub arrives        | Real impl                                   | AI phase that consumes it |
+| --------------------- | ------------------- | ------------------------------------------- | ------------------------- |
+| `WorkspaceStore`      | BE-2                | BE-2 (local impl **is** the real one in V1) | AI-2                      |
+| `ContainerRuntime`    | BE-2                | BE-9 (Docker)                               | AI-2, AI-6, AI-8          |
+| `EventBus`            | BE-2                | BE-2                                        | AI-7                      |
+| `UsageService.emit()` | BE-4 (logs a no-op) | BE-4 (writes rows)                          | AI-1                      |
+| `SpecRepository`      | BE-6                | BE-6                                        | AI-5                      |
+| `BuildLogWriter`      | BE-10               | BE-10                                       | AI-6, AI-7                |
+| `InternalErrorWriter` | BE-1 (schema)       | AI-7                                        | AI-7                      |
 
 **The `ContainerRuntime` stub is what lets AI-2 and AI-6 start before Docker exists:**
 
@@ -158,11 +158,15 @@ export const StubContainerRuntime: ContainerRuntime = {
     // Runs on the host in a temp dir, no isolation.
     // DEVELOPMENT AND TESTS ONLY — never enabled in production.
   },
-  async provision() { return { containerId: 'stub', previewUrl: '' } },
-  async health()    { return { ready: true } },
-  async stop()      {},
-  async destroy()   {},
-}
+  async provision() {
+    return { containerId: "stub", previewUrl: "" };
+  },
+  async health() {
+    return { ready: true };
+  },
+  async stop() {},
+  async destroy() {},
+};
 ```
 
 **The stub must be impossible to enable in production.** Guard on `NODE_ENV !== 'production'` and **fail startup** if it is selected in production. This is a security boundary, not a convenience — it is the one place generated code could run without isolation.
@@ -218,32 +222,37 @@ BE-11 Deploy ───────────▶ AI-9  Change requests
 
 Every interface that crosses the boundary.
 
-| # | Seam | Defined in | Consumed by | Contract |
-|---|------|-----------|-------------|----------|
-| 1 | `WorkspaceStore` | `platform/workspace` | AI-2 file tools, AI-4 index | Read/write/delete/list within a confined root |
-| 2 | `ContainerRuntime` | `platform/container` | AI-2 exec, AI-6 build, AI-8 test run | `exec`, `execStream`, `provision`, `health`, `stop`, `destroy` |
-| 3 | `EventBus` | `platform/events` | AI-7 emissions, BE-10 SSE | Typed publish/subscribe per build channel |
-| 4 | `UsageService.emit()` | `modules/usage` | AI-1 every model call | `(kind, quantity, ctx) => void`, never throws |
-| 5 | `SpecRepository` | `modules/spec` | AI-5 generation output | Versioned create/read; approval state |
-| 6 | `BuildLogWriter` | `modules/build/logs` | AI-6, AI-7 progress | `(buildId, type, content)` → assigns `seq` |
-| 7 | `InternalErrorWriter` | `modules/agent/recovery/logger` | AI-7 | Full failure context, never user-visible |
-| 8 | `VersionService` | `modules/version` | AI-6, AI-9 commits | Commit with message; returns hash |
-| 9 | `CredentialReader` | `modules/credential` | AI-6 env generation | Decrypted values, in memory only |
-| 10 | `WorkflowStep` | `modules/build/workflow` | AI step implementations | `{ name, run, canCancel?, checkpoint? }` |
-| 11 | Contracts | `lib/contracts` | Both, and the frontend | Zod schemas; single source of types |
-| 12 | Error types | `lib/errors` | Both | Typed errors mapped at the route boundary |
+| #   | Seam                  | Defined in                      | Consumed by                          | Contract                                                       |
+| --- | --------------------- | ------------------------------- | ------------------------------------ | -------------------------------------------------------------- |
+| 1   | `WorkspaceStore`      | `platform/workspace`            | AI-2 file tools, AI-4 index          | Read/write/delete/list within a confined root                  |
+| 2   | `ContainerRuntime`    | `platform/container`            | AI-2 exec, AI-6 build, AI-8 test run | `exec`, `execStream`, `provision`, `health`, `stop`, `destroy` |
+| 3   | `EventBus`            | `platform/events`               | AI-7 emissions, BE-10 SSE            | Typed publish/subscribe per build channel                      |
+| 4   | `UsageService.emit()` | `modules/usage`                 | AI-1 every model call                | `(kind, quantity, ctx) => void`, never throws                  |
+| 5   | `SpecRepository`      | `modules/spec`                  | AI-5 generation output               | Versioned create/read; approval state                          |
+| 6   | `BuildLogWriter`      | `modules/build/logs`            | AI-6, AI-7 progress                  | `(buildId, type, content)` → assigns `seq`                     |
+| 7   | `InternalErrorWriter` | `modules/agent/recovery/logger` | AI-7                                 | Full failure context, never user-visible                       |
+| 8   | `VersionService`      | `modules/version`               | AI-6, AI-9 commits                   | Commit with message; returns hash                              |
+| 9   | `CredentialReader`    | `modules/credential`            | AI-6 env generation                  | Decrypted values, in memory only                               |
+| 10  | `WorkflowStep`        | `modules/build/workflow`        | AI step implementations              | `{ name, run, canCancel?, checkpoint? }`                       |
+| 11  | Contracts             | `lib/contracts`                 | Both, and the frontend               | Zod schemas; single source of types                            |
+| 12  | Error types           | `lib/errors`                    | Both                                 | Typed errors mapped at the route boundary                      |
 
 Each seam gets its TypeScript interface written **before** either side implements it. The interface is the coordination artifact — it is what lets two tracks work simultaneously without talking.
 
 ```ts
 // packages/core/src/platform/container/runtime.ts — written in BE-2, implemented in BE-9
 export interface ContainerRuntime {
-  provision(input: ProvisionInput): Promise<{ containerId: string; previewUrl: string }>
-  exec(input: ExecInput): Promise<ExecResult>              // { exitCode, stdout, stderr }
-  execStream(input: ExecInput, onLine: (line: string) => void): Promise<ExecResult>
-  health(containerId: string): Promise<{ ready: boolean; detail?: string }>
-  stop(containerId: string): Promise<void>                 // preserves volumes
-  destroy(containerId: string): Promise<void>              // removes volumes
+  provision(
+    input: ProvisionInput,
+  ): Promise<{ containerId: string; previewUrl: string }>;
+  exec(input: ExecInput): Promise<ExecResult>; // { exitCode, stdout, stderr }
+  execStream(
+    input: ExecInput,
+    onLine: (line: string) => void,
+  ): Promise<ExecResult>;
+  health(containerId: string): Promise<{ ready: boolean; detail?: string }>;
+  stop(containerId: string): Promise<void>; // preserves volumes
+  destroy(containerId: string): Promise<void>; // removes volumes
 }
 ```
 
@@ -366,7 +375,7 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 **Deliverables**
 
 - `packages/core/src/modules/agent/llm/provider.ts` — the `LLMProvider` interface
-- `packages/core/src/modules/agent/llm/providers/anthropic.ts` — first concrete provider *(blocked: see Open Items)*
+- `packages/core/src/modules/agent/llm/providers/anthropic.ts` — first concrete provider _(blocked: see Open Items)_
 - `packages/core/src/modules/agent/llm/providers/mock.ts` — deterministic provider from fixtures
 - `packages/core/src/modules/agent/llm/router.ts` — phase → model map
 - `packages/core/src/modules/agent/llm/structured.ts` — Zod → JSON schema → validated response with bounded retry
@@ -1289,20 +1298,20 @@ BE-8  ──▶ AI-9
 
 These tests belong to neither track alone. They live in `tests/integration/` and are owned jointly.
 
-| Test | Proves | Wave |
-|------|--------|------|
-| `model-call-records-usage` | AI-1 → BE-4 seam | 1 |
-| `stub-runtime-refuses-production` | The stub cannot run generated code in production | 1 |
-| `agent-edits-become-commits` | AI-2 → BE-8 seam | 1 |
-| `context-retrieval-real-workspace` | AI-4 reads a real indexed project | 1 |
-| `upload-to-specs` | BE-5 → AI-5 → BE-6 pipeline | 2 |
-| `spec-revision-stales-downstream` | BE-6 staleness rule under real generation | 2 |
-| `credential-never-logged` | BE-7 during a full generation run | 2 |
-| `specs-to-running-app` | AI-6 → BE-9 end to end | 3 |
-| `build-stream-resume` | BE-10 SSE with an AI-generated build | 3 |
-| `recovery-respects-rules` | AI-7 halts on a never-degradable failure | 3 |
-| `test-agent-no-implementation` | AI-8 context isolation under real conditions | 3 |
-| `full-flow` | I-8 complete | 4 |
+| Test                               | Proves                                           | Wave |
+| ---------------------------------- | ------------------------------------------------ | ---- |
+| `model-call-records-usage`         | AI-1 → BE-4 seam                                 | 1    |
+| `stub-runtime-refuses-production`  | The stub cannot run generated code in production | 1    |
+| `agent-edits-become-commits`       | AI-2 → BE-8 seam                                 | 1    |
+| `context-retrieval-real-workspace` | AI-4 reads a real indexed project                | 1    |
+| `upload-to-specs`                  | BE-5 → AI-5 → BE-6 pipeline                      | 2    |
+| `spec-revision-stales-downstream`  | BE-6 staleness rule under real generation        | 2    |
+| `credential-never-logged`          | BE-7 during a full generation run                | 2    |
+| `specs-to-running-app`             | AI-6 → BE-9 end to end                           | 3    |
+| `build-stream-resume`              | BE-10 SSE with an AI-generated build             | 3    |
+| `recovery-respects-rules`          | AI-7 halts on a never-degradable failure         | 3    |
+| `test-agent-no-implementation`     | AI-8 context isolation under real conditions     | 3    |
+| `full-flow`                        | I-8 complete                                     | 4    |
 
 **Common failure mode these catch:** both tracks pass their own tests while the seam between them is wrong — a shape mismatch, a missing field, or an ownership dispute that only appears when the halves run together.
 
@@ -1312,20 +1321,20 @@ These tests belong to neither track alone. They live in `tests/integration/` and
 
 ### Backend layering
 
-| Layer | Responsibility | Must not |
-|-------|---------------|----------|
-| Route handler | Session, `RequestContext`, one service call, revalidate, map errors | Contain domain logic |
-| Service | Business rules, orchestration, transactions | Import `next/*` |
-| Repository | Prisma queries only | Contain business rules |
-| Platform | Infrastructure behind an interface | Be imported directly by services |
+| Layer         | Responsibility                                                      | Must not                         |
+| ------------- | ------------------------------------------------------------------- | -------------------------------- |
+| Route handler | Session, `RequestContext`, one service call, revalidate, map errors | Contain domain logic             |
+| Service       | Business rules, orchestration, transactions                         | Import `next/*`                  |
+| Repository    | Prisma queries only                                                 | Contain business rules           |
+| Platform      | Infrastructure behind an interface                                  | Be imported directly by services |
 
 ### Model usage
 
-| Task | Model tier |
-|------|-----------|
-| Routing, file selection, summarization, classification | Cheapest reliable |
-| Spec generation, code generation, fixing | Strongest available |
-| Prompt assembly, validation, parsing, running tests | **No model — deterministic** |
+| Task                                                   | Model tier                   |
+| ------------------------------------------------------ | ---------------------------- |
+| Routing, file selection, summarization, classification | Cheapest reliable            |
+| Spec generation, code generation, fixing               | Strongest available          |
+| Prompt assembly, validation, parsing, running tests    | **No model — deterministic** |
 
 If a step can be deterministic, it must be. Model calls are the expensive, slow, unreliable path.
 
@@ -1360,15 +1369,15 @@ Every phase declares and enforces: max iterations, max tokens, max wall-clock, m
 
 **Project-wide risks live in `IMPLEMENTATION_PLAN.md §8`.** This table covers only the risks specific to running these two tracks in parallel.
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| **BE-2 deprioritized** | AI cannot start at all | **BE-2 is the highest-leverage phase — build it first** |
-| Seam interface changes after AI-2 starts | Rework on both sides | Interfaces frozen in BE-2; changes require both owners |
-| Stub behavior diverges from the real implementation | AI passes against the stub, fails in production | One integration test per seam, run at the wave gate |
-| Two tracks edit `workflow.ts` | Merge conflicts, unclear ownership | Backend owns the engine; AI owns the steps; `WorkflowStep` is the contract |
-| **BE-9 or BE-10 slips** | AI-6, AI-7, AI-8 stall together | Stub runtime lets AI-6 and AI-8 develop early; only real verification waits |
-| Integration gates skipped under schedule pressure | Two green tracks, broken product | Gates are pass/fail and block wave completion |
-| Ownership boundary crossed under time pressure | Merge conflicts, unclear accountability | Ownership table in §4; changes across a boundary require a request, not an edit |
+| Risk                                                | Impact                                          | Mitigation                                                                      |
+| --------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------- |
+| **BE-2 deprioritized**                              | AI cannot start at all                          | **BE-2 is the highest-leverage phase — build it first**                         |
+| Seam interface changes after AI-2 starts            | Rework on both sides                            | Interfaces frozen in BE-2; changes require both owners                          |
+| Stub behavior diverges from the real implementation | AI passes against the stub, fails in production | One integration test per seam, run at the wave gate                             |
+| Two tracks edit `workflow.ts`                       | Merge conflicts, unclear ownership              | Backend owns the engine; AI owns the steps; `WorkflowStep` is the contract      |
+| **BE-9 or BE-10 slips**                             | AI-6, AI-7, AI-8 stall together                 | Stub runtime lets AI-6 and AI-8 develop early; only real verification waits     |
+| Integration gates skipped under schedule pressure   | Two green tracks, broken product                | Gates are pass/fail and block wave completion                                   |
+| Ownership boundary crossed under time pressure      | Merge conflicts, unclear accountability         | Ownership table in §4; changes across a boundary require a request, not an edit |
 
 ---
 

@@ -8,5 +8,7 @@
     "./nextjs-shadcn/template.json": "./nextjs-shadcn/template.json",
     "./nextjs-shadcn/skeleton": "./nextjs-shadcn/skeleton"
   },
-  "files": ["nextjs-shadcn"]
+  "files": [
+    "nextjs-shadcn"
+  ]
 }

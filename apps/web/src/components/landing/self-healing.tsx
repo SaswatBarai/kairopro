@@ -1,10 +1,15 @@
 import { FadeIn } from "@/components/landing/fade-in";
 import { SectionHeading } from "@/components/landing/section-heading";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 const flow = [
   { label: "BUILD", cls: "font-medium text-white" },
   { label: "RUN", cls: "font-medium text-white" },
-  { label: "FAIL", cls: "rounded border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 font-semibold text-rose-400" },
+  {
+    label: "FAIL",
+    cls: "rounded border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 font-semibold text-rose-400",
+  },
   { label: "PATCH", cls: "font-medium text-brand-cyan" },
   { label: "TEST", cls: "font-medium text-emerald-400" },
   { label: "SHIP", cls: "font-semibold text-brand-purple" },
@@ -61,30 +66,26 @@ export function SelfHealing() {
           align="center"
           eyebrow="AUTONOMOUS RECOVERY"
           eyebrowClassName="text-rose-400"
-          title={
-            <>
-              IT DOESN&apos;T STOP WHEN THE CODE IS GENERATED.
-            </>
-          }
+          title={<>IT DOESN&apos;T STOP WHEN THE CODE IS GENERATED.</>}
           description="LLMs produce flaws on first passes. KairoPro acts like a senior engineer: runs the code in a sandbox, catches compilation errors, reads the stack traces, and patches the AST until tests pass."
         />
       </FadeIn>
 
       {/* Flow ticker bar */}
       <FadeIn delay={0.1}>
-        <div className="mb-12 flex flex-wrap items-center justify-center gap-3 rounded border border-white/[0.08] bg-brand-surface px-6 py-3 font-mono-tech text-xs tracking-wider text-zinc-400 sm:gap-6">
+        <Card className="mb-12 flex-row flex-wrap items-center justify-center gap-3 rounded border-white/[0.08] bg-brand-surface px-6 py-3 font-mono-tech text-xs tracking-wider text-zinc-400 shadow-none sm:gap-6">
           {flow.map((item, i) => (
             <span key={item.label} className="flex items-center gap-3 sm:gap-6">
               {i > 0 && <span className="text-zinc-600">→</span>}
               <span className={item.cls}>{item.label}</span>
             </span>
           ))}
-        </div>
+        </Card>
       </FadeIn>
 
       {/* Timeline progression demo */}
       <FadeIn delay={0.15}>
-        <div className="rounded-lg border border-white/[0.08] bg-brand-surface p-6 font-mono-tech text-xs sm:p-8">
+        <Card className="gap-0 rounded-lg border-white/[0.08] bg-brand-surface p-6 font-mono-tech text-xs shadow-none sm:p-8">
           <div className="relative grid grid-cols-1 gap-6 md:grid-cols-4">
             {timeline.map((item) => (
               <div
@@ -95,7 +96,9 @@ export function SelfHealing() {
                   className={`mb-2 flex items-center justify-between text-[11px] font-semibold ${item.headingCls}`}
                 >
                   <span>{item.step}</span>
-                  <span className={item.badgeCls}>{item.badge}</span>
+                  <Badge variant="outline" mono className={item.badgeCls}>
+                    {item.badge}
+                  </Badge>
                 </div>
                 <div className="mb-1 text-xs font-medium text-zinc-100">
                   {item.title}
@@ -106,7 +109,7 @@ export function SelfHealing() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </FadeIn>
     </section>
   );

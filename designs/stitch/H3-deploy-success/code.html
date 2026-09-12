@@ -1,277 +1,841 @@
-<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"outline-variant":"#474555","surface-bright":"#39383e","inverse-on-surface":"#303036","surface-container":"#1f1f25","on-secondary-fixed":"#001f25","on-surface":"#e4e1e9","primary":"#c5c0ff","tertiary-fixed":"#6ffbbe","surface-tint":"#c5c0ff","inverse-primary":"#5544dc","on-secondary":"#00363e","surface-container-low":"#1b1b20","secondary-fixed-dim":"#2fd9f4","tertiary":"#4edea3","surface-variant":"#35343a","secondary":"#5de6ff","on-tertiary-fixed":"#002113","error":"#ffb4ab","on-tertiary":"#003824","tertiary-container":"#00865c","tertiary-fixed-dim":"#4edea3","inverse-surface":"#e4e1e9","surface-container-lowest":"#0e0e13","on-secondary-container":"#00515d","surface":"#131318","on-primary":"#2600a1","on-secondary-fixed-variant":"#004e5a","on-background":"#e4e1e9","on-error-container":"#ffdad6","on-primary-fixed-variant":"#3c24c5","secondary-container":"#00cbe6","primary-fixed-dim":"#c5c0ff","surface-dim":"#131318","on-primary-fixed":"#150067","outline":"#928ea1","on-primary-container":"#fffdff","primary-fixed":"#e4dfff","on-tertiary-fixed-variant":"#005236","on-tertiary-container":"#fafff9","background":"#131318","primary-container":"#6d5ef5","surface-container-highest":"#35343a","secondary-fixed":"#a2eeff","error-container":"#93000a","surface-container-high":"#2a292f","on-error":"#690005","on-surface-variant":"#c8c4d7"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"space-xs":"0.25rem","gutter-mobile":"0.5rem",margin:"1rem",gutter:"0.75rem","margin-mobile":"0.75rem","space-md":"0.75rem","space-xl":"1.5rem","space-sm":"0.5rem","space-lg":"1rem"},fontFamily:{"headline-xl":["Inter"],"body-sm":["Inter"],"code-md":["JetBrains Mono"],"label-xs":["JetBrains Mono"],"code-sm":["JetBrains Mono"],"body-md":["Inter"],"code-lg":["JetBrains Mono"],"headline-sm":["Inter"],"headline-lg":["Inter"],"label-md":["JetBrains Mono"]},fontSize:{"headline-xl":["24px",{lineHeight:"32px",letterSpacing:"-0.02em",fontWeight:"600"}],"body-sm":["12px",{lineHeight:"16px",letterSpacing:"0em",fontWeight:"400"}],"code-md":["12px",{lineHeight:"18px",letterSpacing:"0em",fontWeight:"400"}],"label-xs":["10px",{lineHeight:"12px",letterSpacing:"0.05em",fontWeight:"600"}],"code-sm":["11px",{lineHeight:"15px",letterSpacing:"0em",fontWeight:"400"}],"body-md":["13px",{lineHeight:"18px",letterSpacing:"-0.005em",fontWeight:"400"}],"code-lg":["13px",{lineHeight:"20px",letterSpacing:"-0.01em",fontWeight:"500"}],"headline-sm":["15px",{lineHeight:"20px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg":["20px",{lineHeight:"28px",letterSpacing:"-0.015em",fontWeight:"600"}],"label-md":["11px",{lineHeight:"14px",letterSpacing:"0.03em",fontWeight:"500"}]}}}};</script></head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md antialiased min-h-screen"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30"><div class="h-14 w-full px-space-xl flex items-center justify-between"><div class="flex items-center gap-space-xl"><a class="flex items-center gap-space-sm" data-path="home" href="#"><img alt="Brand logo. - Primary color: #6d5ef5
-- Font: inter
-- Mode: dark
-- Roundness: rounded-sm
-" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">KairoPro</span></a><nav class="hidden md:flex items-center gap-space-lg" data-active-classes="text-on-surface font-headline-sm"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="features" href="#">Features</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="pricing" href="#">Pricing</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="docs" href="#">Docs</a></nav></div><div class="flex items-center gap-space-md"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md px-space-sm py-space-xs" data-path="login" href="#">Log in</a><a class="bg-primary-container text-on-primary-container hover:bg-inverse-primary transition-colors font-headline-sm text-headline-sm px-space-md py-space-xs rounded-DEFAULT flex items-center justify-center" data-path="signup" href="#">Start building</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-14 bg-surface-container-lowest"><div class="flex flex-col w-full relative">
-<!-- Underlying 4-Region Developer Workspace (Dimmed Context Under Scrim) -->
-<div class="w-full min-h-[820px] flex flex-col bg-surface select-none pointer-events-none filter blur-[1.5px] opacity-40">
-<!-- Workspace Top Bar -->
-<div class="h-10 w-full bg-surface-container-low px-space-md flex items-center justify-between border-b border-outline-variant/20">
-<div class="flex items-center gap-space-sm font-label-md text-label-md">
-<span class="text-on-surface-variant">workspaces</span>
-<span class="text-outline-variant">/</span>
-<span class="text-on-surface font-semibold">TaskFlow</span>
-<span class="text-outline-variant">/</span>
-<div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container text-secondary font-code-sm text-code-sm">
-<span class="material-symbols-outlined text-[13px]">alt_route</span>
-<span>feat/task-due-date</span>
-</div>
-</div>
-<div class="flex items-center gap-space-md">
-<div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-tertiary-container/20 text-tertiary font-label-xs text-label-xs">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
-          READY
-        </div>
-<button class="bg-primary-container text-on-primary-container px-3 py-1 rounded font-headline-sm text-[12px] flex items-center gap-1.5">
-<span class="material-symbols-outlined text-[14px]">rocket_launch</span>
-          Deploy
-        </button>
-</div>
-</div>
-<!-- Workspace Middle: Explorer + Code Editor -->
-<div class="flex-1 flex min-h-[500px]">
-<!-- Left File Tree -->
-<div class="w-56 bg-surface-container-lowest p-space-sm flex flex-col gap-1 font-code-sm text-code-sm text-on-surface-variant border-r border-outline-variant/20">
-<div class="flex items-center justify-between px-2 py-1 text-outline font-label-xs uppercase tracking-wider">
-<span>Files</span>
-<span class="material-symbols-outlined text-[13px]">folder_open</span>
-</div>
-<div class="px-2 py-1 text-on-surface flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-primary">folder</span> app
-        </div>
-<div class="pl-5 py-1 text-on-surface flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-primary">folder</span> api
-        </div>
-<div class="pl-8 py-1 text-on-surface flex items-center gap-2 bg-surface-container rounded text-primary">
-<span class="material-symbols-outlined text-[14px] text-secondary">javascript</span> route.ts
-        </div>
-<div class="pl-5 py-1 flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px]">folder</span> tasks
-        </div>
-<div class="px-2 py-1 flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-outline">tune</span> kairo.config.ts
-        </div>
-<div class="px-2 py-1 flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-outline">description</span> package.json
-        </div>
-</div>
-<!-- Center Code Editor -->
-<div class="flex-1 bg-surface-container-low flex flex-col font-code-md text-code-md">
-<div class="h-8 bg-surface-container-lowest flex items-center px-4 gap-2 border-b border-outline-variant/20 text-on-surface text-[11px]">
-<span class="material-symbols-outlined text-[14px] text-secondary">javascript</span>
-<span>app/api/route.ts</span>
-<span class="w-2 h-2 rounded-full bg-outline-variant ml-2"></span>
-</div>
-<div class="p-4 space-y-1 text-on-surface-variant text-code-sm">
-<p><span class="text-primary">import</span> { NextResponse } <span class="text-primary">from</span> <span class="text-tertiary">'@kairo/edge'</span>;</p>
-<p><span class="text-primary">export async function</span> <span class="text-secondary">POST</span>(req: Request) {</p>
-<p class="pl-4">const payload = <span class="text-primary">await</span> req.json();</p>
-<p class="pl-4">const syncResult = <span class="text-primary">await</span> edgeDB.tasks.upsert({</p>
-<p class="pl-8">where: { id: payload.taskId },</p>
-<p class="pl-8">update: { dueDate: payload.isoDate, status: <span class="text-tertiary">'COMMITTED'</span> },</p>
-<p class="pl-4">});</p>
-<p class="pl-4"><span class="text-primary">return</span> NextResponse.json({ ok: <span class="text-secondary">true</span>, syncResult });</p>
-<p>}</p>
-</div>
-</div>
-</div>
-<!-- Bottom Console Terminal -->
-<div class="h-44 bg-surface-container-lowest border-t border-outline-variant/20 p-space-sm font-code-sm text-code-sm text-on-surface-variant">
-<div class="flex items-center justify-between pb-2 border-b border-outline-variant/20 text-outline font-label-xs">
-<div class="flex items-center gap-3">
-<span class="text-on-surface font-semibold">TERMINAL</span>
-<span>OUTPUT</span>
-<span>EDGE NODES (24/24)</span>
-</div>
-<span class="text-tertiary">DEPLOYED OK</span>
-</div>
-<div class="pt-2 space-y-0.5 text-[11px] text-on-surface-variant">
-<p><span class="text-outline">16:42:01.09</span> [compiler] Static analysis passed. Optimization tier: aggressive</p>
-<p><span class="text-outline">16:42:19.45</span> [kairo-edge] Propagating binary to 24 PoPs: SFO, FRA, NRT, LHR, SYD...</p>
-<p><span class="text-outline">16:42:38.88</span> [routing] Global canary health 100%. Shifting 100% active traffic.</p>
-<p class="text-tertiary font-code-md">Deployment completed in 38s. Route binding ready: https://taskflow.kairopro.app</p>
-</div>
-</div>
-</div>
-<!-- Focused Backdrop Scrim -->
-<div class="absolute inset-0 bg-surface-container-lowest/80 backdrop-blur-[3px] flex items-center justify-center p-space-md z-40">
-<!-- H3 Modal: Deploy Success Dialog -->
-<div class="w-full max-w-[540px] bg-surface rounded-xl shadow-2xl border border-outline-variant/30 flex flex-col overflow-hidden text-on-surface transition-all">
-<!-- Modal Header -->
-<div class="p-space-lg pb-space-sm flex items-start justify-between">
-<div class="flex items-start gap-space-md">
-<!-- Glowing Emerald Success Badge -->
-<div class="w-9 h-9 rounded-lg bg-tertiary/10 border border-tertiary/40 flex items-center justify-center text-tertiary shadow-[0_0_12px_rgba(78,222,163,0.25)] shrink-0 mt-0.5">
-<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-</div>
-<div class="flex flex-col">
-<div class="flex items-center gap-2">
-<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Deployment live</h2>
-<span class="px-2 py-0.5 rounded text-[10px] font-label-xs font-semibold bg-tertiary/15 text-tertiary uppercase tracking-wider border border-tertiary/30">Active</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-              TaskFlow is now live on the Kairo Edge Network.
-            </p>
-</div>
-</div>
-<!-- Dismiss Close Button -->
-<button aria-label="Close dialog" class="text-on-surface-variant hover:text-on-surface p-1 rounded transition-colors" id="close-modal-btn">
-<span class="material-symbols-outlined text-[18px]">close</span>
-</button>
-</div>
-<!-- Main Body Container -->
-<div class="px-space-lg pb-space-lg flex flex-col gap-space-md">
-<!-- Prominent Live Endpoint Showcase Box -->
-<div class="p-3.5 rounded-lg bg-surface-container-lowest border border-tertiary/30 shadow-inner flex flex-col gap-3 relative overflow-hidden">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-1.5 text-label-xs font-label-xs text-tertiary">
-<span class="w-2 h-2 rounded-full bg-tertiary animate-ping absolute opacity-75"></span>
-<span class="w-2 h-2 rounded-full bg-tertiary relative"></span>
-<span class="font-semibold tracking-wide uppercase">Production Edge URL</span>
-</div>
-<span class="text-label-xs font-label-xs text-on-surface-variant flex items-center gap-1">
-<span class="material-symbols-outlined text-[12px] text-tertiary">lock</span> TLS 1.3
-            </span>
-</div>
-<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-surface-container-low/70 px-3 py-2 rounded">
-<span class="font-code-lg text-code-lg text-primary select-all truncate font-medium" id="endpoint-url">
-              https://taskflow.kairopro.app
-            </span>
-<div class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-<!-- Copy URL Button -->
-<button class="h-7 px-2.5 rounded bg-surface-container hover:bg-surface-bright border border-outline-variant/30 text-on-surface font-code-sm text-code-sm flex items-center gap-1 transition-colors active:scale-95" id="copy-btn" title="Copy to clipboard">
-<span class="material-symbols-outlined text-[14px]">content_copy</span>
-<span id="copy-text">Copy</span>
-</button>
-<!-- Open Live App Button -->
-<a class="h-7 px-3 rounded bg-primary-container hover:bg-inverse-primary text-on-primary-container font-code-sm text-code-sm font-semibold flex items-center gap-1 transition-colors shadow-sm" href="https://taskflow.kairopro.app" rel="noopener noreferrer" target="_blank">
-<span>Visit</span>
-<span class="material-symbols-outlined text-[14px]">arrow_outward</span>
-</a>
-</div>
-</div>
-</div>
-<!-- Deployment Details & Performance Metrics Grid -->
-<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-left">
-<!-- Metric 1: Deployment Hash -->
-<div class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1">
-<span class="font-label-xs text-label-xs text-outline uppercase tracking-wider">Deployment ID</span>
-<div class="flex items-center justify-between">
-<span class="font-code-sm text-code-sm text-on-surface font-medium">dep_8f29c01a</span>
-<button class="text-on-surface-variant hover:text-primary transition-colors" title="Copy deployment hash">
-<span class="material-symbols-outlined text-[13px]">content_copy</span>
-</button>
-</div>
-</div>
-<!-- Metric 2: Branch & Commit -->
-<div class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1">
-<span class="font-label-xs text-label-xs text-outline uppercase tracking-wider">Branch / Commit</span>
-<div class="flex items-center gap-1.5 truncate">
-<span class="material-symbols-outlined text-[13px] text-secondary shrink-0">commit</span>
-<span class="font-code-sm text-code-sm text-on-surface truncate">feat/task-due</span>
-<span class="font-code-sm text-code-sm text-outline-variant">4b9e271</span>
-</div>
-</div>
-<!-- Metric 3: Compile / Duration -->
-<div class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1">
-<span class="font-label-xs text-label-xs text-outline uppercase tracking-wider">Build Duration</span>
-<div class="flex items-center gap-1 text-tertiary">
-<span class="material-symbols-outlined text-[14px]">bolt</span>
-<span class="font-code-sm text-code-sm font-semibold">38s</span>
-<span class="text-outline text-[10px] ml-auto font-label-xs">Fast</span>
-</div>
-</div>
-<!-- Metric 4: Target Environment -->
-<div class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1">
-<span class="font-label-xs text-label-xs text-outline uppercase tracking-wider">Environment</span>
-<span class="font-code-sm text-code-sm text-on-surface flex items-center gap-1.5">
-<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-              Global Edge (V8)
-            </span>
-</div>
-<!-- Metric 5: Edge Propagation Health -->
-<div class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1 sm:col-span-2">
-<span class="font-label-xs text-label-xs text-outline uppercase tracking-wider">Edge Status &amp; Mesh</span>
-<div class="flex items-center justify-between text-tertiary font-code-sm text-code-sm">
-<div class="flex items-center gap-1.5">
-<span class="material-symbols-outlined text-[14px]">hub</span>
-<span>24/24 PoPs Synced</span>
-</div>
-<span class="text-on-surface-variant font-label-xs text-label-xs">100% healthy</span>
-</div>
-</div>
-</div>
-<!-- Secondary Quick Actions & Integrations -->
-<div class="flex items-center justify-between pt-1 border-t border-outline-variant/15 text-on-surface-variant">
-<div class="flex items-center gap-2 flex-wrap font-body-sm text-body-sm">
-<a class="px-2 py-1 rounded hover:bg-surface-container hover:text-on-surface text-on-surface-variant flex items-center gap-1.5 transition-colors" href="#">
-<span class="material-symbols-outlined text-[15px]">terminal</span>
-<span>Build logs</span>
-</a>
-<a class="px-2 py-1 rounded hover:bg-surface-container hover:text-on-surface text-on-surface-variant flex items-center gap-1.5 transition-colors" href="#">
-<span class="material-symbols-outlined text-[15px]">dns</span>
-<span>Custom domain</span>
-</a>
-<a class="px-2 py-1 rounded hover:bg-surface-container hover:text-on-surface text-on-surface-variant flex items-center gap-1.5 transition-colors" href="#">
-<span class="material-symbols-outlined text-[15px]">share</span>
-<span>Share preview</span>
-</a>
-</div>
-</div>
-<!-- Footer / Confirmation & Zero-Downtime Microcopy -->
-<div class="mt-1 pt-3 border-t border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest/50 -mx-space-lg -mb-space-lg px-space-lg py-3">
-<div class="flex items-center gap-1.5 text-outline font-body-sm text-[11px] leading-tight max-w-[340px]">
-<span class="material-symbols-outlined text-[14px] text-tertiary shrink-0">verified_user</span>
-<span>Zero downtime cutover. Rollback ready to <span class="font-code-sm text-on-surface">dep_7e12b90</span>.</span>
-</div>
-<button class="h-8 px-4 rounded bg-surface-container hover:bg-surface-bright border border-outline-variant/30 text-on-surface font-headline-sm text-headline-sm transition-colors shrink-0" id="dismiss-btn">
-            Done
-          </button>
-</div>
-</div>
-</div>
-</div>
-<script>
-    (function() {
-      const copyBtn = document.getElementById('copy-btn');
-      const copyText = document.getElementById('copy-text');
-      const endpointUrl = document.getElementById('endpoint-url');
-      const closeBtn = document.getElementById('close-modal-btn');
-      const dismissBtn = document.getElementById('dismiss-btn');
-
-      if (copyBtn && endpointUrl && copyText) {
-        copyBtn.addEventListener('click', function() {
-          navigator.clipboard.writeText(endpointUrl.textContent.trim()).then(function() {
-            copyText.textContent = 'Copied!';
-            copyBtn.classList.add('text-tertiary');
-            setTimeout(function() {
-              copyText.textContent = 'Copy';
-              copyBtn.classList.remove('text-tertiary');
-            }, 2000);
-          }).catch(function() {
-            copyText.textContent = 'Copied';
-          });
-        });
-      }
-
-      function handleDismiss() {
-        const modalScrim = document.querySelector('.bg-surface-container-lowest\\/80');
-        if (modalScrim) {
-          modalScrim.style.transition = 'opacity 0.2s ease';
-          modalScrim.style.opacity = '0';
-          setTimeout(function() {
-            modalScrim.style.display = 'none';
-          }, 200);
+<!doctype html>
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @layer base {
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        body {
+          overscroll-behavior: none;
+        }
+        main > :first-child {
+          margin-top: 0 !important;
+        }
+        main > :last-child {
+          margin-bottom: 0 !important;
         }
       }
-
-      if (closeBtn) closeBtn.addEventListener('click', handleDismiss);
-      if (dismissBtn) dismissBtn.addEventListener('click', handleDismiss);
-    })();
-  </script>
-</div></main><footer class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl"><div class="w-full px-space-xl flex flex-col md:flex-row items-center justify-between gap-space-lg"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #6d5ef5
+      ::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline-variant": "#474555",
+              "surface-bright": "#39383e",
+              "inverse-on-surface": "#303036",
+              "surface-container": "#1f1f25",
+              "on-secondary-fixed": "#001f25",
+              "on-surface": "#e4e1e9",
+              primary: "#c5c0ff",
+              "tertiary-fixed": "#6ffbbe",
+              "surface-tint": "#c5c0ff",
+              "inverse-primary": "#5544dc",
+              "on-secondary": "#00363e",
+              "surface-container-low": "#1b1b20",
+              "secondary-fixed-dim": "#2fd9f4",
+              tertiary: "#4edea3",
+              "surface-variant": "#35343a",
+              secondary: "#5de6ff",
+              "on-tertiary-fixed": "#002113",
+              error: "#ffb4ab",
+              "on-tertiary": "#003824",
+              "tertiary-container": "#00865c",
+              "tertiary-fixed-dim": "#4edea3",
+              "inverse-surface": "#e4e1e9",
+              "surface-container-lowest": "#0e0e13",
+              "on-secondary-container": "#00515d",
+              surface: "#131318",
+              "on-primary": "#2600a1",
+              "on-secondary-fixed-variant": "#004e5a",
+              "on-background": "#e4e1e9",
+              "on-error-container": "#ffdad6",
+              "on-primary-fixed-variant": "#3c24c5",
+              "secondary-container": "#00cbe6",
+              "primary-fixed-dim": "#c5c0ff",
+              "surface-dim": "#131318",
+              "on-primary-fixed": "#150067",
+              outline: "#928ea1",
+              "on-primary-container": "#fffdff",
+              "primary-fixed": "#e4dfff",
+              "on-tertiary-fixed-variant": "#005236",
+              "on-tertiary-container": "#fafff9",
+              background: "#131318",
+              "primary-container": "#6d5ef5",
+              "surface-container-highest": "#35343a",
+              "secondary-fixed": "#a2eeff",
+              "error-container": "#93000a",
+              "surface-container-high": "#2a292f",
+              "on-error": "#690005",
+              "on-surface-variant": "#c8c4d7",
+            },
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem",
+            },
+            spacing: {
+              "space-xs": "0.25rem",
+              "gutter-mobile": "0.5rem",
+              margin: "1rem",
+              gutter: "0.75rem",
+              "margin-mobile": "0.75rem",
+              "space-md": "0.75rem",
+              "space-xl": "1.5rem",
+              "space-sm": "0.5rem",
+              "space-lg": "1rem",
+            },
+            fontFamily: {
+              "headline-xl": ["Inter"],
+              "body-sm": ["Inter"],
+              "code-md": ["JetBrains Mono"],
+              "label-xs": ["JetBrains Mono"],
+              "code-sm": ["JetBrains Mono"],
+              "body-md": ["Inter"],
+              "code-lg": ["JetBrains Mono"],
+              "headline-sm": ["Inter"],
+              "headline-lg": ["Inter"],
+              "label-md": ["JetBrains Mono"],
+            },
+            fontSize: {
+              "headline-xl": [
+                "24px",
+                {
+                  lineHeight: "32px",
+                  letterSpacing: "-0.02em",
+                  fontWeight: "600",
+                },
+              ],
+              "body-sm": [
+                "12px",
+                { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "code-md": [
+                "12px",
+                { lineHeight: "18px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "label-xs": [
+                "10px",
+                {
+                  lineHeight: "12px",
+                  letterSpacing: "0.05em",
+                  fontWeight: "600",
+                },
+              ],
+              "code-sm": [
+                "11px",
+                { lineHeight: "15px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "body-md": [
+                "13px",
+                {
+                  lineHeight: "18px",
+                  letterSpacing: "-0.005em",
+                  fontWeight: "400",
+                },
+              ],
+              "code-lg": [
+                "13px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "-0.01em",
+                  fontWeight: "500",
+                },
+              ],
+              "headline-sm": [
+                "15px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "-0.01em",
+                  fontWeight: "600",
+                },
+              ],
+              "headline-lg": [
+                "20px",
+                {
+                  lineHeight: "28px",
+                  letterSpacing: "-0.015em",
+                  fontWeight: "600",
+                },
+              ],
+              "label-md": [
+                "11px",
+                {
+                  lineHeight: "14px",
+                  letterSpacing: "0.03em",
+                  fontWeight: "500",
+                },
+              ],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="bg-surface-container-lowest text-on-surface font-body-md text-body-md antialiased min-h-screen"
+  >
+    <header
+      class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30"
+    >
+      <div class="h-14 w-full px-space-xl flex items-center justify-between">
+        <div class="flex items-center gap-space-xl">
+          <a class="flex items-center gap-space-sm" data-path="home" href="#"
+            ><img
+              alt="Brand logo. - Primary color: #6d5ef5
 - Font: inter
 - Mode: dark
 - Roundness: rounded-sm
-" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">KairoPro</span></div><div class="flex flex-wrap items-center justify-center gap-space-lg"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="features" href="#">Features</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="pricing" href="#">Pricing</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="docs" href="#">Docs</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="github" href="#">GitHub</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="terms" href="#">Terms</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="privacy" href="#">Privacy</a></div><div class="text-on-surface-variant font-body-sm text-body-sm font-label-md text-label-md">© 2025 KairoPro Inc. All rights reserved.</div></div></footer></body></html>
+"
+              class="h-8 w-auto object-contain"
+              src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"
+            /><span
+              class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+              >KairoPro</span
+            ></a
+          >
+          <nav
+            class="hidden md:flex items-center gap-space-lg"
+            data-active-classes="text-on-surface font-headline-sm"
+          >
+            <a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="features"
+              href="#"
+              >Features</a
+            ><a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="pricing"
+              href="#"
+              >Pricing</a
+            ><a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="docs"
+              href="#"
+              >Docs</a
+            >
+          </nav>
+        </div>
+        <div class="flex items-center gap-space-md">
+          <a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md px-space-sm py-space-xs"
+            data-path="login"
+            href="#"
+            >Log in</a
+          ><a
+            class="bg-primary-container text-on-primary-container hover:bg-inverse-primary transition-colors font-headline-sm text-headline-sm px-space-md py-space-xs rounded-DEFAULT flex items-center justify-center"
+            data-path="signup"
+            href="#"
+            >Start building</a
+          >
+          <div
+            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"
+          >
+            <span class="material-symbols-outlined text-on-primary text-[18px]"
+              >person</span
+            >
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="w-full pt-14 bg-surface-container-lowest">
+      <div class="flex flex-col w-full relative">
+        <!-- Underlying 4-Region Developer Workspace (Dimmed Context Under Scrim) -->
+        <div
+          class="w-full min-h-[820px] flex flex-col bg-surface select-none pointer-events-none filter blur-[1.5px] opacity-40"
+        >
+          <!-- Workspace Top Bar -->
+          <div
+            class="h-10 w-full bg-surface-container-low px-space-md flex items-center justify-between border-b border-outline-variant/20"
+          >
+            <div
+              class="flex items-center gap-space-sm font-label-md text-label-md"
+            >
+              <span class="text-on-surface-variant">workspaces</span>
+              <span class="text-outline-variant">/</span>
+              <span class="text-on-surface font-semibold">TaskFlow</span>
+              <span class="text-outline-variant">/</span>
+              <div
+                class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container text-secondary font-code-sm text-code-sm"
+              >
+                <span class="material-symbols-outlined text-[13px]"
+                  >alt_route</span
+                >
+                <span>feat/task-due-date</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-space-md">
+              <div
+                class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-tertiary-container/20 text-tertiary font-label-xs text-label-xs"
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"
+                ></span>
+                READY
+              </div>
+              <button
+                class="bg-primary-container text-on-primary-container px-3 py-1 rounded font-headline-sm text-[12px] flex items-center gap-1.5"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >rocket_launch</span
+                >
+                Deploy
+              </button>
+            </div>
+          </div>
+          <!-- Workspace Middle: Explorer + Code Editor -->
+          <div class="flex-1 flex min-h-[500px]">
+            <!-- Left File Tree -->
+            <div
+              class="w-56 bg-surface-container-lowest p-space-sm flex flex-col gap-1 font-code-sm text-code-sm text-on-surface-variant border-r border-outline-variant/20"
+            >
+              <div
+                class="flex items-center justify-between px-2 py-1 text-outline font-label-xs uppercase tracking-wider"
+              >
+                <span>Files</span>
+                <span class="material-symbols-outlined text-[13px]"
+                  >folder_open</span
+                >
+              </div>
+              <div class="px-2 py-1 text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-[14px] text-primary"
+                  >folder</span
+                >
+                app
+              </div>
+              <div class="pl-5 py-1 text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-[14px] text-primary"
+                  >folder</span
+                >
+                api
+              </div>
+              <div
+                class="pl-8 py-1 text-on-surface flex items-center gap-2 bg-surface-container rounded text-primary"
+              >
+                <span
+                  class="material-symbols-outlined text-[14px] text-secondary"
+                  >javascript</span
+                >
+                route.ts
+              </div>
+              <div class="pl-5 py-1 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[14px]"
+                  >folder</span
+                >
+                tasks
+              </div>
+              <div class="px-2 py-1 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[14px] text-outline"
+                  >tune</span
+                >
+                kairo.config.ts
+              </div>
+              <div class="px-2 py-1 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[14px] text-outline"
+                  >description</span
+                >
+                package.json
+              </div>
+            </div>
+            <!-- Center Code Editor -->
+            <div
+              class="flex-1 bg-surface-container-low flex flex-col font-code-md text-code-md"
+            >
+              <div
+                class="h-8 bg-surface-container-lowest flex items-center px-4 gap-2 border-b border-outline-variant/20 text-on-surface text-[11px]"
+              >
+                <span
+                  class="material-symbols-outlined text-[14px] text-secondary"
+                  >javascript</span
+                >
+                <span>app/api/route.ts</span>
+                <span
+                  class="w-2 h-2 rounded-full bg-outline-variant ml-2"
+                ></span>
+              </div>
+              <div class="p-4 space-y-1 text-on-surface-variant text-code-sm">
+                <p>
+                  <span class="text-primary">import</span> { NextResponse }
+                  <span class="text-primary">from</span>
+                  <span class="text-tertiary">'@kairo/edge'</span>;
+                </p>
+                <p>
+                  <span class="text-primary">export async function</span>
+                  <span class="text-secondary">POST</span>(req: Request) {
+                </p>
+                <p class="pl-4">
+                  const payload =
+                  <span class="text-primary">await</span> req.json();
+                </p>
+                <p class="pl-4">
+                  const syncResult =
+                  <span class="text-primary">await</span> edgeDB.tasks.upsert({
+                </p>
+                <p class="pl-8">where: { id: payload.taskId },</p>
+                <p class="pl-8">
+                  update: { dueDate: payload.isoDate, status:
+                  <span class="text-tertiary">'COMMITTED'</span> },
+                </p>
+                <p class="pl-4">});</p>
+                <p class="pl-4">
+                  <span class="text-primary">return</span> NextResponse.json({
+                  ok: <span class="text-secondary">true</span>, syncResult });
+                </p>
+                <p>}</p>
+              </div>
+            </div>
+          </div>
+          <!-- Bottom Console Terminal -->
+          <div
+            class="h-44 bg-surface-container-lowest border-t border-outline-variant/20 p-space-sm font-code-sm text-code-sm text-on-surface-variant"
+          >
+            <div
+              class="flex items-center justify-between pb-2 border-b border-outline-variant/20 text-outline font-label-xs"
+            >
+              <div class="flex items-center gap-3">
+                <span class="text-on-surface font-semibold">TERMINAL</span>
+                <span>OUTPUT</span>
+                <span>EDGE NODES (24/24)</span>
+              </div>
+              <span class="text-tertiary">DEPLOYED OK</span>
+            </div>
+            <div class="pt-2 space-y-0.5 text-[11px] text-on-surface-variant">
+              <p>
+                <span class="text-outline">16:42:01.09</span> [compiler] Static
+                analysis passed. Optimization tier: aggressive
+              </p>
+              <p>
+                <span class="text-outline">16:42:19.45</span> [kairo-edge]
+                Propagating binary to 24 PoPs: SFO, FRA, NRT, LHR, SYD...
+              </p>
+              <p>
+                <span class="text-outline">16:42:38.88</span> [routing] Global
+                canary health 100%. Shifting 100% active traffic.
+              </p>
+              <p class="text-tertiary font-code-md">
+                Deployment completed in 38s. Route binding ready:
+                https://taskflow.kairopro.app
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- Focused Backdrop Scrim -->
+        <div
+          class="absolute inset-0 bg-surface-container-lowest/80 backdrop-blur-[3px] flex items-center justify-center p-space-md z-40"
+        >
+          <!-- H3 Modal: Deploy Success Dialog -->
+          <div
+            class="w-full max-w-[540px] bg-surface rounded-xl shadow-2xl border border-outline-variant/30 flex flex-col overflow-hidden text-on-surface transition-all"
+          >
+            <!-- Modal Header -->
+            <div
+              class="p-space-lg pb-space-sm flex items-start justify-between"
+            >
+              <div class="flex items-start gap-space-md">
+                <!-- Glowing Emerald Success Badge -->
+                <div
+                  class="w-9 h-9 rounded-lg bg-tertiary/10 border border-tertiary/40 flex items-center justify-center text-tertiary shadow-[0_0_12px_rgba(78,222,163,0.25)] shrink-0 mt-0.5"
+                >
+                  <span
+                    class="material-symbols-outlined text-[20px]"
+                    style="font-variation-settings: &quot;FILL&quot; 1"
+                    >check_circle</span
+                  >
+                </div>
+                <div class="flex flex-col">
+                  <div class="flex items-center gap-2">
+                    <h2
+                      class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight"
+                    >
+                      Deployment live
+                    </h2>
+                    <span
+                      class="px-2 py-0.5 rounded text-[10px] font-label-xs font-semibold bg-tertiary/15 text-tertiary uppercase tracking-wider border border-tertiary/30"
+                      >Active</span
+                    >
+                  </div>
+                  <p
+                    class="font-body-sm text-body-sm text-on-surface-variant mt-0.5"
+                  >
+                    TaskFlow is now live on the Kairo Edge Network.
+                  </p>
+                </div>
+              </div>
+              <!-- Dismiss Close Button -->
+              <button
+                aria-label="Close dialog"
+                class="text-on-surface-variant hover:text-on-surface p-1 rounded transition-colors"
+                id="close-modal-btn"
+              >
+                <span class="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+            <!-- Main Body Container -->
+            <div class="px-space-lg pb-space-lg flex flex-col gap-space-md">
+              <!-- Prominent Live Endpoint Showcase Box -->
+              <div
+                class="p-3.5 rounded-lg bg-surface-container-lowest border border-tertiary/30 shadow-inner flex flex-col gap-3 relative overflow-hidden"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="flex items-center gap-1.5 text-label-xs font-label-xs text-tertiary"
+                  >
+                    <span
+                      class="w-2 h-2 rounded-full bg-tertiary animate-ping absolute opacity-75"
+                    ></span>
+                    <span
+                      class="w-2 h-2 rounded-full bg-tertiary relative"
+                    ></span>
+                    <span class="font-semibold tracking-wide uppercase"
+                      >Production Edge URL</span
+                    >
+                  </div>
+                  <span
+                    class="text-label-xs font-label-xs text-on-surface-variant flex items-center gap-1"
+                  >
+                    <span
+                      class="material-symbols-outlined text-[12px] text-tertiary"
+                      >lock</span
+                    >
+                    TLS 1.3
+                  </span>
+                </div>
+                <div
+                  class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-surface-container-low/70 px-3 py-2 rounded"
+                >
+                  <span
+                    class="font-code-lg text-code-lg text-primary select-all truncate font-medium"
+                    id="endpoint-url"
+                  >
+                    https://taskflow.kairopro.app
+                  </span>
+                  <div
+                    class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto"
+                  >
+                    <!-- Copy URL Button -->
+                    <button
+                      class="h-7 px-2.5 rounded bg-surface-container hover:bg-surface-bright border border-outline-variant/30 text-on-surface font-code-sm text-code-sm flex items-center gap-1 transition-colors active:scale-95"
+                      id="copy-btn"
+                      title="Copy to clipboard"
+                    >
+                      <span class="material-symbols-outlined text-[14px]"
+                        >content_copy</span
+                      >
+                      <span id="copy-text">Copy</span>
+                    </button>
+                    <!-- Open Live App Button -->
+                    <a
+                      class="h-7 px-3 rounded bg-primary-container hover:bg-inverse-primary text-on-primary-container font-code-sm text-code-sm font-semibold flex items-center gap-1 transition-colors shadow-sm"
+                      href="https://taskflow.kairopro.app"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <span>Visit</span>
+                      <span class="material-symbols-outlined text-[14px]"
+                        >arrow_outward</span
+                      >
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <!-- Deployment Details & Performance Metrics Grid -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-left">
+                <!-- Metric 1: Deployment Hash -->
+                <div
+                  class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1"
+                >
+                  <span
+                    class="font-label-xs text-label-xs text-outline uppercase tracking-wider"
+                    >Deployment ID</span
+                  >
+                  <div class="flex items-center justify-between">
+                    <span
+                      class="font-code-sm text-code-sm text-on-surface font-medium"
+                      >dep_8f29c01a</span
+                    >
+                    <button
+                      class="text-on-surface-variant hover:text-primary transition-colors"
+                      title="Copy deployment hash"
+                    >
+                      <span class="material-symbols-outlined text-[13px]"
+                        >content_copy</span
+                      >
+                    </button>
+                  </div>
+                </div>
+                <!-- Metric 2: Branch & Commit -->
+                <div
+                  class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1"
+                >
+                  <span
+                    class="font-label-xs text-label-xs text-outline uppercase tracking-wider"
+                    >Branch / Commit</span
+                  >
+                  <div class="flex items-center gap-1.5 truncate">
+                    <span
+                      class="material-symbols-outlined text-[13px] text-secondary shrink-0"
+                      >commit</span
+                    >
+                    <span
+                      class="font-code-sm text-code-sm text-on-surface truncate"
+                      >feat/task-due</span
+                    >
+                    <span class="font-code-sm text-code-sm text-outline-variant"
+                      >4b9e271</span
+                    >
+                  </div>
+                </div>
+                <!-- Metric 3: Compile / Duration -->
+                <div
+                  class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1"
+                >
+                  <span
+                    class="font-label-xs text-label-xs text-outline uppercase tracking-wider"
+                    >Build Duration</span
+                  >
+                  <div class="flex items-center gap-1 text-tertiary">
+                    <span class="material-symbols-outlined text-[14px]"
+                      >bolt</span
+                    >
+                    <span class="font-code-sm text-code-sm font-semibold"
+                      >38s</span
+                    >
+                    <span class="text-outline text-[10px] ml-auto font-label-xs"
+                      >Fast</span
+                    >
+                  </div>
+                </div>
+                <!-- Metric 4: Target Environment -->
+                <div
+                  class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1"
+                >
+                  <span
+                    class="font-label-xs text-label-xs text-outline uppercase tracking-wider"
+                    >Environment</span
+                  >
+                  <span
+                    class="font-code-sm text-code-sm text-on-surface flex items-center gap-1.5"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    Global Edge (V8)
+                  </span>
+                </div>
+                <!-- Metric 5: Edge Propagation Health -->
+                <div
+                  class="p-2.5 bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-1 sm:col-span-2"
+                >
+                  <span
+                    class="font-label-xs text-label-xs text-outline uppercase tracking-wider"
+                    >Edge Status &amp; Mesh</span
+                  >
+                  <div
+                    class="flex items-center justify-between text-tertiary font-code-sm text-code-sm"
+                  >
+                    <div class="flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[14px]"
+                        >hub</span
+                      >
+                      <span>24/24 PoPs Synced</span>
+                    </div>
+                    <span
+                      class="text-on-surface-variant font-label-xs text-label-xs"
+                      >100% healthy</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <!-- Secondary Quick Actions & Integrations -->
+              <div
+                class="flex items-center justify-between pt-1 border-t border-outline-variant/15 text-on-surface-variant"
+              >
+                <div
+                  class="flex items-center gap-2 flex-wrap font-body-sm text-body-sm"
+                >
+                  <a
+                    class="px-2 py-1 rounded hover:bg-surface-container hover:text-on-surface text-on-surface-variant flex items-center gap-1.5 transition-colors"
+                    href="#"
+                  >
+                    <span class="material-symbols-outlined text-[15px]"
+                      >terminal</span
+                    >
+                    <span>Build logs</span>
+                  </a>
+                  <a
+                    class="px-2 py-1 rounded hover:bg-surface-container hover:text-on-surface text-on-surface-variant flex items-center gap-1.5 transition-colors"
+                    href="#"
+                  >
+                    <span class="material-symbols-outlined text-[15px]"
+                      >dns</span
+                    >
+                    <span>Custom domain</span>
+                  </a>
+                  <a
+                    class="px-2 py-1 rounded hover:bg-surface-container hover:text-on-surface text-on-surface-variant flex items-center gap-1.5 transition-colors"
+                    href="#"
+                  >
+                    <span class="material-symbols-outlined text-[15px]"
+                      >share</span
+                    >
+                    <span>Share preview</span>
+                  </a>
+                </div>
+              </div>
+              <!-- Footer / Confirmation & Zero-Downtime Microcopy -->
+              <div
+                class="mt-1 pt-3 border-t border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest/50 -mx-space-lg -mb-space-lg px-space-lg py-3"
+              >
+                <div
+                  class="flex items-center gap-1.5 text-outline font-body-sm text-[11px] leading-tight max-w-[340px]"
+                >
+                  <span
+                    class="material-symbols-outlined text-[14px] text-tertiary shrink-0"
+                    >verified_user</span
+                  >
+                  <span
+                    >Zero downtime cutover. Rollback ready to
+                    <span class="font-code-sm text-on-surface">dep_7e12b90</span
+                    >.</span
+                  >
+                </div>
+                <button
+                  class="h-8 px-4 rounded bg-surface-container hover:bg-surface-bright border border-outline-variant/30 text-on-surface font-headline-sm text-headline-sm transition-colors shrink-0"
+                  id="dismiss-btn"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script>
+          (function () {
+            const copyBtn = document.getElementById("copy-btn");
+            const copyText = document.getElementById("copy-text");
+            const endpointUrl = document.getElementById("endpoint-url");
+            const closeBtn = document.getElementById("close-modal-btn");
+            const dismissBtn = document.getElementById("dismiss-btn");
+
+            if (copyBtn && endpointUrl && copyText) {
+              copyBtn.addEventListener("click", function () {
+                navigator.clipboard
+                  .writeText(endpointUrl.textContent.trim())
+                  .then(function () {
+                    copyText.textContent = "Copied!";
+                    copyBtn.classList.add("text-tertiary");
+                    setTimeout(function () {
+                      copyText.textContent = "Copy";
+                      copyBtn.classList.remove("text-tertiary");
+                    }, 2000);
+                  })
+                  .catch(function () {
+                    copyText.textContent = "Copied";
+                  });
+              });
+            }
+
+            function handleDismiss() {
+              const modalScrim = document.querySelector(
+                ".bg-surface-container-lowest\\/80",
+              );
+              if (modalScrim) {
+                modalScrim.style.transition = "opacity 0.2s ease";
+                modalScrim.style.opacity = "0";
+                setTimeout(function () {
+                  modalScrim.style.display = "none";
+                }, 200);
+              }
+            }
+
+            if (closeBtn) closeBtn.addEventListener("click", handleDismiss);
+            if (dismissBtn) dismissBtn.addEventListener("click", handleDismiss);
+          })();
+        </script>
+      </div>
+    </main>
+    <footer
+      class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl"
+    >
+      <div
+        class="w-full px-space-xl flex flex-col md:flex-row items-center justify-between gap-space-lg"
+      >
+        <div class="flex items-center gap-space-sm">
+          <img
+            alt="Brand logo. - Primary color: #6d5ef5
+- Font: inter
+- Mode: dark
+- Roundness: rounded-sm
+"
+            class="h-6 w-auto object-contain"
+            src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"
+          /><span
+            class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+            >KairoPro</span
+          >
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-space-lg">
+          <a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="features"
+            href="#"
+            >Features</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="pricing"
+            href="#"
+            >Pricing</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="docs"
+            href="#"
+            >Docs</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="github"
+            href="#"
+            >GitHub</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="terms"
+            href="#"
+            >Terms</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="privacy"
+            href="#"
+            >Privacy</a
+          >
+        </div>
+        <div
+          class="text-on-surface-variant font-body-sm text-body-sm font-label-md text-label-md"
+        >
+          © 2025 KairoPro Inc. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

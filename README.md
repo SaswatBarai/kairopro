@@ -10,21 +10,21 @@ An AI-powered development platform. A user describes an application — or uploa
 
 ### Product and architecture
 
-| File | Purpose |
-|------|---------|
-| `PRD.md` | Product requirements — the original V1 definition |
-| `PRDv2.md` | **Supersedes `PRD.md` where they conflict.** Revised flow (PM agent, design system phase), agent-boundary decision, contract freezing, V1→V2 migration requirements |
-| `TECHNICAL_DOCUMENT.md` | System architecture — HLD, schema, AI architecture, execution, security, scaling, cost, roadmap |
-| `DESIGN.md` | The KairoPro design system, in the [DESIGN.md](https://github.com/google-labs-code/design.md) spec format. Lintable and exportable to Tailwind |
-| `STITCH_PROMPTS.md` | Google Stitch prompt pack — 27 screen prompts for marketing and application UI |
+| File                    | Purpose                                                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PRD.md`                | Product requirements — the original V1 definition                                                                                                                   |
+| `PRDv2.md`              | **Supersedes `PRD.md` where they conflict.** Revised flow (PM agent, design system phase), agent-boundary decision, contract freezing, V1→V2 migration requirements |
+| `TECHNICAL_DOCUMENT.md` | System architecture — HLD, schema, AI architecture, execution, security, scaling, cost, roadmap                                                                     |
+| `DESIGN.md`             | The KairoPro design system, in the [DESIGN.md](https://github.com/google-labs-code/design.md) spec format. Lintable and exportable to Tailwind                      |
+| `STITCH_PROMPTS.md`     | Google Stitch prompt pack — 27 screen prompts for marketing and application UI                                                                                      |
 
 ### Implementation plans
 
-| File | Purpose |
-|------|---------|
-| `docs/IMPLEMENTATION_PLAN.md` | **Start here.** Master sequencing, dependency graph, wave plan, cross-track conventions, risk register |
-| `docs/FRONTEND_PLAN.md` | FE-1 … FE-10 — shell, marketing, auth, dashboard, input, gates, build, workspace, deploy, hardening |
-| `docs/BACKEND_AI_PLAN.md` | **Backend and AI together.** BE-1 … BE-11 and AI-1 … AI-9, organized by wave, with the 12 seams, stub-first strategy, ownership boundaries, and 8 integration gates inline |
+| File                          | Purpose                                                                                                                                                                    |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/IMPLEMENTATION_PLAN.md` | **Start here.** Master sequencing, dependency graph, wave plan, cross-track conventions, risk register                                                                     |
+| `docs/FRONTEND_PLAN.md`       | FE-1 … FE-10 — shell, marketing, auth, dashboard, input, gates, build, workspace, deploy, hardening                                                                        |
+| `docs/BACKEND_AI_PLAN.md`     | **Backend and AI together.** BE-1 … BE-11 and AI-1 … AI-9, organized by wave, with the 12 seams, stub-first strategy, ownership boundaries, and 8 integration gates inline |
 
 **Reading order for a new contributor:** `PRDv2.md` → `TECHNICAL_DOCUMENT.md` → `docs/IMPLEMENTATION_PLAN.md` → `DESIGN.md`.
 
@@ -138,7 +138,7 @@ agent/
 └── prompts/          Versioned .md files, never string literals
 ```
 
-**`workflow/steps/` vs `phases/`** — a *step* is a unit of workflow with a gate and a checkpoint. A *phase* is a scoped generation pass inside a step. Different lifetimes, so they don't share a directory.
+**`workflow/steps/` vs `phases/`** — a _step_ is a unit of workflow with a gate and a checkpoint. A _phase_ is a scoped generation pass inside a step. Different lifetimes, so they don't share a directory.
 
 **`recovery/rules.ts` is a policy file on purpose.** The degradable / never-degradable split is a decision, not logic: presentation complexity may be silently simplified, but authorization, tenant isolation, and money must never be. A reviewer should be able to read that file and see the policy.
 

@@ -7,4 +7,4 @@
  *
  * Populated in Phase 0 (P0.4).
  */
-export {}
+export {};

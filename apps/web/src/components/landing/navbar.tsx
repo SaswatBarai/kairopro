@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Dedicated pages — to be created later.
 const navLinks = [
+  { label: "Home", href: "/" },
   { label: "Features", href: "/features" },
   { label: "Pricing", href: "/pricing" },
+  { label: "About", href: "/about" },
   { label: "Docs", href: "/docs" },
 ];
 
@@ -33,23 +35,36 @@ function GitHubIcon({ className }: { className?: string }) {
   );
 }
 
+function isActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 function NavLink({
   label,
   href,
   onClick,
   mobile = false,
+  active = false,
 }: {
   label: string;
   href: string;
   onClick?: () => void;
   mobile?: boolean;
+  active?: boolean;
 }) {
   if (mobile) {
     return (
       <a
         href={href}
         onClick={onClick}
-        className="flex items-center rounded-sm px-3 py-2.5 text-[15px] text-zinc-400 transition-colors hover:bg-brand-surface-muted/60 hover:text-zinc-100"
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "flex items-center rounded-sm px-3 py-2.5 text-[15px] transition-colors",
+          active
+            ? "bg-brand-surface-muted/60 text-zinc-100"
+            : "text-zinc-400 hover:bg-brand-surface-muted/60 hover:text-zinc-100",
+        )}
       >
         {label}
       </a>
@@ -58,18 +73,26 @@ function NavLink({
   return (
     <a
       href={href}
-      className="group relative py-2 text-sm text-zinc-500 transition-colors duration-200 hover:text-zinc-200"
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "group relative py-2 text-sm transition-colors duration-200",
+        active ? "text-zinc-100" : "text-zinc-500 hover:text-zinc-200",
+      )}
     >
       {label}
       <span
         aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 bg-gradient-to-r from-brand-purple to-brand-cyan transition-transform duration-300 group-hover:scale-x-100"
+        className={cn(
+          "absolute inset-x-0 bottom-0 h-[2px] origin-center bg-gradient-to-r from-brand-purple to-brand-cyan transition-transform duration-300",
+          active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
+        )}
       />
     </a>
   );
 }
 
 export function Navbar() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -81,7 +104,7 @@ export function Navbar() {
   }, []);
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
+    <div className="fixed left-0 right-0 top-0 z-[100] px-3 pt-3 sm:px-5 sm:pt-4">
       <div
         className={cn(
           "mx-auto max-w-[1080px] rounded-[3px] border transition-all duration-300",
@@ -104,7 +127,11 @@ export function Navbar() {
           {/* Center navigation */}
           <nav className="hidden items-center gap-7 px-7 lg:flex">
             {navLinks.map((link) => (
-              <NavLink key={link.href} {...link} />
+              <NavLink
+                key={link.href}
+                {...link}
+                active={isActive(pathname, link.href)}
+              />
             ))}
           </nav>
 
@@ -172,6 +199,7 @@ export function Navbar() {
                     key={link.href}
                     {...link}
                     mobile
+                    active={isActive(pathname, link.href)}
                     onClick={() => setMenuOpen(false)}
                   />
                 ))}

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 type StepState = "done" | "running" | "waiting" | "queued";
@@ -120,9 +122,9 @@ export function PipelineVisualization() {
   const active = activeCycle[tick] ?? "code";
 
   return (
-    <div
+    <Card
       id="compiler"
-      className="w-full max-w-5xl overflow-hidden rounded-lg border border-white/[0.09] bg-brand-surface/90 shadow-2xl backdrop-blur-sm"
+      className="w-full max-w-5xl gap-0 overflow-hidden rounded-lg border-white/[0.09] bg-brand-surface/90 py-0 shadow-2xl backdrop-blur-sm"
     >
       {/* Header bar with telemetry */}
       <div className="flex h-10 items-center justify-between border-b border-white/[0.06] bg-brand-surface-muted/90 px-4 font-mono-tech text-[11px]">
@@ -137,9 +139,9 @@ export function PipelineVisualization() {
         </div>
         <div className="flex items-center gap-4 text-zinc-500">
           <span className="hidden md:inline">KERNEL: 6.8.1-ALPINE</span>
-          <span className="rounded border border-brand-cyan/20 bg-brand-cyan/10 px-2 py-0.5 text-brand-cyan">
+          <Badge variant="cyan" mono>
             STATE: AUTO_SYNC
-          </span>
+          </Badge>
         </div>
       </div>
 
@@ -220,6 +222,6 @@ export function PipelineVisualization() {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

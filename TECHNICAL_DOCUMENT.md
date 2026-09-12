@@ -99,12 +99,12 @@
 
 ### 1.3 Request Lifecycle Types
 
-| Lifecycle | Transport | Description |
-|-----------|-----------|-------------|
-| Standard CRUD | HTTP request/response | Project list, spec fetch, settings |
-| Mutations | Server Actions | Create project, approve spec, save credentials |
-| Long-running | HTTP + SSE | Build progress, terminal output, code stream |
-| Background | Async worker (in-process queue) | Container provisioning, cleanup, health checks |
+| Lifecycle     | Transport                       | Description                                    |
+| ------------- | ------------------------------- | ---------------------------------------------- |
+| Standard CRUD | HTTP request/response           | Project list, spec fetch, settings             |
+| Mutations     | Server Actions                  | Create project, approve spec, save credentials |
+| Long-running  | HTTP + SSE                      | Build progress, terminal output, code stream   |
+| Background    | Async worker (in-process queue) | Container provisioning, cleanup, health checks |
 
 ### 1.4 Environment Topology (V1)
 
@@ -209,11 +209,11 @@ Dependencies flow one way. There are no cycles, and `turbo` builds in this order
 
 Each of these is enforced by the build system rather than by convention, review, or a linter rule that can be disabled with a comment.
 
-| Boundary | Enforced by |
-|---|---|
-| `core` cannot use Next.js APIs | `next` is not a dependency of `@kairopro/core`, so `next/*` fails to resolve |
-| `contracts` cannot pull in server code | No internal dependencies, no Node built-ins — safe in a client bundle |
-| The template is never type-checked | No `tsconfig` references `packages/templates/nextjs-shadcn/skeleton` |
+| Boundary                                | Enforced by                                                                        |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
+| `core` cannot use Next.js APIs          | `next` is not a dependency of `@kairopro/core`, so `next/*` fails to resolve       |
+| `contracts` cannot pull in server code  | No internal dependencies, no Node built-ins — safe in a client bundle              |
+| The template is never type-checked      | No `tsconfig` references `packages/templates/nextjs-shadcn/skeleton`               |
 | One database URL for app and migrations | A single root `.env`, loaded explicitly by `next.config.ts` and `prisma.config.ts` |
 
 The first is the one that matters most. It is the difference between lifting a module into a background worker later and rewriting it — and unlike an ESLint rule, it cannot be silenced in a file that is under deadline pressure.
@@ -259,55 +259,55 @@ Every route reads the session, builds a context, and passes it to one service me
 
 ### 3.1 KairoPro Platform
 
-| Layer | Choice | Rationale |
-|-------|--------|-----------|
-| Repo layout | pnpm workspaces + Turborepo | Package boundaries enforced structurally; dependency-ordered, cached builds |
-| Framework | Next.js 16 (App Router) | SSR, server components, route handlers, server actions, one codebase for FE+BE |
-| Language | TypeScript 7 | Type safety across the stack; workspace packages ship raw TS, compiled by Next |
-| UI Library | shadcn/ui | Source-in-repo components, Radix accessibility, Tailwind native, AI-modifiable |
-| Styling | Tailwind CSS v4 | CSS-first `@theme` — the `DESIGN.md` export *is* the config; no JS config file |
-| Server State | RSC + TanStack Query | RSC for first paint; TanStack for polling, mutations, pagination, invalidation |
-| Client State | Zustand | Minimal, no boilerplate, ideal for high-frequency stream state |
-| Validation | Zod | Runtime validation + type inference, shared across client, server, MSW, and AI output |
-| ORM | Prisma 7 | Type-safe queries, declarative schema, migrations; `prisma-client` generator with explicit output path |
-| Database | PostgreSQL 16 | JSONB for specs, mature, same DB as generated apps |
-| Auth | NextAuth.js (Auth.js) | Email/password + Google OAuth, Next.js native, self-hosted |
-| Realtime | Server-Sent Events | Simpler than WebSocket, auto-reconnect, HTTP-native, one-directional is enough |
-| Editor | Monaco | VS Code editing experience, syntax highlighting |
-| Containers | Docker + dockerode | Per-project isolation, mature tooling |
-| Reverse Proxy | Caddy | Automatic HTTPS, Docker label routing, minimal config |
-| Git | isomorphic-git or git CLI | Version control per project |
-| LLM | Abstracted provider (Anthropic/OpenAI) | Swappable, multi-model |
-| Encryption | Node crypto (AES-256-GCM) | Credential encryption at rest |
-| Logging | Pino | Structured JSON logs |
+| Layer         | Choice                                 | Rationale                                                                                              |
+| ------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Repo layout   | pnpm workspaces + Turborepo            | Package boundaries enforced structurally; dependency-ordered, cached builds                            |
+| Framework     | Next.js 16 (App Router)                | SSR, server components, route handlers, server actions, one codebase for FE+BE                         |
+| Language      | TypeScript 7                           | Type safety across the stack; workspace packages ship raw TS, compiled by Next                         |
+| UI Library    | shadcn/ui                              | Source-in-repo components, Radix accessibility, Tailwind native, AI-modifiable                         |
+| Styling       | Tailwind CSS v4                        | CSS-first `@theme` — the `DESIGN.md` export _is_ the config; no JS config file                         |
+| Server State  | RSC + TanStack Query                   | RSC for first paint; TanStack for polling, mutations, pagination, invalidation                         |
+| Client State  | Zustand                                | Minimal, no boilerplate, ideal for high-frequency stream state                                         |
+| Validation    | Zod                                    | Runtime validation + type inference, shared across client, server, MSW, and AI output                  |
+| ORM           | Prisma 7                               | Type-safe queries, declarative schema, migrations; `prisma-client` generator with explicit output path |
+| Database      | PostgreSQL 16                          | JSONB for specs, mature, same DB as generated apps                                                     |
+| Auth          | NextAuth.js (Auth.js)                  | Email/password + Google OAuth, Next.js native, self-hosted                                             |
+| Realtime      | Server-Sent Events                     | Simpler than WebSocket, auto-reconnect, HTTP-native, one-directional is enough                         |
+| Editor        | Monaco                                 | VS Code editing experience, syntax highlighting                                                        |
+| Containers    | Docker + dockerode                     | Per-project isolation, mature tooling                                                                  |
+| Reverse Proxy | Caddy                                  | Automatic HTTPS, Docker label routing, minimal config                                                  |
+| Git           | isomorphic-git or git CLI              | Version control per project                                                                            |
+| LLM           | Abstracted provider (Anthropic/OpenAI) | Swappable, multi-model                                                                                 |
+| Encryption    | Node crypto (AES-256-GCM)              | Credential encryption at rest                                                                          |
+| Logging       | Pino                                   | Structured JSON logs                                                                                   |
 
 ### 3.2 Generated Application Stack
 
-| Layer | Choice |
-|-------|--------|
-| Framework | Next.js 14+ (App Router) |
-| Language | TypeScript |
-| UI Library | shadcn/ui |
-| Styling | Tailwind CSS |
-| Database | PostgreSQL 16 |
-| ORM | Prisma |
-| Auth | NextAuth.js |
-| Validation | Zod |
-| Runtime | Node.js 20 |
+| Layer      | Choice                   |
+| ---------- | ------------------------ |
+| Framework  | Next.js 14+ (App Router) |
+| Language   | TypeScript               |
+| UI Library | shadcn/ui                |
+| Styling    | Tailwind CSS             |
+| Database   | PostgreSQL 16            |
+| ORM        | Prisma                   |
+| Auth       | NextAuth.js              |
+| Validation | Zod                      |
+| Runtime    | Node.js 20               |
 
 ### 3.3 Rejected Alternatives and Why
 
-| Alternative | Rejected Because |
-|-------------|-----------------|
+| Alternative        | Rejected Because                                                                 |
+| ------------------ | -------------------------------------------------------------------------------- |
 | Microservices (V1) | Network failure modes, 3x deployment work, no scale justification at 10-50 users |
-| Kubernetes (V1) | Massive operational overhead for single-host scale |
-| Firecracker (V1) | Strong isolation but significant infra complexity; revisit at V3 |
-| Redis (V1) | In-process pub/sub is sufficient for single host; add when multi-host |
-| Vector DB (V1) | Projects are 20-40 files; keyword + dependency matching suffices |
-| WebSockets (V1) | SSE covers one-directional streaming with less complexity |
-| GraphQL | REST + server actions are simpler; no over-fetching problem at this scale |
-| MongoDB | Relational data (projects→specs→versions) fits PostgreSQL better |
-| Raw SQL | Prisma gives type safety and migrations with less AI error surface |
+| Kubernetes (V1)    | Massive operational overhead for single-host scale                               |
+| Firecracker (V1)   | Strong isolation but significant infra complexity; revisit at V3                 |
+| Redis (V1)         | In-process pub/sub is sufficient for single host; add when multi-host            |
+| Vector DB (V1)     | Projects are 20-40 files; keyword + dependency matching suffices                 |
+| WebSockets (V1)    | SSE covers one-directional streaming with less complexity                        |
+| GraphQL            | REST + server actions are simpler; no over-fetching problem at this scale        |
+| MongoDB            | Relational data (projects→specs→versions) fits PostgreSQL better                 |
+| Raw SQL            | Prisma gives type safety and migrations with less AI error surface               |
 
 ---
 
@@ -656,7 +656,7 @@ interface CompletionRequest {
   tools?: ToolDefinition[];
   temperature?: number;
   maxTokens?: number;
-  responseFormat?: 'text' | 'json';
+  responseFormat?: "text" | "json";
   jsonSchema?: object;
 }
 
@@ -664,7 +664,7 @@ interface CompletionResponse {
   content: string;
   toolCalls?: ToolCall[];
   usage: { inputTokens: number; outputTokens: number };
-  stopReason: 'end' | 'tool_use' | 'max_tokens';
+  stopReason: "end" | "tool_use" | "max_tokens";
 }
 ```
 
@@ -672,12 +672,12 @@ interface CompletionResponse {
 
 ```typescript
 const MODEL_MAP = {
-  'prd':            { provider: 'anthropic', model: 'claude-sonnet' },
-  'data-model':     { provider: 'anthropic', model: 'claude-sonnet' },
-  'app-structure':  { provider: 'anthropic', model: 'claude-sonnet' },
-  'code-gen':       { provider: 'anthropic', model: 'claude-sonnet' },
-  'fix':            { provider: 'anthropic', model: 'claude-sonnet' },
-  'summarize':      { provider: 'anthropic', model: 'claude-haiku' },
+  prd: { provider: "anthropic", model: "claude-sonnet" },
+  "data-model": { provider: "anthropic", model: "claude-sonnet" },
+  "app-structure": { provider: "anthropic", model: "claude-sonnet" },
+  "code-gen": { provider: "anthropic", model: "claude-sonnet" },
+  fix: { provider: "anthropic", model: "claude-sonnet" },
+  summarize: { provider: "anthropic", model: "claude-haiku" },
 };
 ```
 
@@ -740,9 +740,9 @@ interface Tool<TInput, TOutput> {
 interface ToolContext {
   projectId: string;
   buildId: string;
-  workspacePath: string;   // /var/kairopro/workspaces/{projectId}
-  containerId?: string;    // running app container, if any
-  emit: (event: BuildEvent) => void;   // stream to SSE
+  workspacePath: string; // /var/kairopro/workspaces/{projectId}
+  containerId?: string; // running app container, if any
+  emit: (event: BuildEvent) => void; // stream to SSE
 }
 ```
 
@@ -750,56 +750,56 @@ interface ToolContext {
 
 **File Tools**
 
-| Tool | Input | Output | Notes |
-|------|-------|--------|-------|
-| `read_file` | `{ path, offset?, limit? }` | file content | Path validated inside workspace |
-| `write_file` | `{ path, content }` | `{ ok, bytesWritten }` | Creates parent dirs |
-| `edit_file` | `{ path, oldString, newString, replaceAll? }` | `{ ok, replacements }` | Exact-match replacement |
-| `delete_file` | `{ path }` | `{ ok }` | Refuses paths outside workspace |
-| `list_files` | `{ path?, glob? }` | `{ files: string[] }` | Respects .gitignore |
+| Tool          | Input                                         | Output                 | Notes                           |
+| ------------- | --------------------------------------------- | ---------------------- | ------------------------------- |
+| `read_file`   | `{ path, offset?, limit? }`                   | file content           | Path validated inside workspace |
+| `write_file`  | `{ path, content }`                           | `{ ok, bytesWritten }` | Creates parent dirs             |
+| `edit_file`   | `{ path, oldString, newString, replaceAll? }` | `{ ok, replacements }` | Exact-match replacement         |
+| `delete_file` | `{ path }`                                    | `{ ok }`               | Refuses paths outside workspace |
+| `list_files`  | `{ path?, glob? }`                            | `{ files: string[] }`  | Respects .gitignore             |
 
 **Search Tools**
 
-| Tool | Input | Output | Notes |
-|------|-------|--------|-------|
-| `search_code` | `{ pattern, glob?, maxResults? }` | `{ matches: Match[] }` | Regex search via ripgrep-equivalent |
-| `find_symbol` | `{ name }` | `{ locations: Location[] }` | AST-aware symbol lookup |
+| Tool          | Input                             | Output                      | Notes                               |
+| ------------- | --------------------------------- | --------------------------- | ----------------------------------- |
+| `search_code` | `{ pattern, glob?, maxResults? }` | `{ matches: Match[] }`      | Regex search via ripgrep-equivalent |
+| `find_symbol` | `{ name }`                        | `{ locations: Location[] }` | AST-aware symbol lookup             |
 
 **Dependency Tools**
 
-| Tool | Input | Output | Notes |
-|------|-------|--------|-------|
+| Tool                 | Input               | Output        | Notes                 |
+| -------------------- | ------------------- | ------------- | --------------------- |
 | `install_dependency` | `{ package, dev? }` | `{ ok, log }` | Runs inside container |
 
 **Execution Tools**
 
-| Tool | Input | Output | Notes |
-|------|-------|--------|-------|
-| `run_command` | `{ command, cwd?, timeoutMs? }` | `{ exitCode, stdout, stderr }` | Runs inside container, timeout enforced |
-| `start_server` | `{ command, port }` | `{ pid, port, url }` | Background process in container |
-| `stop_server` | `{ pid }` | `{ ok }` | Kills background process |
+| Tool           | Input                           | Output                         | Notes                                   |
+| -------------- | ------------------------------- | ------------------------------ | --------------------------------------- |
+| `run_command`  | `{ command, cwd?, timeoutMs? }` | `{ exitCode, stdout, stderr }` | Runs inside container, timeout enforced |
+| `start_server` | `{ command, port }`             | `{ pid, port, url }`           | Background process in container         |
+| `stop_server`  | `{ pid }`                       | `{ ok }`                       | Kills background process                |
 
 **Test Tools**
 
-| Tool | Input | Output | Notes |
-|------|-------|--------|-------|
+| Tool        | Input          | Output                       | Notes                            |
+| ----------- | -------------- | ---------------------------- | -------------------------------- |
 | `run_tests` | `{ command? }` | `{ passed, failed, output }` | Defaults to project test command |
 
 **Observation Tools**
 
-| Tool | Input | Output | Notes |
-|------|-------|--------|-------|
-| `read_logs` | `{ source, lines? }` | `{ lines: string[] }` | Container or app logs |
-| `inspect_error` | `{ log: string }` | `{ type, message, file, line, hint }` | Parses and classifies errors |
+| Tool            | Input                | Output                                | Notes                        |
+| --------------- | -------------------- | ------------------------------------- | ---------------------------- |
+| `read_logs`     | `{ source, lines? }` | `{ lines: string[] }`                 | Container or app logs        |
+| `inspect_error` | `{ log: string }`    | `{ type, message, file, line, hint }` | Parses and classifies errors |
 
 **Browser Tools**
 
-| Tool | Input | Output | Notes |
-|------|-------|--------|-------|
-| `open_browser` | `{ url }` | `{ session }` | Headless browser session |
-| `take_screenshot` | `{ selector? }` | `{ image }` | Screenshot as base64 |
-| `click` | `{ selector }` | `{ ok }` | Headless interaction |
-| `type_text` | `{ selector, text }` | `{ ok }` | Headless interaction |
+| Tool              | Input                | Output        | Notes                    |
+| ----------------- | -------------------- | ------------- | ------------------------ |
+| `open_browser`    | `{ url }`            | `{ session }` | Headless browser session |
+| `take_screenshot` | `{ selector? }`      | `{ image }`   | Screenshot as base64     |
+| `click`           | `{ selector }`       | `{ ok }`      | Headless interaction     |
+| `type_text`       | `{ selector, text }` | `{ ok }`      | Headless interaction     |
 
 ### 6.3 Tool Safety
 
@@ -877,9 +877,9 @@ interface WorkflowStep {
 }
 
 interface StepResult {
-  status: 'complete' | 'needs_approval' | 'failed';
+  status: "complete" | "needs_approval" | "failed";
   output?: unknown;
-  simplifications?: Simplification[];   // features that were simplified
+  simplifications?: Simplification[]; // features that were simplified
 }
 ```
 
@@ -934,10 +934,14 @@ Every meaningful action emits an event through the in-process event bus, which t
 
 ```typescript
 type BuildEvent =
-  | { type: 'status'; step: string; state: 'pending'|'in_progress'|'complete'|'error' }
-  | { type: 'terminal'; content: string }
-  | { type: 'code'; file: string; content: string }
-  | { type: 'simplification'; feature: string; reason: string };  // internal; user-facing copy derived separately
+  | {
+      type: "status";
+      step: string;
+      state: "pending" | "in_progress" | "complete" | "error";
+    }
+  | { type: "terminal"; content: string }
+  | { type: "code"; file: string; content: string }
+  | { type: "simplification"; feature: string; reason: string }; // internal; user-facing copy derived separately
 ```
 
 Events are persisted as `BuildLog` rows with a per-build sequence number so reconnecting clients can resume.
@@ -1045,7 +1049,7 @@ Projects range from ~20 to (eventually) hundreds of files. Sending everything to
 - Slow (latency scales with input)
 - Counterproductive (irrelevant context degrades output quality)
 
-We need to select the *smallest set of files that lets the agent do the task correctly*.
+We need to select the _smallest set of files that lets the agent do the task correctly_.
 
 ### 9.2 V1 Context Strategy
 
@@ -1060,13 +1064,26 @@ Generated when the project is built, updated when the structure changes.
   "name": "TaskManager",
   "purpose": "Task management for small teams",
   "stack": ["next.js", "postgresql", "prisma", "shadcn-ui", "nextauth"],
-  "auth": { "providers": ["credentials", "google"], "roles": ["ADMIN", "MANAGER", "MEMBER"] },
+  "auth": {
+    "providers": ["credentials", "google"],
+    "roles": ["ADMIN", "MANAGER", "MEMBER"]
+  },
   "models": [
     { "name": "User", "fields": ["id", "email", "name", "role", "teamId"] },
     { "name": "Team", "fields": ["id", "name"] },
-    { "name": "Task", "fields": ["id", "title", "status", "priority", "assigneeId", "teamId"] }
+    {
+      "name": "Task",
+      "fields": ["id", "title", "status", "priority", "assigneeId", "teamId"]
+    }
   ],
-  "pages": ["/dashboard", "/tasks", "/tasks/new", "/tasks/[id]", "/team", "/settings"],
+  "pages": [
+    "/dashboard",
+    "/tasks",
+    "/tasks/new",
+    "/tasks/[id]",
+    "/team",
+    "/settings"
+  ],
   "apiRoutes": ["/api/tasks", "/api/team", "/api/auth"],
   "conventions": {
     "router": "app",
@@ -1203,7 +1220,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 1024M
 
   db:
@@ -1221,7 +1238,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 512M
 
 volumes:
@@ -1329,15 +1346,15 @@ The generated code is untrusted. It comes from an LLM, it may contain arbitrary 
 
 ### 11.3 Isolation Mechanisms (V1)
 
-| Concern | Mechanism |
-|---------|-----------|
-| Process isolation | Each project in its own container, non-root user inside |
-| Filesystem isolation | Container filesystem; only its workspace is mounted |
-| Network isolation | Per-project Docker network; no cross-project communication |
-| Resource limits | cgroup limits on CPU and memory |
-| Privilege | Containers run non-root, no `--privileged`, no host mounts |
-| Host access | No access to the Docker socket from project containers |
-| Credentials | Only that project's env vars are injected |
+| Concern              | Mechanism                                                  |
+| -------------------- | ---------------------------------------------------------- |
+| Process isolation    | Each project in its own container, non-root user inside    |
+| Filesystem isolation | Container filesystem; only its workspace is mounted        |
+| Network isolation    | Per-project Docker network; no cross-project communication |
+| Resource limits      | cgroup limits on CPU and memory                            |
+| Privilege            | Containers run non-root, no `--privileged`, no host mounts |
+| Host access          | No access to the Docker socket from project containers     |
+| Credentials          | Only that project's env vars are injected                  |
 
 ### 11.4 What V1 Isolation Is NOT
 
@@ -1492,16 +1509,16 @@ Modules (`project`, `spec`, `agent`, `execution`, `version`, `deploy`, `credenti
 
 ### 13.2 Service Responsibilities
 
-| Service | Responsibility |
-|---------|---------------|
-| `ProjectService` | CRUD projects, status transitions, workspace path allocation |
-| `SpecService` | Generate/revise/approve specs, mark downstream stale |
-| `AgentService` | Run agent phases, manage context, call LLM, execute tools |
-| `BuildService` | Orchestrate build workflow, checkpoints, cancellation |
-| `ExecutionService` | Provision/stop/destroy containers, exec commands, health |
-| `VersionService` | Git commits, history, diffs, revert |
-| `DeployService` | Subdomain allocation, SSL, persistence, GitHub export |
-| `CredentialService` | Store/retrieve/encrypt credentials |
+| Service             | Responsibility                                               |
+| ------------------- | ------------------------------------------------------------ |
+| `ProjectService`    | CRUD projects, status transitions, workspace path allocation |
+| `SpecService`       | Generate/revise/approve specs, mark downstream stale         |
+| `AgentService`      | Run agent phases, manage context, call LLM, execute tools    |
+| `BuildService`      | Orchestrate build workflow, checkpoints, cancellation        |
+| `ExecutionService`  | Provision/stop/destroy containers, exec commands, health     |
+| `VersionService`    | Git commits, history, diffs, revert                          |
+| `DeployService`     | Subdomain allocation, SSL, persistence, GitHub export        |
+| `CredentialService` | Store/retrieve/encrypt credentials                           |
 
 ### 13.3 Error Handling Strategy
 
@@ -1538,10 +1555,14 @@ Zod schemas are the single source of validation and types:
 const createProjectSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(10000).optional(),
-  inputs: z.array(z.object({
-    type: z.enum(['TEXT', 'FILE', 'SCREENSHOT']),
-    content: z.string(),
-  })).max(10),
+  inputs: z
+    .array(
+      z.object({
+        type: z.enum(["TEXT", "FILE", "SCREENSHOT"]),
+        content: z.string(),
+      }),
+    )
+    .max(10),
 });
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
@@ -1555,26 +1576,28 @@ The same schema validates the client form and the server action.
 
 ### 14.1 Rendering Strategy
 
-| Route | Strategy | Reason |
-|-------|----------|--------|
-| Landing | Static/SSR | SEO, fast first paint |
-| Auth | Client | Interactive forms |
-| Dashboard | Server Component | Data from DB, no client fetch |
-| Input flow | Client | File uploads, local state |
+| Route         | Strategy                      | Reason                                             |
+| ------------- | ----------------------------- | -------------------------------------------------- |
+| Landing       | Static/SSR                    | SEO, fast first paint                              |
+| Auth          | Client                        | Interactive forms                                  |
+| Dashboard     | Server Component              | Data from DB, no client fetch                      |
+| Input flow    | Client                        | File uploads, local state                          |
 | Approval flow | Server shell + Client islands | Spec content server-rendered, feedback area client |
-| Build view | Client | SSE-driven, high-frequency updates |
-| Project view | Server shell + Client widgets | File tree/editor/history are client |
-| Settings | Server shell + Client forms | |
+| Build view    | Client                        | SSE-driven, high-frequency updates                 |
+| Project view  | Server shell + Client widgets | File tree/editor/history are client                |
+| Settings      | Server shell + Client forms   |                                                    |
 
 Server Components fetch and render; client islands handle interactivity. This keeps the initial payload small and avoids loading spinners for core data.
 
 ### 14.2 State Management Split
 
 **Server state (React Server Components + server actions):**
+
 - Project list, project detail, specs, build history, versions
 - Revalidated via `revalidatePath` after mutations
 
 **Client state (Zustand):**
+
 - Build progress (steps, terminal, code stream) — high-frequency updates that shouldn't round-trip
 - Local form/UI state (modals, panels)
 - Preview frame state
@@ -1734,14 +1757,14 @@ A single local user (the KairoPro service) owns all commits. No remote is config
 
 ### 16.2 Commit Points
 
-| Trigger | Commit Message |
-|---------|----------------|
-| Project created | "Initialize project" |
-| Spec approved | "Approve {spec type} v{n}" |
-| Build completes | "Initial build" |
-| Change applied | "{user change description}" |
+| Trigger         | Commit Message                        |
+| --------------- | ------------------------------------- |
+| Project created | "Initialize project"                  |
+| Spec approved   | "Approve {spec type} v{n}"            |
+| Build completes | "Initial build"                       |
+| Change applied  | "{user change description}"           |
 | Build cancelled | "Checkpoint: cancelled during {step}" |
-| Revert | "Revert: {original message}" |
+| Revert          | "Revert: {original message}"          |
 
 ### 16.3 Commit Implementation
 
@@ -1793,6 +1816,7 @@ provisionPreview(projectId)
 ```
 
 Caddy watches Docker labels and automatically:
+
 - Routes `{sub}.preview.kairopro.dev` → container:3000
 - Provisions a wildcard TLS certificate for `*.preview.kairopro.dev`
 
@@ -1841,6 +1865,7 @@ The token is used transiently for the push and never stored in the workspace.
 ### 17.5 Custom Domains (V2)
 
 Postponed. Requires:
+
 - User-entered domains
 - DNS verification (TXT record)
 - Per-domain certificate issuance
@@ -1854,12 +1879,12 @@ The reverse proxy already supports it; the missing pieces are the UI and verific
 
 ### 18.1 Testing KairoPro Itself
 
-| Level | Scope | Tools |
-|-------|-------|-------|
-| Unit | Services, context builder, recovery ladder, crypto | Vitest |
+| Level       | Scope                                              | Tools                   |
+| ----------- | -------------------------------------------------- | ----------------------- |
+| Unit        | Services, context builder, recovery ladder, crypto | Vitest                  |
 | Integration | Repositories against a test DB, git ops, event bus | Vitest + Testcontainers |
-| E2E | Full flows: create → approve → build → preview | Playwright |
-| Contract | LLM provider interface with a mock provider | Vitest |
+| E2E         | Full flows: create → approve → build → preview     | Playwright              |
+| Contract    | LLM provider interface with a mock provider        | Vitest                  |
 
 ### 18.2 Testing Generated Apps
 
@@ -1922,17 +1947,17 @@ Every build is traceable end-to-end by `buildId`.
 
 ### 19.2 Metrics
 
-| Metric | Type | Use |
-|--------|------|-----|
-| `build.started` | counter | Volume |
-| `build.completed` | counter | Success rate (complete vs. partial) |
-| `build.duration` | histogram | Performance |
-| `build.fix_iterations` | histogram | Generation quality |
-| `llm.tokens` | counter | Cost |
-| `llm.latency` | histogram | Provider performance |
-| `tool.calls` | counter by tool | Agent behavior |
-| `container.provision` | histogram | Infra performance |
-| `error.internal` | counter by type | Reliability |
+| Metric                 | Type            | Use                                 |
+| ---------------------- | --------------- | ----------------------------------- |
+| `build.started`        | counter         | Volume                              |
+| `build.completed`      | counter         | Success rate (complete vs. partial) |
+| `build.duration`       | histogram       | Performance                         |
+| `build.fix_iterations` | histogram       | Generation quality                  |
+| `llm.tokens`           | counter         | Cost                                |
+| `llm.latency`          | histogram       | Provider performance                |
+| `tool.calls`           | counter by tool | Agent behavior                      |
+| `container.provision`  | histogram       | Infra performance                   |
+| `error.internal`       | counter by type | Reliability                         |
 
 ### 19.3 Internal Error Dashboard
 
@@ -1966,26 +1991,26 @@ Alerts (via a simple notifier) on:
 
 ### 20.1 Scaling Dimensions
 
-| Dimension | V1 | V2 | V3 |
-|-----------|----|----|----|
-| App instances | 1 | N behind LB | N + autoscale |
-| Database | 1 Postgres | 1 + read replica | Managed + replicas |
-| Event bus | In-process | Redis pub/sub | Redis cluster |
-| Job execution | In-process | BullMQ workers | Distributed workers |
-| Containers | 1 Docker host | N Docker hosts | Scheduler + microVMs |
-| Storage | Local disk | Shared volume (NFS/EFS) | Object storage |
-| LLM | 1 provider | 2 providers | Router with fallback |
+| Dimension     | V1            | V2                      | V3                   |
+| ------------- | ------------- | ----------------------- | -------------------- |
+| App instances | 1             | N behind LB             | N + autoscale        |
+| Database      | 1 Postgres    | 1 + read replica        | Managed + replicas   |
+| Event bus     | In-process    | Redis pub/sub           | Redis cluster        |
+| Job execution | In-process    | BullMQ workers          | Distributed workers  |
+| Containers    | 1 Docker host | N Docker hosts          | Scheduler + microVMs |
+| Storage       | Local disk    | Shared volume (NFS/EFS) | Object storage       |
+| LLM           | 1 provider    | 2 providers             | Router with fallback |
 
 ### 20.2 V1 Bottlenecks and Their Fixes
 
-| Bottleneck | Symptom | Fix |
-|-----------|---------|-----|
-| Single host Docker | Can't exceed host capacity | Add hosts, shard projects by host |
-| In-process event bus | Events lost on restart; no multi-instance | Move to Redis pub/sub |
-| Local workspace storage | Not shared across hosts | Move to shared storage or object storage with local cache |
-| In-process builds | Builds compete with app for CPU | Move builds to dedicated workers |
-| Single LLM provider | Rate limits, outages | Add provider fallback |
-| Postgres connection pool | Exhaustion under load | PgBouncer or managed pooling |
+| Bottleneck               | Symptom                                   | Fix                                                       |
+| ------------------------ | ----------------------------------------- | --------------------------------------------------------- |
+| Single host Docker       | Can't exceed host capacity                | Add hosts, shard projects by host                         |
+| In-process event bus     | Events lost on restart; no multi-instance | Move to Redis pub/sub                                     |
+| Local workspace storage  | Not shared across hosts                   | Move to shared storage or object storage with local cache |
+| In-process builds        | Builds compete with app for CPU           | Move builds to dedicated workers                          |
+| Single LLM provider      | Rate limits, outages                      | Add provider fallback                                     |
+| Postgres connection pool | Exhaustion under load                     | PgBouncer or managed pooling                              |
 
 ### 20.3 Scaling Path
 
@@ -2012,14 +2037,14 @@ Each stage is triggered by a concrete limit being hit, not by anticipation.
 
 ### 21.1 Cost Drivers
 
-| Driver | V1 cost | Notes |
-|--------|---------|-------|
-| LLM tokens | Dominant | Builds involve many calls; context selection is a direct cost lever |
-| Compute (host) | Moderate | App + N project containers |
-| Storage | Low | Workspaces + build logs |
-| Egress | Low | Preview/deployed traffic |
-| SSL | Free | Let's Encrypt |
-| DNS | Low | Wildcards |
+| Driver         | V1 cost  | Notes                                                               |
+| -------------- | -------- | ------------------------------------------------------------------- |
+| LLM tokens     | Dominant | Builds involve many calls; context selection is a direct cost lever |
+| Compute (host) | Moderate | App + N project containers                                          |
+| Storage        | Low      | Workspaces + build logs                                             |
+| Egress         | Low      | Preview/deployed traffic                                            |
+| SSL            | Free     | Let's Encrypt                                                       |
+| DNS            | Low      | Wildcards                                                           |
 
 ### 21.2 Cost per Build (Estimate)
 
@@ -2059,17 +2084,17 @@ Pricing must cover LLM cost per build with margin. Usage-based caps prevent abus
 
 ### 22.1 Application Security
 
-| Concern | Mitigation |
-|---------|-----------|
-| Auth | NextAuth, httpOnly session cookies, secure in production |
-| Authorization | Ownership checks on every project route |
-| CSRF | Next.js server actions + same-site cookies |
-| Input validation | Zod on every boundary |
-| File uploads | Type allowlist, size limit, stored outside web root |
-| Rate limiting | Per-user limits on generation and build endpoints |
-| SQL injection | Prisma parameterized queries |
-| XSS | React escaping; no `dangerouslySetInnerHTML` on user content |
-| Secrets | Env vars, never committed; encrypted credentials at rest |
+| Concern          | Mitigation                                                   |
+| ---------------- | ------------------------------------------------------------ |
+| Auth             | NextAuth, httpOnly session cookies, secure in production     |
+| Authorization    | Ownership checks on every project route                      |
+| CSRF             | Next.js server actions + same-site cookies                   |
+| Input validation | Zod on every boundary                                        |
+| File uploads     | Type allowlist, size limit, stored outside web root          |
+| Rate limiting    | Per-user limits on generation and build endpoints            |
+| SQL injection    | Prisma parameterized queries                                 |
+| XSS              | React escaping; no `dangerouslySetInnerHTML` on user content |
+| Secrets          | Env vars, never committed; encrypted credentials at rest     |
 
 ### 22.2 Credential Handling
 
@@ -2119,6 +2144,7 @@ Plaintext keys exist only in memory during provisioning and inside the project c
 ## 23. Development Roadmap
 
 ### Phase 1 — Foundation
+
 - Next.js + TypeScript + Tailwind + shadcn/ui scaffold
 - Prisma schema + migrations
 - NextAuth (email/password + Google)
@@ -2130,6 +2156,7 @@ Plaintext keys exist only in memory during provisioning and inside the project c
 **Exit:** User can sign up, create a project, see it in the dashboard.
 
 ### Phase 2 — Input & Specs
+
 - Input flow (text + file upload, storage)
 - File text extraction (PDF/DOCX) + image handling
 - LLM provider interface + first provider
@@ -2141,6 +2168,7 @@ Plaintext keys exist only in memory during provisioning and inside the project c
 **Exit:** User can provide input, review and approve all three specs.
 
 ### Phase 3 — Code Generation
+
 - Template (`packages/templates/nextjs-shadcn`)
 - Tool registry + file/search/exec tools
 - Code-gen prompts
@@ -2152,6 +2180,7 @@ Plaintext keys exist only in memory during provisioning and inside the project c
 **Exit:** From approved specs, the system generates a project that type-checks and builds.
 
 ### Phase 4 — Execution & Preview
+
 - Docker manager (network, compose, limits)
 - Credential injection + env generation
 - Migration + boot + health checks
@@ -2165,6 +2194,7 @@ Plaintext keys exist only in memory during provisioning and inside the project c
 **Exit:** User can build, watch progress in real time, and open a working preview.
 
 ### Phase 5 — Change Management
+
 - Change request flow + context retrieval
 - Change confirmation dialog
 - Diff generation + history UI
@@ -2175,6 +2205,7 @@ Plaintext keys exist only in memory during provisioning and inside the project c
 **Exit:** User can request changes to an existing project and see them applied.
 
 ### Phase 6 — Deploy & Export
+
 - Deploy on KairoPro (subdomain, persistence, production routing)
 - SSL for production subdomains
 - DB backup scheduling
@@ -2185,6 +2216,7 @@ Plaintext keys exist only in memory during provisioning and inside the project c
 **Exit:** User can deploy to a live URL or export to GitHub.
 
 ### Phase 7 — Hardening & Launch
+
 - Golden project regression suite
 - Metrics + internal error dashboard
 - Alerting

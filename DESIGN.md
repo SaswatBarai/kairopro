@@ -390,8 +390,8 @@ understanding where they are:
 
 - Don't show stack traces, exception names, HTTP status codes, file-and-line
   references, or any raw technical error to the user. When something cannot be
-  built, the interface reports the *outcome* ("Email/password sign-in is
-  ready. Google sign-in can be added later."), never the *failure*.
+  built, the interface reports the _outcome_ ("Email/password sign-in is
+  ready. Google sign-in can be added later."), never the _failure_.
 - Don't use red (`danger`) to communicate that a build or feature failed. Red
   is reserved for destructive user actions. A simplified feature is a
   `warning` at most.

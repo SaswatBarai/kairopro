@@ -493,20 +493,20 @@ Each phase states its goal, dependencies, deliverables, exit criteria, tests, an
 
 ### Data layer rules
 
-| Situation | Use |
-|-----------|-----|
-| Data for first paint, no interactivity | RSC, direct service call, pass as props |
-| Data that refetches, polls, or is mutated | TanStack Query |
+| Situation                                             | Use                                                   |
+| ----------------------------------------------------- | ----------------------------------------------------- |
+| Data for first paint, no interactivity                | RSC, direct service call, pass as props               |
+| Data that refetches, polls, or is mutated             | TanStack Query                                        |
 | Data the RSC already fetched and the client continues | TanStack with `initialData` and a matching `queryKey` |
-| Append-only high-frequency output | Zustand ring buffer |
-| Ephemeral UI state | Zustand |
+| Append-only high-frequency output                     | Zustand ring buffer                                   |
+| Ephemeral UI state                                    | Zustand                                               |
 
 ### Import conventions
 
 ```ts
-import { ProjectSchema } from '@kairopro/contracts'   // isomorphic — safe anywhere
-import { projectService } from '@kairopro/core'        // server-only
-import { cn } from '@/lib/utils'                       // app-internal
+import { ProjectSchema } from "@kairopro/contracts"; // isomorphic — safe anywhere
+import { projectService } from "@kairopro/core"; // server-only
+import { cn } from "@/lib/utils"; // app-internal
 ```
 
 - `@/` maps to `apps/web/src/` and never reaches into a workspace package.

@@ -1,458 +1,1190 @@
-<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"outline-variant":"#474555","surface-bright":"#39383e","inverse-on-surface":"#303036","surface-container":"#1f1f25","on-secondary-fixed":"#001f25","on-surface":"#e4e1e9","primary":"#c5c0ff","tertiary-fixed":"#6ffbbe","surface-tint":"#c5c0ff","inverse-primary":"#5544dc","on-secondary":"#00363e","surface-container-low":"#1b1b20","secondary-fixed-dim":"#2fd9f4","tertiary":"#4edea3","surface-variant":"#35343a","secondary":"#5de6ff","on-tertiary-fixed":"#002113","error":"#ffb4ab","on-tertiary":"#003824","tertiary-container":"#00865c","tertiary-fixed-dim":"#4edea3","inverse-surface":"#e4e1e9","surface-container-lowest":"#0e0e13","on-secondary-container":"#00515d","surface":"#131318","on-primary":"#2600a1","on-secondary-fixed-variant":"#004e5a","on-background":"#e4e1e9","on-error-container":"#ffdad6","on-primary-fixed-variant":"#3c24c5","secondary-container":"#00cbe6","primary-fixed-dim":"#c5c0ff","surface-dim":"#131318","on-primary-fixed":"#150067","outline":"#928ea1","on-primary-container":"#fffdff","primary-fixed":"#e4dfff","on-tertiary-fixed-variant":"#005236","on-tertiary-container":"#fafff9","background":"#131318","primary-container":"#6d5ef5","surface-container-highest":"#35343a","secondary-fixed":"#a2eeff","error-container":"#93000a","surface-container-high":"#2a292f","on-error":"#690005","on-surface-variant":"#c8c4d7"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"space-xs":"0.25rem","gutter-mobile":"0.5rem",margin:"1rem",gutter:"0.75rem","margin-mobile":"0.75rem","space-md":"0.75rem","space-xl":"1.5rem","space-sm":"0.5rem","space-lg":"1rem"},fontFamily:{"headline-xl":["Inter"],"body-sm":["Inter"],"code-md":["JetBrains Mono"],"label-xs":["JetBrains Mono"],"code-sm":["JetBrains Mono"],"body-md":["Inter"],"code-lg":["JetBrains Mono"],"headline-sm":["Inter"],"headline-lg":["Inter"],"label-md":["JetBrains Mono"]},fontSize:{"headline-xl":["24px",{lineHeight:"32px",letterSpacing:"-0.02em",fontWeight:"600"}],"body-sm":["12px",{lineHeight:"16px",letterSpacing:"0em",fontWeight:"400"}],"code-md":["12px",{lineHeight:"18px",letterSpacing:"0em",fontWeight:"400"}],"label-xs":["10px",{lineHeight:"12px",letterSpacing:"0.05em",fontWeight:"600"}],"code-sm":["11px",{lineHeight:"15px",letterSpacing:"0em",fontWeight:"400"}],"body-md":["13px",{lineHeight:"18px",letterSpacing:"-0.005em",fontWeight:"400"}],"code-lg":["13px",{lineHeight:"20px",letterSpacing:"-0.01em",fontWeight:"500"}],"headline-sm":["15px",{lineHeight:"20px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg":["20px",{lineHeight:"28px",letterSpacing:"-0.015em",fontWeight:"600"}],"label-md":["11px",{lineHeight:"14px",letterSpacing:"0.03em",fontWeight:"500"}]}}}};</script></head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md antialiased min-h-screen"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30"><div class="h-14 w-full px-space-xl flex items-center justify-between"><div class="flex items-center gap-space-xl"><a class="flex items-center gap-space-sm" data-path="home" href="#"><img alt="Brand logo. - Primary color: #6d5ef5
+<!doctype html>
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @layer base {
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        body {
+          overscroll-behavior: none;
+        }
+        main > :first-child {
+          margin-top: 0 !important;
+        }
+        main > :last-child {
+          margin-bottom: 0 !important;
+        }
+      }
+      ::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline-variant": "#474555",
+              "surface-bright": "#39383e",
+              "inverse-on-surface": "#303036",
+              "surface-container": "#1f1f25",
+              "on-secondary-fixed": "#001f25",
+              "on-surface": "#e4e1e9",
+              primary: "#c5c0ff",
+              "tertiary-fixed": "#6ffbbe",
+              "surface-tint": "#c5c0ff",
+              "inverse-primary": "#5544dc",
+              "on-secondary": "#00363e",
+              "surface-container-low": "#1b1b20",
+              "secondary-fixed-dim": "#2fd9f4",
+              tertiary: "#4edea3",
+              "surface-variant": "#35343a",
+              secondary: "#5de6ff",
+              "on-tertiary-fixed": "#002113",
+              error: "#ffb4ab",
+              "on-tertiary": "#003824",
+              "tertiary-container": "#00865c",
+              "tertiary-fixed-dim": "#4edea3",
+              "inverse-surface": "#e4e1e9",
+              "surface-container-lowest": "#0e0e13",
+              "on-secondary-container": "#00515d",
+              surface: "#131318",
+              "on-primary": "#2600a1",
+              "on-secondary-fixed-variant": "#004e5a",
+              "on-background": "#e4e1e9",
+              "on-error-container": "#ffdad6",
+              "on-primary-fixed-variant": "#3c24c5",
+              "secondary-container": "#00cbe6",
+              "primary-fixed-dim": "#c5c0ff",
+              "surface-dim": "#131318",
+              "on-primary-fixed": "#150067",
+              outline: "#928ea1",
+              "on-primary-container": "#fffdff",
+              "primary-fixed": "#e4dfff",
+              "on-tertiary-fixed-variant": "#005236",
+              "on-tertiary-container": "#fafff9",
+              background: "#131318",
+              "primary-container": "#6d5ef5",
+              "surface-container-highest": "#35343a",
+              "secondary-fixed": "#a2eeff",
+              "error-container": "#93000a",
+              "surface-container-high": "#2a292f",
+              "on-error": "#690005",
+              "on-surface-variant": "#c8c4d7",
+            },
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem",
+            },
+            spacing: {
+              "space-xs": "0.25rem",
+              "gutter-mobile": "0.5rem",
+              margin: "1rem",
+              gutter: "0.75rem",
+              "margin-mobile": "0.75rem",
+              "space-md": "0.75rem",
+              "space-xl": "1.5rem",
+              "space-sm": "0.5rem",
+              "space-lg": "1rem",
+            },
+            fontFamily: {
+              "headline-xl": ["Inter"],
+              "body-sm": ["Inter"],
+              "code-md": ["JetBrains Mono"],
+              "label-xs": ["JetBrains Mono"],
+              "code-sm": ["JetBrains Mono"],
+              "body-md": ["Inter"],
+              "code-lg": ["JetBrains Mono"],
+              "headline-sm": ["Inter"],
+              "headline-lg": ["Inter"],
+              "label-md": ["JetBrains Mono"],
+            },
+            fontSize: {
+              "headline-xl": [
+                "24px",
+                {
+                  lineHeight: "32px",
+                  letterSpacing: "-0.02em",
+                  fontWeight: "600",
+                },
+              ],
+              "body-sm": [
+                "12px",
+                { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "code-md": [
+                "12px",
+                { lineHeight: "18px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "label-xs": [
+                "10px",
+                {
+                  lineHeight: "12px",
+                  letterSpacing: "0.05em",
+                  fontWeight: "600",
+                },
+              ],
+              "code-sm": [
+                "11px",
+                { lineHeight: "15px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "body-md": [
+                "13px",
+                {
+                  lineHeight: "18px",
+                  letterSpacing: "-0.005em",
+                  fontWeight: "400",
+                },
+              ],
+              "code-lg": [
+                "13px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "-0.01em",
+                  fontWeight: "500",
+                },
+              ],
+              "headline-sm": [
+                "15px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "-0.01em",
+                  fontWeight: "600",
+                },
+              ],
+              "headline-lg": [
+                "20px",
+                {
+                  lineHeight: "28px",
+                  letterSpacing: "-0.015em",
+                  fontWeight: "600",
+                },
+              ],
+              "label-md": [
+                "11px",
+                {
+                  lineHeight: "14px",
+                  letterSpacing: "0.03em",
+                  fontWeight: "500",
+                },
+              ],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="bg-surface-container-lowest text-on-surface font-body-md text-body-md antialiased min-h-screen"
+  >
+    <header
+      class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30"
+    >
+      <div class="h-14 w-full px-space-xl flex items-center justify-between">
+        <div class="flex items-center gap-space-xl">
+          <a class="flex items-center gap-space-sm" data-path="home" href="#"
+            ><img
+              alt="Brand logo. - Primary color: #6d5ef5
 - Font: inter
 - Mode: dark
 - Roundness: rounded-sm
-" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">KairoPro</span></a><nav class="hidden md:flex items-center gap-space-lg" data-active-classes="text-on-surface font-headline-sm"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="features" href="#">Features</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="pricing" href="#">Pricing</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="docs" href="#">Docs</a></nav></div><div class="flex items-center gap-space-md"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md px-space-sm py-space-xs" data-path="login" href="#">Log in</a><a class="bg-primary-container text-on-primary-container hover:bg-inverse-primary transition-colors font-headline-sm text-headline-sm px-space-md py-space-xs rounded-DEFAULT flex items-center justify-center" data-path="signup" href="#">Start building</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-14 bg-surface-container-lowest"><div class="flex flex-col w-full">
-<!-- Command Bar & Top Controls -->
-<div class="w-full bg-surface border-b border-outline-variant/20 px-space-xl py-space-md">
-<div class="max-w-[1440px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
-<!-- Title & Live Counter Badges -->
-<div class="flex items-center gap-space-lg">
-<div class="flex items-baseline gap-space-sm">
-<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Projects</h1>
-<span class="font-label-md text-label-md text-on-surface-variant font-medium">Workspace: kairo-core</span>
-</div>
-<div class="hidden lg:flex items-center gap-space-xs pl-space-md border-l border-outline-variant/30">
-<button class="px-space-sm py-[3px] bg-surface-container text-on-surface rounded-DEFAULT text-body-sm font-body-sm hover:bg-surface-variant transition-colors">All (4)</button>
-<button class="px-space-sm py-[3px] text-on-surface-variant hover:text-on-surface rounded-DEFAULT text-body-sm font-body-sm transition-colors">Active (2)</button>
-<button class="px-space-sm py-[3px] text-on-surface-variant hover:text-on-surface rounded-DEFAULT text-body-sm font-body-sm transition-colors">Building (1)</button>
-<button class="px-space-sm py-[3px] text-on-surface-variant hover:text-on-surface rounded-DEFAULT text-body-sm font-body-sm transition-colors">Drafts (1)</button>
-</div>
-</div>
-<!-- Search and Global Actions -->
-<div class="flex items-center gap-space-md w-full md:w-auto justify-between md:justify-end">
-<div class="relative flex-1 md:w-72">
-<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">search</span>
-<input class="w-full h-8 pl-8 pr-12 bg-surface-container-lowest text-on-surface placeholder:text-outline text-body-sm font-code-md rounded-DEFAULT border border-outline-variant/30 focus:outline-none focus:border-primary-container transition-colors" placeholder="Filter projects..." type="text">
-<kbd class="absolute right-2 top-1/2 -translate-y-1/2 text-label-xs font-label-xs text-outline bg-surface-container px-1 py-0.5 rounded-DEFAULT border border-outline-variant/30 select-none">⌘K</kbd>
-</div>
-<button class="h-8 px-space-md bg-primary-container hover:bg-inverse-primary text-on-primary-container rounded-DEFAULT flex items-center gap-1.5 transition-colors font-headline-sm text-body-md whitespace-nowrap">
-<span class="material-symbols-outlined text-[16px]">add</span>
-<span>New project</span>
-</button>
-<div class="flex items-center justify-center w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant/30 text-primary font-code-md text-code-md font-semibold select-none">
-          PW
+"
+              class="h-8 w-auto object-contain"
+              src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"
+            /><span
+              class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+              >KairoPro</span
+            ></a
+          >
+          <nav
+            class="hidden md:flex items-center gap-space-lg"
+            data-active-classes="text-on-surface font-headline-sm"
+          >
+            <a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="features"
+              href="#"
+              >Features</a
+            ><a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="pricing"
+              href="#"
+              >Pricing</a
+            ><a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="docs"
+              href="#"
+              >Docs</a
+            >
+          </nav>
         </div>
-</div>
-</div>
-</div>
-<!-- Main Canvas -->
-<div class="w-full max-w-[1440px] mx-auto px-space-xl py-space-xl flex flex-col gap-space-xl">
-<!-- Workspace Stats Header Bar -->
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
-<!-- Total Projects -->
-<div class="bg-surface-container-low border border-outline-variant/20 rounded-DEFAULT p-space-md flex items-center justify-between">
-<div class="flex items-center gap-space-md">
-<div class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface-variant">
-<span class="material-symbols-outlined text-[18px]">folder_copy</span>
-</div>
-<div>
-<div class="font-headline-sm text-headline-sm text-on-surface">3 active</div>
-<div class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Projects</div>
-</div>
-</div>
-<span class="font-code-sm text-code-sm text-outline">4 total</span>
-</div>
-<!-- Production Deployed -->
-<div class="bg-surface-container-low border border-outline-variant/20 rounded-DEFAULT p-space-md flex items-center justify-between">
-<div class="flex items-center gap-space-md">
-<div class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-tertiary">
-<span class="material-symbols-outlined text-[18px]">cloud_done</span>
-</div>
-<div>
-<div class="font-headline-sm text-headline-sm text-on-surface">1 deployed</div>
-<div class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Production Status</div>
-</div>
-</div>
-<span class="font-code-sm text-code-sm text-tertiary flex items-center gap-1">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-          100% healthy
-        </span>
-</div>
-<!-- Preview Envs -->
-<div class="bg-surface-container-low border border-outline-variant/20 rounded-DEFAULT p-space-md flex items-center justify-between">
-<div class="flex items-center gap-space-md">
-<div class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface-variant">
-<span class="material-symbols-outlined text-[18px]">call_split</span>
-</div>
-<div>
-<div class="font-headline-sm text-headline-sm text-on-surface">2 previews</div>
-<div class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Ephemeral Envs</div>
-</div>
-</div>
-<span class="font-code-sm text-code-sm text-outline">auto-routed</span>
-</div>
-</div>
-<!-- Section Divider & Grid Label -->
-<div class="flex items-center justify-between border-b border-outline-variant/20 pb-space-sm">
-<div class="flex items-center gap-space-sm">
-<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Repositories &amp; Agent Workspaces</span>
-<span class="text-outline text-label-xs">•</span>
-<span class="font-code-sm text-code-sm text-outline">Synced to GitHub</span>
-</div>
-<div class="flex items-center gap-space-sm text-outline font-code-sm text-code-sm">
-<span>Sort by:</span>
-<span class="text-on-surface hover:underline cursor-pointer">Recent activity ↓</span>
-</div>
-</div>
-<!-- Projects Grid: Strict 3-column layout desktop -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
-<!-- CARD 1: TaskFlow (Production Deployed) -->
-<div class="bg-surface-container-low border border-outline-variant/25 hover:border-outline-variant/50 transition-colors rounded-DEFAULT flex flex-col justify-between overflow-hidden group">
-<div>
-<!-- Card Header -->
-<div class="p-space-md border-b border-outline-variant/15 flex items-center justify-between">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[18px] text-primary">layers</span>
-<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">TaskFlow</h2>
-</div>
-<!-- Status Badge: Emerald -->
-<div class="h-5 px-1.5 rounded-DEFAULT bg-tertiary/10 border border-tertiary/30 text-tertiary font-label-xs text-label-xs flex items-center gap-1">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-<span>Deployed</span>
-</div>
-</div>
-<!-- Preview Frame: Miniature Realistic Kanban Board -->
-<div class="p-space-md">
-<div class="w-full h-36 bg-surface-container-lowest rounded-DEFAULT border border-outline-variant/20 flex flex-col overflow-hidden select-none">
-<!-- Window Chrome -->
-<div class="h-6 bg-surface border-b border-outline-variant/20 px-2 flex items-center justify-between">
-<div class="flex items-center gap-1">
-<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
-<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
-<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
-</div>
-<span class="font-code-sm text-[9px] text-outline">app.taskflow.internal</span>
-<span class="material-symbols-outlined text-[12px] text-outline">security</span>
-</div>
-<!-- Miniature Kanban Board Preview -->
-<div class="p-2 grid grid-cols-3 gap-1.5 flex-1 bg-surface-container-lowest">
-<!-- Column 1 -->
-<div class="bg-surface-container-low p-1 rounded-DEFAULT border border-outline-variant/10 flex flex-col gap-1">
-<div class="flex justify-between items-center text-[8px] font-label-xs text-outline">
-<span>BACKLOG</span>
-<span>2</span>
-</div>
-<div class="h-5 bg-surface-variant/40 rounded-DEFAULT p-1 border border-outline-variant/15 flex flex-col justify-center">
-<div class="w-3/4 h-1 bg-outline-variant/40 rounded-DEFAULT"></div>
-</div>
-<div class="h-5 bg-surface-variant/40 rounded-DEFAULT p-1 border border-outline-variant/15 flex flex-col justify-center">
-<div class="w-1/2 h-1 bg-outline-variant/40 rounded-DEFAULT"></div>
-</div>
-</div>
-<!-- Column 2 -->
-<div class="bg-surface-container-low p-1 rounded-DEFAULT border border-outline-variant/10 flex flex-col gap-1">
-<div class="flex justify-between items-center text-[8px] font-label-xs text-primary">
-<span>IN PROG</span>
-<span>1</span>
-</div>
-<div class="h-7 bg-surface-container rounded-DEFAULT p-1 border border-primary/30 flex flex-col justify-between">
-<div class="w-4/5 h-1.5 bg-primary/40 rounded-DEFAULT"></div>
-<div class="w-1/3 h-1 bg-tertiary/40 rounded-DEFAULT"></div>
-</div>
-</div>
-<!-- Column 3 -->
-<div class="bg-surface-container-low p-1 rounded-DEFAULT border border-outline-variant/10 flex flex-col gap-1">
-<div class="flex justify-between items-center text-[8px] font-label-xs text-tertiary">
-<span>DONE</span>
-<span>4</span>
-</div>
-<div class="h-5 bg-surface-variant/40 rounded-DEFAULT p-1 border border-outline-variant/15 flex flex-col justify-center">
-<div class="w-5/6 h-1 bg-outline-variant/40 rounded-DEFAULT"></div>
-</div>
-<div class="h-5 bg-surface-variant/40 rounded-DEFAULT p-1 border border-outline-variant/15 flex flex-col justify-center">
-<div class="w-2/3 h-1 bg-outline-variant/40 rounded-DEFAULT"></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Metadata Rows -->
-<div class="px-space-md pb-space-md flex flex-col gap-1.5 font-code-sm text-code-sm">
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Activity</span>
-<span class="text-on-surface">Deployed 2 days ago</span>
-</div>
-<div class="flex items-center justify-between">
-<span class="text-outline">URL</span>
-<a class="text-primary hover:underline flex items-center gap-1 font-code-sm truncate max-w-[200px]" href="#">
-<span>taskflow.kairopro.app</span>
-<span class="material-symbols-outlined text-[13px]">north_east</span>
-</a>
-</div>
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Stack</span>
-<span class="font-label-xs text-label-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant border border-outline-variant/20 rounded-DEFAULT">Next.js 15 • PostgreSQL</span>
-</div>
-</div>
-</div>
-<!-- Footer Action Row (Ghost buttons) -->
-<div class="p-space-sm bg-surface-container-low border-t border-outline-variant/15 flex items-center justify-between">
-<span class="font-code-sm text-label-xs text-outline px-1">main @ 7e2f1a</span>
-<div class="flex items-center gap-1">
-<button class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Open app">
-<span class="material-symbols-outlined text-[16px]">open_in_new</span>
-</button>
-<button class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Copy URL">
-<span class="material-symbols-outlined text-[16px]">content_copy</span>
-</button>
-<button class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="More options">
-<span class="material-symbols-outlined text-[16px]">more_horiz</span>
-</button>
-</div>
-</div>
-</div>
-<!-- CARD 2: Invoice CRM (Ready Preview) -->
-<div class="bg-surface-container-low border border-outline-variant/25 hover:border-outline-variant/50 transition-colors rounded-DEFAULT flex flex-col justify-between overflow-hidden group">
-<div>
-<!-- Card Header -->
-<div class="p-space-md border-b border-outline-variant/15 flex items-center justify-between">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[18px] text-primary">receipt_long</span>
-<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Invoice CRM</h2>
-</div>
-<!-- Status Badge: Ready -->
-<div class="h-5 px-1.5 rounded-DEFAULT bg-tertiary/10 border border-tertiary/30 text-tertiary font-label-xs text-label-xs flex items-center gap-1">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-<span>Ready</span>
-</div>
-</div>
-<!-- Preview Frame: Miniature Invoicing/Billing Data Table -->
-<div class="p-space-md">
-<div class="w-full h-36 bg-surface-container-lowest rounded-DEFAULT border border-outline-variant/20 flex flex-col overflow-hidden select-none">
-<!-- Window Chrome -->
-<div class="h-6 bg-surface border-b border-outline-variant/20 px-2 flex items-center justify-between">
-<div class="flex items-center gap-1">
-<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
-<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
-<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
-</div>
-<span class="font-code-sm text-[9px] text-outline">crm-staging.preview</span>
-<span class="material-symbols-outlined text-[12px] text-outline">tune</span>
-</div>
-<!-- Invoicing Data Table Preview -->
-<div class="p-2 flex-1 flex flex-col gap-1.5 bg-surface-container-lowest">
-<!-- Header row -->
-<div class="grid grid-cols-4 text-[8px] font-label-xs text-outline pb-1 border-b border-outline-variant/15">
-<span>INVOICE</span>
-<span>CLIENT</span>
-<span>AMOUNT</span>
-<span class="text-right">STATUS</span>
-</div>
-<!-- Row 1 -->
-<div class="grid grid-cols-4 items-center text-[8px] font-code-sm py-0.5 border-b border-outline-variant/10">
-<span class="text-on-surface">#INV-802</span>
-<span class="text-outline truncate">Acme Labs</span>
-<span class="text-on-surface font-semibold">$4,850</span>
-<div class="flex justify-end">
-<span class="text-[7px] bg-tertiary/10 text-tertiary px-1 rounded-DEFAULT">PAID</span>
-</div>
-</div>
-<!-- Row 2 -->
-<div class="grid grid-cols-4 items-center text-[8px] font-code-sm py-0.5 border-b border-outline-variant/10">
-<span class="text-on-surface">#INV-803</span>
-<span class="text-outline truncate">Vortex Corp</span>
-<span class="text-on-surface font-semibold">$1,200</span>
-<div class="flex justify-end">
-<span class="text-[7px] bg-surface-container text-on-surface-variant px-1 rounded-DEFAULT">PENDING</span>
-</div>
-</div>
-<!-- Row 3 -->
-<div class="grid grid-cols-4 items-center text-[8px] font-code-sm py-0.5">
-<span class="text-on-surface">#INV-804</span>
-<span class="text-outline truncate">Hyperion</span>
-<span class="text-on-surface font-semibold">$9,400</span>
-<div class="flex justify-end">
-<span class="text-[7px] bg-tertiary/10 text-tertiary px-1 rounded-DEFAULT">PAID</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Metadata Rows -->
-<div class="px-space-md pb-space-md flex flex-col gap-1.5 font-code-sm text-code-sm">
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Activity</span>
-<span class="text-on-surface">Built 4 hours ago</span>
-</div>
-<div class="flex items-center justify-between">
-<span class="text-outline">URL</span>
-<a class="text-primary hover:underline flex items-center gap-1 font-code-sm truncate max-w-[200px]" href="#">
-<span class="truncate">invoice-crm-a1b2.preview...</span>
-<span class="material-symbols-outlined text-[13px]">north_east</span>
-</a>
-</div>
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Stack</span>
-<span class="font-label-xs text-label-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant border border-outline-variant/20 rounded-DEFAULT">Next.js 15 • Prisma</span>
-</div>
-</div>
-</div>
-<!-- Footer Action Row (Ghost buttons) -->
-<div class="p-space-sm bg-surface-container-low border-t border-outline-variant/15 flex items-center justify-between">
-<span class="font-code-sm text-label-xs text-outline px-1">preview @ pr-14</span>
-<div class="flex items-center gap-1">
-<button class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Open preview">
-<span class="material-symbols-outlined text-[16px]">open_in_new</span>
-</button>
-<button class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Copy URL">
-<span class="material-symbols-outlined text-[16px]">content_copy</span>
-</button>
-<button class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="More options">
-<span class="material-symbols-outlined text-[16px]">more_horiz</span>
-</button>
-</div>
-</div>
-</div>
-<!-- CARD 3: Booking System (ACTIVE AGENT EXECUTION - Exclusive Cyan Usage) -->
-<div class="bg-surface-container-low border border-secondary/40 hover:border-secondary/70 transition-colors rounded-DEFAULT flex flex-col justify-between overflow-hidden relative">
-<!-- Subtle Active Hairline Indicator -->
-<div class="absolute top-0 left-0 right-0 h-[2px] bg-secondary"></div>
-<div>
-<!-- Card Header -->
-<div class="p-space-md border-b border-outline-variant/15 flex items-center justify-between">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[18px] text-secondary">calendar_clock</span>
-<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Booking System</h2>
-</div>
-<!-- Status Badge: Pure Agent Cyan with Pulsing Dot -->
-<div class="h-5 px-1.5 rounded-DEFAULT bg-secondary/10 border border-secondary/40 text-secondary font-label-xs text-label-xs flex items-center gap-1.5">
-<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
-<span>Building</span>
-</div>
-</div>
-<!-- Thumbnail Area: Dimmed box with pulsing cyan indeterminate progress -->
-<div class="p-space-md">
-<div class="w-full h-36 bg-surface-container-lowest rounded-DEFAULT border border-dashed border-secondary/30 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-<!-- Subtle Background Code Stream Illusion -->
-<div class="absolute inset-0 p-2 opacity-15 pointer-events-none font-code-sm text-[9px] text-secondary leading-tight select-none">
-<div>&gt; generating schema /api/v1/slots</div>
-<div>&gt; running AST codegen [agent:core-02]</div>
-<div>&gt; validating edge functions ... OK</div>
-</div>
-<!-- Center Building State Indicator -->
-<div class="relative z-10 flex flex-col items-center gap-2">
-<div class="w-8 h-8 rounded-DEFAULT bg-secondary/10 border border-secondary/30 flex items-center justify-center text-secondary">
-<span class="material-symbols-outlined text-[18px] animate-spin">sync</span>
-</div>
-<span class="font-code-md text-code-md text-secondary font-medium tracking-tight">Building agent task…</span>
-</div>
-<!-- Indeterminate Progress Line -->
-<div class="absolute bottom-0 left-0 w-full h-[2px] bg-surface-container">
-<div class="h-full bg-secondary w-2/5 animate-[pulse_1.5s_infinite]"></div>
-</div>
-</div>
-</div>
-<!-- Metadata Rows -->
-<div class="px-space-md pb-space-md flex flex-col gap-1.5 font-code-sm text-code-sm">
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Activity</span>
-<span class="text-on-surface">Started 1 minute ago</span>
-</div>
-<div class="flex items-center justify-between">
-<span class="text-outline">Agent step</span>
-<span class="text-secondary font-code-sm truncate max-w-[200px]">Step 3/7: Creating API routes</span>
-</div>
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Worker</span>
-<span class="font-label-xs text-label-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant border border-outline-variant/20 rounded-DEFAULT">agent-runner-x86-04</span>
-</div>
-</div>
-</div>
-<!-- Footer Action Row (View live build) -->
-<div class="p-space-sm bg-surface-container-low border-t border-outline-variant/15 flex items-center justify-between">
-<span class="font-code-sm text-label-xs text-secondary px-1 flex items-center gap-1">
-<span class="w-1 h-1 rounded-full bg-secondary"></span>
-            Streaming logs
-          </span>
-<button class="h-7 px-space-sm bg-surface-container hover:bg-surface-variant border border-secondary/30 text-secondary rounded-DEFAULT flex items-center gap-1 font-body-sm text-body-sm transition-colors">
-<span>View live build</span>
-<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-</button>
-</div>
-</div>
-<!-- CARD 4: Internal Dashboard (Draft State) -->
-<div class="bg-surface-container-low border border-outline-variant/25 hover:border-outline-variant/50 transition-colors rounded-DEFAULT flex flex-col justify-between overflow-hidden group">
-<div>
-<!-- Card Header -->
-<div class="p-space-md border-b border-outline-variant/15 flex items-center justify-between">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[18px] text-outline">dashboard</span>
-<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Internal Dashboard</h2>
-</div>
-<!-- Status Badge: Neutral Draft -->
-<div class="h-5 px-1.5 rounded-DEFAULT bg-surface-container border border-outline-variant/30 text-on-surface-variant font-label-xs text-label-xs flex items-center gap-1">
-<span>Draft</span>
-</div>
-</div>
-<!-- Thumbnail Area: Dimmed placeholder box with spec icon -->
-<div class="p-space-md">
-<div class="w-full h-36 bg-surface-container-lowest rounded-DEFAULT border border-dashed border-outline-variant/20 flex flex-col items-center justify-center p-4 text-center select-none">
-<span class="material-symbols-outlined text-[24px] text-outline mb-1">description</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">No preview yet</span>
-<span class="font-label-xs text-label-xs text-outline mt-0.5">Specification verified and queued</span>
-</div>
-</div>
-<!-- Metadata Rows -->
-<div class="px-space-md pb-space-md flex flex-col gap-1.5 font-code-sm text-code-sm">
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Activity</span>
-<span class="text-on-surface">Spec approved 3 days ago</span>
-</div>
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Architect</span>
-<span class="text-on-surface font-code-sm">alex.w@internal.io</span>
-</div>
-<div class="flex items-center justify-between text-on-surface-variant">
-<span class="text-outline">Stack</span>
-<span class="font-label-xs text-label-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant border border-outline-variant/20 rounded-DEFAULT">Next.js 15 • Tailwind</span>
-</div>
-</div>
-</div>
-<!-- Footer Action Row (Continue setup secondary action) -->
-<div class="p-space-sm bg-surface-container-low border-t border-outline-variant/15 flex items-center justify-between">
-<span class="font-code-sm text-label-xs text-outline px-1">draft-v1.yaml</span>
-<button class="h-7 px-space-md bg-surface-container hover:bg-surface-variant border border-outline-variant/30 text-on-surface rounded-DEFAULT flex items-center gap-1.5 font-body-sm text-body-sm transition-colors">
-<span class="material-symbols-outlined text-[14px] text-outline">play_arrow</span>
-<span>Continue setup</span>
-</button>
-</div>
-</div>
-</div>
-<!-- Quick Terminal Output Drawer / Workspace Diagnostics -->
-<div class="w-full bg-surface-container-low border border-outline-variant/20 rounded-DEFAULT overflow-hidden mt-space-md">
-<div class="h-8 bg-surface px-space-md border-b border-outline-variant/20 flex items-center justify-between text-label-xs font-label-xs text-on-surface-variant">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[15px] text-outline">terminal</span>
-<span class="uppercase tracking-wider">Background Agent Dispatcher</span>
-</div>
-<div class="flex items-center gap-space-md">
-<span class="text-tertiary flex items-center gap-1">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-            Socket connected (us-east-1)
-          </span>
-<span class="text-outline">latency: 18ms</span>
-</div>
-</div>
-<div class="p-space-md font-code-sm text-code-sm bg-surface-container-lowest text-outline leading-relaxed overflow-x-auto">
-<div class="flex gap-space-md">
-<span class="text-outline/40 select-none">14:02:18</span>
-<span class="text-on-surface-variant">[orchestrator] Re-indexed repository registry for workspace 'kairo-core'. Found 4 targets.</span>
-</div>
-<div class="flex gap-space-md">
-<span class="text-outline/40 select-none">14:03:02</span>
-<span class="text-on-surface-variant">[runner-04] Initialized agent workflow for <span class="text-on-surface">'Booking System'</span>. Synthesizing Prisma schema.</span>
-</div>
-<div class="flex gap-space-md">
-<span class="text-outline/40 select-none">14:04:11</span>
-<span class="text-secondary">[runner-04:step-3] Generating Express router controllers. Token usage: 4.8k tokens.</span>
-</div>
-</div>
-</div>
-</div>
-</div></main><footer class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl"><div class="w-full px-space-xl flex flex-col md:flex-row items-center justify-between gap-space-lg"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #6d5ef5
+        <div class="flex items-center gap-space-md">
+          <a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md px-space-sm py-space-xs"
+            data-path="login"
+            href="#"
+            >Log in</a
+          ><a
+            class="bg-primary-container text-on-primary-container hover:bg-inverse-primary transition-colors font-headline-sm text-headline-sm px-space-md py-space-xs rounded-DEFAULT flex items-center justify-center"
+            data-path="signup"
+            href="#"
+            >Start building</a
+          >
+          <div
+            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"
+          >
+            <span class="material-symbols-outlined text-on-primary text-[18px]"
+              >person</span
+            >
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="w-full pt-14 bg-surface-container-lowest">
+      <div class="flex flex-col w-full">
+        <!-- Command Bar & Top Controls -->
+        <div
+          class="w-full bg-surface border-b border-outline-variant/20 px-space-xl py-space-md"
+        >
+          <div
+            class="max-w-[1440px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md"
+          >
+            <!-- Title & Live Counter Badges -->
+            <div class="flex items-center gap-space-lg">
+              <div class="flex items-baseline gap-space-sm">
+                <h1
+                  class="font-headline-lg text-headline-lg text-on-surface tracking-tight"
+                >
+                  Projects
+                </h1>
+                <span
+                  class="font-label-md text-label-md text-on-surface-variant font-medium"
+                  >Workspace: kairo-core</span
+                >
+              </div>
+              <div
+                class="hidden lg:flex items-center gap-space-xs pl-space-md border-l border-outline-variant/30"
+              >
+                <button
+                  class="px-space-sm py-[3px] bg-surface-container text-on-surface rounded-DEFAULT text-body-sm font-body-sm hover:bg-surface-variant transition-colors"
+                >
+                  All (4)
+                </button>
+                <button
+                  class="px-space-sm py-[3px] text-on-surface-variant hover:text-on-surface rounded-DEFAULT text-body-sm font-body-sm transition-colors"
+                >
+                  Active (2)
+                </button>
+                <button
+                  class="px-space-sm py-[3px] text-on-surface-variant hover:text-on-surface rounded-DEFAULT text-body-sm font-body-sm transition-colors"
+                >
+                  Building (1)
+                </button>
+                <button
+                  class="px-space-sm py-[3px] text-on-surface-variant hover:text-on-surface rounded-DEFAULT text-body-sm font-body-sm transition-colors"
+                >
+                  Drafts (1)
+                </button>
+              </div>
+            </div>
+            <!-- Search and Global Actions -->
+            <div
+              class="flex items-center gap-space-md w-full md:w-auto justify-between md:justify-end"
+            >
+              <div class="relative flex-1 md:w-72">
+                <span
+                  class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none"
+                  >search</span
+                >
+                <input
+                  class="w-full h-8 pl-8 pr-12 bg-surface-container-lowest text-on-surface placeholder:text-outline text-body-sm font-code-md rounded-DEFAULT border border-outline-variant/30 focus:outline-none focus:border-primary-container transition-colors"
+                  placeholder="Filter projects..."
+                  type="text"
+                />
+                <kbd
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-label-xs font-label-xs text-outline bg-surface-container px-1 py-0.5 rounded-DEFAULT border border-outline-variant/30 select-none"
+                  >⌘K</kbd
+                >
+              </div>
+              <button
+                class="h-8 px-space-md bg-primary-container hover:bg-inverse-primary text-on-primary-container rounded-DEFAULT flex items-center gap-1.5 transition-colors font-headline-sm text-body-md whitespace-nowrap"
+              >
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                <span>New project</span>
+              </button>
+              <div
+                class="flex items-center justify-center w-8 h-8 rounded-DEFAULT bg-surface-container border border-outline-variant/30 text-primary font-code-md text-code-md font-semibold select-none"
+              >
+                PW
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Main Canvas -->
+        <div
+          class="w-full max-w-[1440px] mx-auto px-space-xl py-space-xl flex flex-col gap-space-xl"
+        >
+          <!-- Workspace Stats Header Bar -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+            <!-- Total Projects -->
+            <div
+              class="bg-surface-container-low border border-outline-variant/20 rounded-DEFAULT p-space-md flex items-center justify-between"
+            >
+              <div class="flex items-center gap-space-md">
+                <div
+                  class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface-variant"
+                >
+                  <span class="material-symbols-outlined text-[18px]"
+                    >folder_copy</span
+                  >
+                </div>
+                <div>
+                  <div
+                    class="font-headline-sm text-headline-sm text-on-surface"
+                  >
+                    3 active
+                  </div>
+                  <div
+                    class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
+                  >
+                    Total Projects
+                  </div>
+                </div>
+              </div>
+              <span class="font-code-sm text-code-sm text-outline"
+                >4 total</span
+              >
+            </div>
+            <!-- Production Deployed -->
+            <div
+              class="bg-surface-container-low border border-outline-variant/20 rounded-DEFAULT p-space-md flex items-center justify-between"
+            >
+              <div class="flex items-center gap-space-md">
+                <div
+                  class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-tertiary"
+                >
+                  <span class="material-symbols-outlined text-[18px]"
+                    >cloud_done</span
+                  >
+                </div>
+                <div>
+                  <div
+                    class="font-headline-sm text-headline-sm text-on-surface"
+                  >
+                    1 deployed
+                  </div>
+                  <div
+                    class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
+                  >
+                    Production Status
+                  </div>
+                </div>
+              </div>
+              <span
+                class="font-code-sm text-code-sm text-tertiary flex items-center gap-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                100% healthy
+              </span>
+            </div>
+            <!-- Preview Envs -->
+            <div
+              class="bg-surface-container-low border border-outline-variant/20 rounded-DEFAULT p-space-md flex items-center justify-between"
+            >
+              <div class="flex items-center gap-space-md">
+                <div
+                  class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface-variant"
+                >
+                  <span class="material-symbols-outlined text-[18px]"
+                    >call_split</span
+                  >
+                </div>
+                <div>
+                  <div
+                    class="font-headline-sm text-headline-sm text-on-surface"
+                  >
+                    2 previews
+                  </div>
+                  <div
+                    class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
+                  >
+                    Ephemeral Envs
+                  </div>
+                </div>
+              </div>
+              <span class="font-code-sm text-code-sm text-outline"
+                >auto-routed</span
+              >
+            </div>
+          </div>
+          <!-- Section Divider & Grid Label -->
+          <div
+            class="flex items-center justify-between border-b border-outline-variant/20 pb-space-sm"
+          >
+            <div class="flex items-center gap-space-sm">
+              <span
+                class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant"
+                >Repositories &amp; Agent Workspaces</span
+              >
+              <span class="text-outline text-label-xs">•</span>
+              <span class="font-code-sm text-code-sm text-outline"
+                >Synced to GitHub</span
+              >
+            </div>
+            <div
+              class="flex items-center gap-space-sm text-outline font-code-sm text-code-sm"
+            >
+              <span>Sort by:</span>
+              <span class="text-on-surface hover:underline cursor-pointer"
+                >Recent activity ↓</span
+              >
+            </div>
+          </div>
+          <!-- Projects Grid: Strict 3-column layout desktop -->
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg"
+          >
+            <!-- CARD 1: TaskFlow (Production Deployed) -->
+            <div
+              class="bg-surface-container-low border border-outline-variant/25 hover:border-outline-variant/50 transition-colors rounded-DEFAULT flex flex-col justify-between overflow-hidden group"
+            >
+              <div>
+                <!-- Card Header -->
+                <div
+                  class="p-space-md border-b border-outline-variant/15 flex items-center justify-between"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-[18px] text-primary"
+                      >layers</span
+                    >
+                    <h2
+                      class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+                    >
+                      TaskFlow
+                    </h2>
+                  </div>
+                  <!-- Status Badge: Emerald -->
+                  <div
+                    class="h-5 px-1.5 rounded-DEFAULT bg-tertiary/10 border border-tertiary/30 text-tertiary font-label-xs text-label-xs flex items-center gap-1"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    <span>Deployed</span>
+                  </div>
+                </div>
+                <!-- Preview Frame: Miniature Realistic Kanban Board -->
+                <div class="p-space-md">
+                  <div
+                    class="w-full h-36 bg-surface-container-lowest rounded-DEFAULT border border-outline-variant/20 flex flex-col overflow-hidden select-none"
+                  >
+                    <!-- Window Chrome -->
+                    <div
+                      class="h-6 bg-surface border-b border-outline-variant/20 px-2 flex items-center justify-between"
+                    >
+                      <div class="flex items-center gap-1">
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-outline-variant"
+                        ></span>
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-outline-variant"
+                        ></span>
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-outline-variant"
+                        ></span>
+                      </div>
+                      <span class="font-code-sm text-[9px] text-outline"
+                        >app.taskflow.internal</span
+                      >
+                      <span
+                        class="material-symbols-outlined text-[12px] text-outline"
+                        >security</span
+                      >
+                    </div>
+                    <!-- Miniature Kanban Board Preview -->
+                    <div
+                      class="p-2 grid grid-cols-3 gap-1.5 flex-1 bg-surface-container-lowest"
+                    >
+                      <!-- Column 1 -->
+                      <div
+                        class="bg-surface-container-low p-1 rounded-DEFAULT border border-outline-variant/10 flex flex-col gap-1"
+                      >
+                        <div
+                          class="flex justify-between items-center text-[8px] font-label-xs text-outline"
+                        >
+                          <span>BACKLOG</span>
+                          <span>2</span>
+                        </div>
+                        <div
+                          class="h-5 bg-surface-variant/40 rounded-DEFAULT p-1 border border-outline-variant/15 flex flex-col justify-center"
+                        >
+                          <div
+                            class="w-3/4 h-1 bg-outline-variant/40 rounded-DEFAULT"
+                          ></div>
+                        </div>
+                        <div
+                          class="h-5 bg-surface-variant/40 rounded-DEFAULT p-1 border border-outline-variant/15 flex flex-col justify-center"
+                        >
+                          <div
+                            class="w-1/2 h-1 bg-outline-variant/40 rounded-DEFAULT"
+                          ></div>
+                        </div>
+                      </div>
+                      <!-- Column 2 -->
+                      <div
+                        class="bg-surface-container-low p-1 rounded-DEFAULT border border-outline-variant/10 flex flex-col gap-1"
+                      >
+                        <div
+                          class="flex justify-between items-center text-[8px] font-label-xs text-primary"
+                        >
+                          <span>IN PROG</span>
+                          <span>1</span>
+                        </div>
+                        <div
+                          class="h-7 bg-surface-container rounded-DEFAULT p-1 border border-primary/30 flex flex-col justify-between"
+                        >
+                          <div
+                            class="w-4/5 h-1.5 bg-primary/40 rounded-DEFAULT"
+                          ></div>
+                          <div
+                            class="w-1/3 h-1 bg-tertiary/40 rounded-DEFAULT"
+                          ></div>
+                        </div>
+                      </div>
+                      <!-- Column 3 -->
+                      <div
+                        class="bg-surface-container-low p-1 rounded-DEFAULT border border-outline-variant/10 flex flex-col gap-1"
+                      >
+                        <div
+                          class="flex justify-between items-center text-[8px] font-label-xs text-tertiary"
+                        >
+                          <span>DONE</span>
+                          <span>4</span>
+                        </div>
+                        <div
+                          class="h-5 bg-surface-variant/40 rounded-DEFAULT p-1 border border-outline-variant/15 flex flex-col justify-center"
+                        >
+                          <div
+                            class="w-5/6 h-1 bg-outline-variant/40 rounded-DEFAULT"
+                          ></div>
+                        </div>
+                        <div
+                          class="h-5 bg-surface-variant/40 rounded-DEFAULT p-1 border border-outline-variant/15 flex flex-col justify-center"
+                        >
+                          <div
+                            class="w-2/3 h-1 bg-outline-variant/40 rounded-DEFAULT"
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Metadata Rows -->
+                <div
+                  class="px-space-md pb-space-md flex flex-col gap-1.5 font-code-sm text-code-sm"
+                >
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Activity</span>
+                    <span class="text-on-surface">Deployed 2 days ago</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-outline">URL</span>
+                    <a
+                      class="text-primary hover:underline flex items-center gap-1 font-code-sm truncate max-w-[200px]"
+                      href="#"
+                    >
+                      <span>taskflow.kairopro.app</span>
+                      <span class="material-symbols-outlined text-[13px]"
+                        >north_east</span
+                      >
+                    </a>
+                  </div>
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Stack</span>
+                    <span
+                      class="font-label-xs text-label-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant border border-outline-variant/20 rounded-DEFAULT"
+                      >Next.js 15 • PostgreSQL</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <!-- Footer Action Row (Ghost buttons) -->
+              <div
+                class="p-space-sm bg-surface-container-low border-t border-outline-variant/15 flex items-center justify-between"
+              >
+                <span class="font-code-sm text-label-xs text-outline px-1"
+                  >main @ 7e2f1a</span
+                >
+                <div class="flex items-center gap-1">
+                  <button
+                    class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                    title="Open app"
+                  >
+                    <span class="material-symbols-outlined text-[16px]"
+                      >open_in_new</span
+                    >
+                  </button>
+                  <button
+                    class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                    title="Copy URL"
+                  >
+                    <span class="material-symbols-outlined text-[16px]"
+                      >content_copy</span
+                    >
+                  </button>
+                  <button
+                    class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                    title="More options"
+                  >
+                    <span class="material-symbols-outlined text-[16px]"
+                      >more_horiz</span
+                    >
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- CARD 2: Invoice CRM (Ready Preview) -->
+            <div
+              class="bg-surface-container-low border border-outline-variant/25 hover:border-outline-variant/50 transition-colors rounded-DEFAULT flex flex-col justify-between overflow-hidden group"
+            >
+              <div>
+                <!-- Card Header -->
+                <div
+                  class="p-space-md border-b border-outline-variant/15 flex items-center justify-between"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-[18px] text-primary"
+                      >receipt_long</span
+                    >
+                    <h2
+                      class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+                    >
+                      Invoice CRM
+                    </h2>
+                  </div>
+                  <!-- Status Badge: Ready -->
+                  <div
+                    class="h-5 px-1.5 rounded-DEFAULT bg-tertiary/10 border border-tertiary/30 text-tertiary font-label-xs text-label-xs flex items-center gap-1"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    <span>Ready</span>
+                  </div>
+                </div>
+                <!-- Preview Frame: Miniature Invoicing/Billing Data Table -->
+                <div class="p-space-md">
+                  <div
+                    class="w-full h-36 bg-surface-container-lowest rounded-DEFAULT border border-outline-variant/20 flex flex-col overflow-hidden select-none"
+                  >
+                    <!-- Window Chrome -->
+                    <div
+                      class="h-6 bg-surface border-b border-outline-variant/20 px-2 flex items-center justify-between"
+                    >
+                      <div class="flex items-center gap-1">
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-outline-variant"
+                        ></span>
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-outline-variant"
+                        ></span>
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-outline-variant"
+                        ></span>
+                      </div>
+                      <span class="font-code-sm text-[9px] text-outline"
+                        >crm-staging.preview</span
+                      >
+                      <span
+                        class="material-symbols-outlined text-[12px] text-outline"
+                        >tune</span
+                      >
+                    </div>
+                    <!-- Invoicing Data Table Preview -->
+                    <div
+                      class="p-2 flex-1 flex flex-col gap-1.5 bg-surface-container-lowest"
+                    >
+                      <!-- Header row -->
+                      <div
+                        class="grid grid-cols-4 text-[8px] font-label-xs text-outline pb-1 border-b border-outline-variant/15"
+                      >
+                        <span>INVOICE</span>
+                        <span>CLIENT</span>
+                        <span>AMOUNT</span>
+                        <span class="text-right">STATUS</span>
+                      </div>
+                      <!-- Row 1 -->
+                      <div
+                        class="grid grid-cols-4 items-center text-[8px] font-code-sm py-0.5 border-b border-outline-variant/10"
+                      >
+                        <span class="text-on-surface">#INV-802</span>
+                        <span class="text-outline truncate">Acme Labs</span>
+                        <span class="text-on-surface font-semibold"
+                          >$4,850</span
+                        >
+                        <div class="flex justify-end">
+                          <span
+                            class="text-[7px] bg-tertiary/10 text-tertiary px-1 rounded-DEFAULT"
+                            >PAID</span
+                          >
+                        </div>
+                      </div>
+                      <!-- Row 2 -->
+                      <div
+                        class="grid grid-cols-4 items-center text-[8px] font-code-sm py-0.5 border-b border-outline-variant/10"
+                      >
+                        <span class="text-on-surface">#INV-803</span>
+                        <span class="text-outline truncate">Vortex Corp</span>
+                        <span class="text-on-surface font-semibold"
+                          >$1,200</span
+                        >
+                        <div class="flex justify-end">
+                          <span
+                            class="text-[7px] bg-surface-container text-on-surface-variant px-1 rounded-DEFAULT"
+                            >PENDING</span
+                          >
+                        </div>
+                      </div>
+                      <!-- Row 3 -->
+                      <div
+                        class="grid grid-cols-4 items-center text-[8px] font-code-sm py-0.5"
+                      >
+                        <span class="text-on-surface">#INV-804</span>
+                        <span class="text-outline truncate">Hyperion</span>
+                        <span class="text-on-surface font-semibold"
+                          >$9,400</span
+                        >
+                        <div class="flex justify-end">
+                          <span
+                            class="text-[7px] bg-tertiary/10 text-tertiary px-1 rounded-DEFAULT"
+                            >PAID</span
+                          >
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Metadata Rows -->
+                <div
+                  class="px-space-md pb-space-md flex flex-col gap-1.5 font-code-sm text-code-sm"
+                >
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Activity</span>
+                    <span class="text-on-surface">Built 4 hours ago</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-outline">URL</span>
+                    <a
+                      class="text-primary hover:underline flex items-center gap-1 font-code-sm truncate max-w-[200px]"
+                      href="#"
+                    >
+                      <span class="truncate">invoice-crm-a1b2.preview...</span>
+                      <span class="material-symbols-outlined text-[13px]"
+                        >north_east</span
+                      >
+                    </a>
+                  </div>
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Stack</span>
+                    <span
+                      class="font-label-xs text-label-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant border border-outline-variant/20 rounded-DEFAULT"
+                      >Next.js 15 • Prisma</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <!-- Footer Action Row (Ghost buttons) -->
+              <div
+                class="p-space-sm bg-surface-container-low border-t border-outline-variant/15 flex items-center justify-between"
+              >
+                <span class="font-code-sm text-label-xs text-outline px-1"
+                  >preview @ pr-14</span
+                >
+                <div class="flex items-center gap-1">
+                  <button
+                    class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                    title="Open preview"
+                  >
+                    <span class="material-symbols-outlined text-[16px]"
+                      >open_in_new</span
+                    >
+                  </button>
+                  <button
+                    class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                    title="Copy URL"
+                  >
+                    <span class="material-symbols-outlined text-[16px]"
+                      >content_copy</span
+                    >
+                  </button>
+                  <button
+                    class="w-7 h-7 flex items-center justify-center rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                    title="More options"
+                  >
+                    <span class="material-symbols-outlined text-[16px]"
+                      >more_horiz</span
+                    >
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- CARD 3: Booking System (ACTIVE AGENT EXECUTION - Exclusive Cyan Usage) -->
+            <div
+              class="bg-surface-container-low border border-secondary/40 hover:border-secondary/70 transition-colors rounded-DEFAULT flex flex-col justify-between overflow-hidden relative"
+            >
+              <!-- Subtle Active Hairline Indicator -->
+              <div
+                class="absolute top-0 left-0 right-0 h-[2px] bg-secondary"
+              ></div>
+              <div>
+                <!-- Card Header -->
+                <div
+                  class="p-space-md border-b border-outline-variant/15 flex items-center justify-between"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-[18px] text-secondary"
+                      >calendar_clock</span
+                    >
+                    <h2
+                      class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+                    >
+                      Booking System
+                    </h2>
+                  </div>
+                  <!-- Status Badge: Pure Agent Cyan with Pulsing Dot -->
+                  <div
+                    class="h-5 px-1.5 rounded-DEFAULT bg-secondary/10 border border-secondary/40 text-secondary font-label-xs text-label-xs flex items-center gap-1.5"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"
+                    ></span>
+                    <span>Building</span>
+                  </div>
+                </div>
+                <!-- Thumbnail Area: Dimmed box with pulsing cyan indeterminate progress -->
+                <div class="p-space-md">
+                  <div
+                    class="w-full h-36 bg-surface-container-lowest rounded-DEFAULT border border-dashed border-secondary/30 flex flex-col items-center justify-center p-4 relative overflow-hidden"
+                  >
+                    <!-- Subtle Background Code Stream Illusion -->
+                    <div
+                      class="absolute inset-0 p-2 opacity-15 pointer-events-none font-code-sm text-[9px] text-secondary leading-tight select-none"
+                    >
+                      <div>&gt; generating schema /api/v1/slots</div>
+                      <div>&gt; running AST codegen [agent:core-02]</div>
+                      <div>&gt; validating edge functions ... OK</div>
+                    </div>
+                    <!-- Center Building State Indicator -->
+                    <div class="relative z-10 flex flex-col items-center gap-2">
+                      <div
+                        class="w-8 h-8 rounded-DEFAULT bg-secondary/10 border border-secondary/30 flex items-center justify-center text-secondary"
+                      >
+                        <span
+                          class="material-symbols-outlined text-[18px] animate-spin"
+                          >sync</span
+                        >
+                      </div>
+                      <span
+                        class="font-code-md text-code-md text-secondary font-medium tracking-tight"
+                        >Building agent task…</span
+                      >
+                    </div>
+                    <!-- Indeterminate Progress Line -->
+                    <div
+                      class="absolute bottom-0 left-0 w-full h-[2px] bg-surface-container"
+                    >
+                      <div
+                        class="h-full bg-secondary w-2/5 animate-[pulse_1.5s_infinite]"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Metadata Rows -->
+                <div
+                  class="px-space-md pb-space-md flex flex-col gap-1.5 font-code-sm text-code-sm"
+                >
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Activity</span>
+                    <span class="text-on-surface">Started 1 minute ago</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-outline">Agent step</span>
+                    <span
+                      class="text-secondary font-code-sm truncate max-w-[200px]"
+                      >Step 3/7: Creating API routes</span
+                    >
+                  </div>
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Worker</span>
+                    <span
+                      class="font-label-xs text-label-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant border border-outline-variant/20 rounded-DEFAULT"
+                      >agent-runner-x86-04</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <!-- Footer Action Row (View live build) -->
+              <div
+                class="p-space-sm bg-surface-container-low border-t border-outline-variant/15 flex items-center justify-between"
+              >
+                <span
+                  class="font-code-sm text-label-xs text-secondary px-1 flex items-center gap-1"
+                >
+                  <span class="w-1 h-1 rounded-full bg-secondary"></span>
+                  Streaming logs
+                </span>
+                <button
+                  class="h-7 px-space-sm bg-surface-container hover:bg-surface-variant border border-secondary/30 text-secondary rounded-DEFAULT flex items-center gap-1 font-body-sm text-body-sm transition-colors"
+                >
+                  <span>View live build</span>
+                  <span class="material-symbols-outlined text-[14px]"
+                    >arrow_forward</span
+                  >
+                </button>
+              </div>
+            </div>
+            <!-- CARD 4: Internal Dashboard (Draft State) -->
+            <div
+              class="bg-surface-container-low border border-outline-variant/25 hover:border-outline-variant/50 transition-colors rounded-DEFAULT flex flex-col justify-between overflow-hidden group"
+            >
+              <div>
+                <!-- Card Header -->
+                <div
+                  class="p-space-md border-b border-outline-variant/15 flex items-center justify-between"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-[18px] text-outline"
+                      >dashboard</span
+                    >
+                    <h2
+                      class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+                    >
+                      Internal Dashboard
+                    </h2>
+                  </div>
+                  <!-- Status Badge: Neutral Draft -->
+                  <div
+                    class="h-5 px-1.5 rounded-DEFAULT bg-surface-container border border-outline-variant/30 text-on-surface-variant font-label-xs text-label-xs flex items-center gap-1"
+                  >
+                    <span>Draft</span>
+                  </div>
+                </div>
+                <!-- Thumbnail Area: Dimmed placeholder box with spec icon -->
+                <div class="p-space-md">
+                  <div
+                    class="w-full h-36 bg-surface-container-lowest rounded-DEFAULT border border-dashed border-outline-variant/20 flex flex-col items-center justify-center p-4 text-center select-none"
+                  >
+                    <span
+                      class="material-symbols-outlined text-[24px] text-outline mb-1"
+                      >description</span
+                    >
+                    <span
+                      class="font-body-sm text-body-sm text-on-surface-variant font-medium"
+                      >No preview yet</span
+                    >
+                    <span
+                      class="font-label-xs text-label-xs text-outline mt-0.5"
+                      >Specification verified and queued</span
+                    >
+                  </div>
+                </div>
+                <!-- Metadata Rows -->
+                <div
+                  class="px-space-md pb-space-md flex flex-col gap-1.5 font-code-sm text-code-sm"
+                >
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Activity</span>
+                    <span class="text-on-surface"
+                      >Spec approved 3 days ago</span
+                    >
+                  </div>
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Architect</span>
+                    <span class="text-on-surface font-code-sm"
+                      >alex.w@internal.io</span
+                    >
+                  </div>
+                  <div
+                    class="flex items-center justify-between text-on-surface-variant"
+                  >
+                    <span class="text-outline">Stack</span>
+                    <span
+                      class="font-label-xs text-label-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant border border-outline-variant/20 rounded-DEFAULT"
+                      >Next.js 15 • Tailwind</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <!-- Footer Action Row (Continue setup secondary action) -->
+              <div
+                class="p-space-sm bg-surface-container-low border-t border-outline-variant/15 flex items-center justify-between"
+              >
+                <span class="font-code-sm text-label-xs text-outline px-1"
+                  >draft-v1.yaml</span
+                >
+                <button
+                  class="h-7 px-space-md bg-surface-container hover:bg-surface-variant border border-outline-variant/30 text-on-surface rounded-DEFAULT flex items-center gap-1.5 font-body-sm text-body-sm transition-colors"
+                >
+                  <span
+                    class="material-symbols-outlined text-[14px] text-outline"
+                    >play_arrow</span
+                  >
+                  <span>Continue setup</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Quick Terminal Output Drawer / Workspace Diagnostics -->
+          <div
+            class="w-full bg-surface-container-low border border-outline-variant/20 rounded-DEFAULT overflow-hidden mt-space-md"
+          >
+            <div
+              class="h-8 bg-surface px-space-md border-b border-outline-variant/20 flex items-center justify-between text-label-xs font-label-xs text-on-surface-variant"
+            >
+              <div class="flex items-center gap-space-sm">
+                <span class="material-symbols-outlined text-[15px] text-outline"
+                  >terminal</span
+                >
+                <span class="uppercase tracking-wider"
+                  >Background Agent Dispatcher</span
+                >
+              </div>
+              <div class="flex items-center gap-space-md">
+                <span class="text-tertiary flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                  Socket connected (us-east-1)
+                </span>
+                <span class="text-outline">latency: 18ms</span>
+              </div>
+            </div>
+            <div
+              class="p-space-md font-code-sm text-code-sm bg-surface-container-lowest text-outline leading-relaxed overflow-x-auto"
+            >
+              <div class="flex gap-space-md">
+                <span class="text-outline/40 select-none">14:02:18</span>
+                <span class="text-on-surface-variant"
+                  >[orchestrator] Re-indexed repository registry for workspace
+                  'kairo-core'. Found 4 targets.</span
+                >
+              </div>
+              <div class="flex gap-space-md">
+                <span class="text-outline/40 select-none">14:03:02</span>
+                <span class="text-on-surface-variant"
+                  >[runner-04] Initialized agent workflow for
+                  <span class="text-on-surface">'Booking System'</span>.
+                  Synthesizing Prisma schema.</span
+                >
+              </div>
+              <div class="flex gap-space-md">
+                <span class="text-outline/40 select-none">14:04:11</span>
+                <span class="text-secondary"
+                  >[runner-04:step-3] Generating Express router controllers.
+                  Token usage: 4.8k tokens.</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer
+      class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl"
+    >
+      <div
+        class="w-full px-space-xl flex flex-col md:flex-row items-center justify-between gap-space-lg"
+      >
+        <div class="flex items-center gap-space-sm">
+          <img
+            alt="Brand logo. - Primary color: #6d5ef5
 - Font: inter
 - Mode: dark
 - Roundness: rounded-sm
-" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">KairoPro</span></div><div class="flex flex-wrap items-center justify-center gap-space-lg"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="features" href="#">Features</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="pricing" href="#">Pricing</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="docs" href="#">Docs</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="github" href="#">GitHub</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="terms" href="#">Terms</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="privacy" href="#">Privacy</a></div><div class="text-on-surface-variant font-body-sm text-body-sm font-label-md text-label-md">© 2025 KairoPro Inc. All rights reserved.</div></div></footer></body></html>
+"
+            class="h-6 w-auto object-contain"
+            src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"
+          /><span
+            class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+            >KairoPro</span
+          >
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-space-lg">
+          <a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="features"
+            href="#"
+            >Features</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="pricing"
+            href="#"
+            >Pricing</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="docs"
+            href="#"
+            >Docs</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="github"
+            href="#"
+            >GitHub</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="terms"
+            href="#"
+            >Terms</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="privacy"
+            href="#"
+            >Privacy</a
+          >
+        </div>
+        <div
+          class="text-on-surface-variant font-body-sm text-body-sm font-label-md text-label-md"
+        >
+          © 2025 KairoPro Inc. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

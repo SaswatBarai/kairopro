@@ -1,5 +1,6 @@
 import { FadeIn } from "@/components/landing/fade-in";
 import { SectionHeading } from "@/components/landing/section-heading";
+import { Card } from "@/components/ui/card";
 
 const coreLayers = [
   { label: "DATABASE", cls: "text-brand-cyan" },
@@ -44,7 +45,7 @@ export function Architecture() {
       </FadeIn>
 
       <FadeIn delay={0.1}>
-        <div className="relative overflow-hidden rounded-lg border border-white/[0.08] bg-brand-surface p-8">
+        <Card className="relative gap-0 overflow-hidden rounded-lg border-white/[0.08] bg-brand-surface p-8 shadow-none">
           <div className="flex flex-col items-center gap-8 text-center font-mono-tech">
             {/* Top: spec input */}
             <div className="rounded border border-white/[0.12] bg-brand-surface-muted px-6 py-2.5 text-xs text-zinc-100 shadow-md">
@@ -89,7 +90,7 @@ export function Architecture() {
               ))}
             </div>
           </div>
-        </div>
+        </Card>
       </FadeIn>
     </section>
   );

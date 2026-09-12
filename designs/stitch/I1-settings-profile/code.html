@@ -1,399 +1,1123 @@
-<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"outline-variant":"#474555","surface-bright":"#39383e","inverse-on-surface":"#303036","surface-container":"#1f1f25","on-secondary-fixed":"#001f25","on-surface":"#e4e1e9","primary":"#c5c0ff","tertiary-fixed":"#6ffbbe","surface-tint":"#c5c0ff","inverse-primary":"#5544dc","on-secondary":"#00363e","surface-container-low":"#1b1b20","secondary-fixed-dim":"#2fd9f4","tertiary":"#4edea3","surface-variant":"#35343a","secondary":"#5de6ff","on-tertiary-fixed":"#002113","error":"#ffb4ab","on-tertiary":"#003824","tertiary-container":"#00865c","tertiary-fixed-dim":"#4edea3","inverse-surface":"#e4e1e9","surface-container-lowest":"#0e0e13","on-secondary-container":"#00515d","surface":"#131318","on-primary":"#2600a1","on-secondary-fixed-variant":"#004e5a","on-background":"#e4e1e9","on-error-container":"#ffdad6","on-primary-fixed-variant":"#3c24c5","secondary-container":"#00cbe6","primary-fixed-dim":"#c5c0ff","surface-dim":"#131318","on-primary-fixed":"#150067","outline":"#928ea1","on-primary-container":"#fffdff","primary-fixed":"#e4dfff","on-tertiary-fixed-variant":"#005236","on-tertiary-container":"#fafff9","background":"#131318","primary-container":"#6d5ef5","surface-container-highest":"#35343a","secondary-fixed":"#a2eeff","error-container":"#93000a","surface-container-high":"#2a292f","on-error":"#690005","on-surface-variant":"#c8c4d7"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"space-xs":"0.25rem","gutter-mobile":"0.5rem",margin:"1rem",gutter:"0.75rem","margin-mobile":"0.75rem","space-md":"0.75rem","space-xl":"1.5rem","space-sm":"0.5rem","space-lg":"1rem"},fontFamily:{"headline-xl":["Inter"],"body-sm":["Inter"],"code-md":["JetBrains Mono"],"label-xs":["JetBrains Mono"],"code-sm":["JetBrains Mono"],"body-md":["Inter"],"code-lg":["JetBrains Mono"],"headline-sm":["Inter"],"headline-lg":["Inter"],"label-md":["JetBrains Mono"]},fontSize:{"headline-xl":["24px",{lineHeight:"32px",letterSpacing:"-0.02em",fontWeight:"600"}],"body-sm":["12px",{lineHeight:"16px",letterSpacing:"0em",fontWeight:"400"}],"code-md":["12px",{lineHeight:"18px",letterSpacing:"0em",fontWeight:"400"}],"label-xs":["10px",{lineHeight:"12px",letterSpacing:"0.05em",fontWeight:"600"}],"code-sm":["11px",{lineHeight:"15px",letterSpacing:"0em",fontWeight:"400"}],"body-md":["13px",{lineHeight:"18px",letterSpacing:"-0.005em",fontWeight:"400"}],"code-lg":["13px",{lineHeight:"20px",letterSpacing:"-0.01em",fontWeight:"500"}],"headline-sm":["15px",{lineHeight:"20px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg":["20px",{lineHeight:"28px",letterSpacing:"-0.015em",fontWeight:"600"}],"label-md":["11px",{lineHeight:"14px",letterSpacing:"0.03em",fontWeight:"500"}]}}}};</script></head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md antialiased min-h-screen"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30"><div class="h-14 w-full px-space-xl flex items-center justify-between"><div class="flex items-center gap-space-xl"><a class="flex items-center gap-space-sm" data-path="home" href="#"><img alt="Brand logo. - Primary color: #6d5ef5
+<!doctype html>
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @layer base {
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        body {
+          overscroll-behavior: none;
+        }
+        main > :first-child {
+          margin-top: 0 !important;
+        }
+        main > :last-child {
+          margin-bottom: 0 !important;
+        }
+      }
+      ::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline-variant": "#474555",
+              "surface-bright": "#39383e",
+              "inverse-on-surface": "#303036",
+              "surface-container": "#1f1f25",
+              "on-secondary-fixed": "#001f25",
+              "on-surface": "#e4e1e9",
+              primary: "#c5c0ff",
+              "tertiary-fixed": "#6ffbbe",
+              "surface-tint": "#c5c0ff",
+              "inverse-primary": "#5544dc",
+              "on-secondary": "#00363e",
+              "surface-container-low": "#1b1b20",
+              "secondary-fixed-dim": "#2fd9f4",
+              tertiary: "#4edea3",
+              "surface-variant": "#35343a",
+              secondary: "#5de6ff",
+              "on-tertiary-fixed": "#002113",
+              error: "#ffb4ab",
+              "on-tertiary": "#003824",
+              "tertiary-container": "#00865c",
+              "tertiary-fixed-dim": "#4edea3",
+              "inverse-surface": "#e4e1e9",
+              "surface-container-lowest": "#0e0e13",
+              "on-secondary-container": "#00515d",
+              surface: "#131318",
+              "on-primary": "#2600a1",
+              "on-secondary-fixed-variant": "#004e5a",
+              "on-background": "#e4e1e9",
+              "on-error-container": "#ffdad6",
+              "on-primary-fixed-variant": "#3c24c5",
+              "secondary-container": "#00cbe6",
+              "primary-fixed-dim": "#c5c0ff",
+              "surface-dim": "#131318",
+              "on-primary-fixed": "#150067",
+              outline: "#928ea1",
+              "on-primary-container": "#fffdff",
+              "primary-fixed": "#e4dfff",
+              "on-tertiary-fixed-variant": "#005236",
+              "on-tertiary-container": "#fafff9",
+              background: "#131318",
+              "primary-container": "#6d5ef5",
+              "surface-container-highest": "#35343a",
+              "secondary-fixed": "#a2eeff",
+              "error-container": "#93000a",
+              "surface-container-high": "#2a292f",
+              "on-error": "#690005",
+              "on-surface-variant": "#c8c4d7",
+            },
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem",
+            },
+            spacing: {
+              "space-xs": "0.25rem",
+              "gutter-mobile": "0.5rem",
+              margin: "1rem",
+              gutter: "0.75rem",
+              "margin-mobile": "0.75rem",
+              "space-md": "0.75rem",
+              "space-xl": "1.5rem",
+              "space-sm": "0.5rem",
+              "space-lg": "1rem",
+            },
+            fontFamily: {
+              "headline-xl": ["Inter"],
+              "body-sm": ["Inter"],
+              "code-md": ["JetBrains Mono"],
+              "label-xs": ["JetBrains Mono"],
+              "code-sm": ["JetBrains Mono"],
+              "body-md": ["Inter"],
+              "code-lg": ["JetBrains Mono"],
+              "headline-sm": ["Inter"],
+              "headline-lg": ["Inter"],
+              "label-md": ["JetBrains Mono"],
+            },
+            fontSize: {
+              "headline-xl": [
+                "24px",
+                {
+                  lineHeight: "32px",
+                  letterSpacing: "-0.02em",
+                  fontWeight: "600",
+                },
+              ],
+              "body-sm": [
+                "12px",
+                { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "code-md": [
+                "12px",
+                { lineHeight: "18px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "label-xs": [
+                "10px",
+                {
+                  lineHeight: "12px",
+                  letterSpacing: "0.05em",
+                  fontWeight: "600",
+                },
+              ],
+              "code-sm": [
+                "11px",
+                { lineHeight: "15px", letterSpacing: "0em", fontWeight: "400" },
+              ],
+              "body-md": [
+                "13px",
+                {
+                  lineHeight: "18px",
+                  letterSpacing: "-0.005em",
+                  fontWeight: "400",
+                },
+              ],
+              "code-lg": [
+                "13px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "-0.01em",
+                  fontWeight: "500",
+                },
+              ],
+              "headline-sm": [
+                "15px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "-0.01em",
+                  fontWeight: "600",
+                },
+              ],
+              "headline-lg": [
+                "20px",
+                {
+                  lineHeight: "28px",
+                  letterSpacing: "-0.015em",
+                  fontWeight: "600",
+                },
+              ],
+              "label-md": [
+                "11px",
+                {
+                  lineHeight: "14px",
+                  letterSpacing: "0.03em",
+                  fontWeight: "500",
+                },
+              ],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="bg-surface-container-lowest text-on-surface font-body-md text-body-md antialiased min-h-screen"
+  >
+    <header
+      class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30"
+    >
+      <div class="h-14 w-full px-space-xl flex items-center justify-between">
+        <div class="flex items-center gap-space-xl">
+          <a class="flex items-center gap-space-sm" data-path="home" href="#"
+            ><img
+              alt="Brand logo. - Primary color: #6d5ef5
 - Font: inter
 - Mode: dark
 - Roundness: rounded-sm
-" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">KairoPro</span></a><nav class="hidden md:flex items-center gap-space-lg" data-active-classes="text-on-surface font-headline-sm"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="features" href="#">Features</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="pricing" href="#">Pricing</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md" data-path="docs" href="#">Docs</a></nav></div><div class="flex items-center gap-space-md"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md px-space-sm py-space-xs" data-path="login" href="#">Log in</a><a class="bg-primary-container text-on-primary-container hover:bg-inverse-primary transition-colors font-headline-sm text-headline-sm px-space-md py-space-xs rounded-DEFAULT flex items-center justify-center" data-path="signup" href="#">Start building</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-14 bg-surface-container-lowest"><div class="flex flex-col w-full">
-<div class="w-full bg-surface-container-low px-space-xl py-space-md flex flex-wrap items-center justify-between gap-space-md">
-<div class="flex items-center gap-space-md">
-<div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">
-<span class="hover:text-on-surface transition-colors cursor-pointer">workspace-alpha</span>
-<span class="text-outline-variant">/</span>
-<span class="hover:text-on-surface transition-colors cursor-pointer">settings</span>
-<span class="text-outline-variant">/</span>
-<span class="text-primary font-code-sm text-code-sm font-semibold">profile</span>
-</div>
-<div class="h-3 w-px bg-surface-variant"></div>
-<div class="flex items-center gap-1.5 px-space-xs py-0.5 rounded-DEFAULT bg-surface-container">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
-<span class="font-label-xs text-label-xs text-tertiary uppercase tracking-wider">Mesh Connected</span>
-</div>
-</div>
-<div class="flex items-center gap-space-md">
-<div class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-[14px] text-outline">terminal</span>
-<span>node-us-west-1a: <span class="text-secondary font-semibold">healthy</span></span>
-</div>
-<div class="h-3 w-px bg-surface-variant"></div>
-<div class="font-label-xs text-label-xs text-on-surface-variant">
-        ENV: <span class="text-on-surface font-code-sm text-code-sm">PRODUCTION</span>
-</div>
-</div>
-</div>
-<div class="w-full px-space-xl py-space-xl flex flex-col lg:flex-row gap-space-xl max-w-[1400px] mx-auto">
-<aside class="w-full lg:w-64 flex-shrink-0 flex flex-col gap-space-lg">
-<div>
-<div class="font-label-xs text-label-xs text-outline uppercase tracking-wider mb-space-sm px-space-sm">
-          Settings Scope
+"
+              class="h-8 w-auto object-contain"
+              src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"
+            /><span
+              class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+              >KairoPro</span
+            ></a
+          >
+          <nav
+            class="hidden md:flex items-center gap-space-lg"
+            data-active-classes="text-on-surface font-headline-sm"
+          >
+            <a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="features"
+              href="#"
+              >Features</a
+            ><a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="pricing"
+              href="#"
+              >Pricing</a
+            ><a
+              class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md"
+              data-path="docs"
+              href="#"
+              >Docs</a
+            >
+          </nav>
         </div>
-<nav class="flex flex-col gap-0.5">
-<a class="group relative flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT bg-surface-container text-on-surface shadow-sm" href="#">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-primary text-[18px]">person</span>
-<span class="font-headline-sm text-headline-sm">Profile</span>
-</div>
-<div class="w-1.5 h-4 rounded-full bg-primary-container"></div>
-</a>
-<a class="group flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT hover:bg-surface-container/60 text-on-surface-variant hover:text-on-surface transition-colors" href="#">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface">key</span>
-<span class="font-body-md text-body-md">Credentials / API Keys</span>
-</div>
-<span class="font-label-xs text-label-xs px-1.5 py-0.5 rounded-DEFAULT bg-surface-container-high text-outline">I2</span>
-</a>
-<a class="group flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT hover:bg-surface-container/60 text-on-surface-variant hover:text-on-surface transition-colors" href="#">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface">notifications</span>
-<span class="font-body-md text-body-md">Notifications</span>
-</div>
-<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-</a>
-<a class="group flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT hover:bg-surface-container/60 text-on-surface-variant hover:text-on-surface transition-colors" href="#">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface">credit_card</span>
-<span class="font-body-md text-body-md">Billing &amp; Usage</span>
-</div>
-</a>
-<a class="group flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT hover:bg-surface-container/60 text-on-surface-variant hover:text-on-surface transition-colors" href="#">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface">group</span>
-<span class="font-body-md text-body-md">Team / Members</span>
-</div>
-<span class="font-label-xs text-label-xs text-outline font-code-sm text-code-sm">4</span>
-</a>
-<div class="pt-space-md mt-space-sm">
-<div class="font-label-xs text-label-xs text-outline uppercase tracking-wider mb-space-sm px-space-sm">
-              Destructive
+        <div class="flex items-center gap-space-md">
+          <a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-md text-body-md px-space-sm py-space-xs"
+            data-path="login"
+            href="#"
+            >Log in</a
+          ><a
+            class="bg-primary-container text-on-primary-container hover:bg-inverse-primary transition-colors font-headline-sm text-headline-sm px-space-md py-space-xs rounded-DEFAULT flex items-center justify-center"
+            data-path="signup"
+            href="#"
+            >Start building</a
+          >
+          <div
+            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"
+          >
+            <span class="material-symbols-outlined text-on-primary text-[18px]"
+              >person</span
+            >
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="w-full pt-14 bg-surface-container-lowest">
+      <div class="flex flex-col w-full">
+        <div
+          class="w-full bg-surface-container-low px-space-xl py-space-md flex flex-wrap items-center justify-between gap-space-md"
+        >
+          <div class="flex items-center gap-space-md">
+            <div
+              class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant"
+            >
+              <span
+                class="hover:text-on-surface transition-colors cursor-pointer"
+                >workspace-alpha</span
+              >
+              <span class="text-outline-variant">/</span>
+              <span
+                class="hover:text-on-surface transition-colors cursor-pointer"
+                >settings</span
+              >
+              <span class="text-outline-variant">/</span>
+              <span class="text-primary font-code-sm text-code-sm font-semibold"
+                >profile</span
+              >
             </div>
-<a class="group flex items-center gap-space-sm px-space-md py-space-sm rounded-DEFAULT hover:bg-error-container/20 text-error hover:text-error transition-colors" href="#">
-<span class="material-symbols-outlined text-[18px]">warning</span>
-<span class="font-body-md text-body-md font-medium">Danger Zone</span>
-</a>
-</div>
-</nav>
-</div>
-<div class="bg-surface-container p-space-md rounded-DEFAULT flex flex-col gap-space-sm">
-<div class="flex items-center justify-between">
-<span class="font-label-xs text-label-xs uppercase tracking-wider text-outline">Compute Tier</span>
-<span class="font-label-xs text-label-xs text-secondary font-code-sm text-code-sm">Pro Plus</span>
-</div>
-<div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
-<div class="bg-secondary h-full w-[68%]"></div>
-</div>
-<div class="flex items-center justify-between font-code-sm text-code-sm text-on-surface-variant">
-<span>Agent Threads</span>
-<span class="text-on-surface font-medium">34 / 50</span>
-</div>
-</div>
-</aside>
-<main class="flex-1 min-w-0 flex flex-col gap-space-xl">
-<section class="flex flex-col gap-space-xs pb-space-sm">
-<div class="flex items-center gap-space-sm">
-<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Profile Settings</h1>
-<span class="font-label-xs text-label-xs px-2 py-0.5 rounded-DEFAULT bg-primary/15 text-primary tracking-wide">DEVELOPER CONSOLE</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-          Manage your personal information, developer persona, verified endpoints, and account security preferences.
-        </p>
-</section>
-<section class="bg-surface-container rounded-DEFAULT p-space-xl flex flex-col gap-space-xl shadow-sm">
-<div class="flex items-center justify-between pb-space-sm bg-surface-container-low px-space-md py-space-sm rounded-DEFAULT">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-primary text-[20px]">badge</span>
-<div>
-<h2 class="font-headline-sm text-headline-sm text-on-surface">Avatar &amp; Developer Identity</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Visual appearance across autonomous agent review threads and commits.</p>
-</div>
-</div>
-<span class="font-code-sm text-code-sm text-outline">SEC-UUID: #0192-AL-88</span>
-</div>
-<div class="flex flex-col md:flex-row items-start md:items-center gap-space-xl bg-surface-container-lowest p-space-lg rounded-DEFAULT">
-<div class="relative flex-shrink-0">
-<div class="w-20 h-20 rounded-xl bg-gradient-to-tr from-primary-container via-inverse-primary to-secondary flex items-center justify-center text-on-primary-container font-headline-lg text-headline-lg font-bold tracking-tight shadow-md">
-              AL
+            <div class="h-3 w-px bg-surface-variant"></div>
+            <div
+              class="flex items-center gap-1.5 px-space-xs py-0.5 rounded-DEFAULT bg-surface-container"
+            >
+              <span
+                class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"
+              ></span>
+              <span
+                class="font-label-xs text-label-xs text-tertiary uppercase tracking-wider"
+                >Mesh Connected</span
+              >
             </div>
-<span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-tertiary shadow-sm"></span>
-</div>
-<div class="flex-1 flex flex-col gap-space-sm">
-<div class="flex flex-wrap items-center gap-space-sm">
-<button class="bg-primary-container hover:bg-inverse-primary text-on-primary-container px-space-md py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm flex items-center gap-space-xs transition-colors shadow-sm" type="button">
-<span class="material-symbols-outlined text-[16px]">upload</span>
-<span>Change avatar</span>
-</button>
-<button class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface px-space-md py-space-xs rounded-DEFAULT font-body-md text-body-md transition-colors" type="button">
-                Remove
-              </button>
-</div>
-<p class="font-body-sm text-body-sm text-outline">
-              Recommended: 256x256px JPG, PNG or WebP. Max 2MB. SVG vectors automatically rasterized.
-            </p>
-</div>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
-<div class="flex flex-col gap-space-xs">
-<label class="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between" for="fullName">
-<span>Full name</span>
-<span class="font-label-xs text-label-xs text-outline">REQUIRED</span>
-</label>
-<input class="w-full bg-surface-container-lowest px-space-md py-space-sm rounded-DEFAULT text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-low transition-colors" id="fullName" type="text" value="Ada Lovelace">
-<span class="font-body-sm text-body-sm text-on-surface-variant">Shown on pull requests, deployment logs, and agent audit trails.</span>
-</div>
-<div class="flex flex-col gap-space-xs">
-<label class="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between" for="username">
-<span>Username / Handle</span>
-<span class="font-code-sm text-code-sm text-secondary">Public Namespace</span>
-</label>
-<div class="flex items-center w-full bg-surface-container-lowest rounded-DEFAULT px-space-md py-space-sm">
-<span class="font-code-md text-code-md text-outline select-none">kairopro.app/@</span>
-<input class="w-full bg-transparent text-secondary font-code-md text-code-md focus:outline-none ml-0.5" id="username" type="text" value="adalovelace">
-</div>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Unique identifier used for tagging inside workflow runs.</span>
-</div>
-<div class="flex flex-col gap-space-xs">
-<label class="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between" for="email">
-<span>Primary Email address</span>
-<span class="inline-flex items-center gap-1 font-label-xs text-label-xs text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-DEFAULT">
-<span class="material-symbols-outlined text-[12px]">check_circle</span>
-                Verified
-              </span>
-</label>
-<div class="flex items-center justify-between bg-surface-container-lowest px-space-md py-space-sm rounded-DEFAULT">
-<span class="font-code-md text-code-md text-on-surface">ada@lovelace.dev</span>
-<button class="font-label-xs text-label-xs text-primary hover:text-primary-fixed transition-colors" type="button">
-                Change primary
-              </button>
-</div>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Used for build failure webhooks and multi-factor auth challenges.</span>
-</div>
-<div class="flex flex-col gap-space-xs">
-<label class="font-headline-sm text-headline-sm text-on-surface" for="timezone">
-              Timezone
-            </label>
-<div class="relative">
-<select class="w-full appearance-none bg-surface-container-lowest px-space-md py-space-sm rounded-DEFAULT text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-low cursor-pointer" id="timezone">
-<option selected="" value="pst">UTC-8 (Pacific Standard Time - America/Los_Angeles)</option>
-<option value="utc">UTC+0 (Coordinated Universal Time - London)</option>
-<option value="est">UTC-5 (Eastern Standard Time - New York)</option>
-<option value="cet">UTC+1 (Central European Time - Berlin)</option>
-<option value="jst">UTC+9 (Japan Standard Time - Tokyo)</option>
-</select>
-<span class="material-symbols-outlined absolute right-3 top-2.5 text-outline pointer-events-none text-[18px]">expand_more</span>
-</div>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Determines cron schedules and workflow recurrence charts.</span>
-</div>
-<div class="flex flex-col gap-space-xs md:col-span-2">
-<label class="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between" for="bio">
-<span>Bio &amp; Persona</span>
-<span class="font-code-sm text-code-sm text-outline">69 / 240 chars</span>
-</label>
-<textarea class="w-full bg-surface-container-lowest px-space-md py-space-sm rounded-DEFAULT text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-low resize-none transition-colors" id="bio" rows="3">Full-stack engineer building automated workflows and serverless tools.</textarea>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Brief context fed into autonomous pairing agents to align code styling and language conventions.</span>
-</div>
-</div>
-</section>
-<section class="bg-surface-container rounded-DEFAULT p-space-xl flex flex-col gap-space-xl shadow-sm">
-<div class="flex items-center justify-between pb-space-sm bg-surface-container-low px-space-md py-space-sm rounded-DEFAULT">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-secondary text-[20px]">hub</span>
-<div>
-<h2 class="font-headline-sm text-headline-sm text-on-surface">Connected Accounts &amp; Git Providers</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Authenticate repository sync triggers and deployment pull requests.</p>
-</div>
-</div>
-<span class="font-code-sm text-code-sm text-tertiary">OAUTH 2.0 ACTIVE</span>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-<div class="bg-surface-container-lowest p-space-lg rounded-DEFAULT flex flex-col justify-between gap-space-md">
-<div class="flex items-start justify-between">
-<div class="flex items-center gap-space-md">
-<div class="w-10 h-10 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface">
-<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-<path clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" fill-rule="evenodd"></path>
-</svg>
-</div>
-<div>
-<div class="flex items-center gap-space-xs">
-<span class="font-headline-sm text-headline-sm text-on-surface">GitHub</span>
-<span class="font-code-sm text-code-sm text-primary">@adalovelace</span>
-</div>
-<div class="flex items-center gap-2 mt-0.5">
-<span class="inline-flex items-center gap-1 font-label-xs text-label-xs text-tertiary">
-<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                      Connected
+          </div>
+          <div class="flex items-center gap-space-md">
+            <div
+              class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-space-xs"
+            >
+              <span class="material-symbols-outlined text-[14px] text-outline"
+                >terminal</span
+              >
+              <span
+                >node-us-west-1a:
+                <span class="text-secondary font-semibold">healthy</span></span
+              >
+            </div>
+            <div class="h-3 w-px bg-surface-variant"></div>
+            <div class="font-label-xs text-label-xs text-on-surface-variant">
+              ENV:
+              <span class="text-on-surface font-code-sm text-code-sm"
+                >PRODUCTION</span
+              >
+            </div>
+          </div>
+        </div>
+        <div
+          class="w-full px-space-xl py-space-xl flex flex-col lg:flex-row gap-space-xl max-w-[1400px] mx-auto"
+        >
+          <aside
+            class="w-full lg:w-64 flex-shrink-0 flex flex-col gap-space-lg"
+          >
+            <div>
+              <div
+                class="font-label-xs text-label-xs text-outline uppercase tracking-wider mb-space-sm px-space-sm"
+              >
+                Settings Scope
+              </div>
+              <nav class="flex flex-col gap-0.5">
+                <a
+                  class="group relative flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT bg-surface-container text-on-surface shadow-sm"
+                  href="#"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-primary text-[18px]"
+                      >person</span
+                    >
+                    <span class="font-headline-sm text-headline-sm"
+                      >Profile</span
+                    >
+                  </div>
+                  <div
+                    class="w-1.5 h-4 rounded-full bg-primary-container"
+                  ></div>
+                </a>
+                <a
+                  class="group flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT hover:bg-surface-container/60 text-on-surface-variant hover:text-on-surface transition-colors"
+                  href="#"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface"
+                      >key</span
+                    >
+                    <span class="font-body-md text-body-md"
+                      >Credentials / API Keys</span
+                    >
+                  </div>
+                  <span
+                    class="font-label-xs text-label-xs px-1.5 py-0.5 rounded-DEFAULT bg-surface-container-high text-outline"
+                    >I2</span
+                  >
+                </a>
+                <a
+                  class="group flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT hover:bg-surface-container/60 text-on-surface-variant hover:text-on-surface transition-colors"
+                  href="#"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface"
+                      >notifications</span
+                    >
+                    <span class="font-body-md text-body-md">Notifications</span>
+                  </div>
+                  <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                </a>
+                <a
+                  class="group flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT hover:bg-surface-container/60 text-on-surface-variant hover:text-on-surface transition-colors"
+                  href="#"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface"
+                      >credit_card</span
+                    >
+                    <span class="font-body-md text-body-md"
+                      >Billing &amp; Usage</span
+                    >
+                  </div>
+                </a>
+                <a
+                  class="group flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT hover:bg-surface-container/60 text-on-surface-variant hover:text-on-surface transition-colors"
+                  href="#"
+                >
+                  <div class="flex items-center gap-space-sm">
+                    <span
+                      class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface"
+                      >group</span
+                    >
+                    <span class="font-body-md text-body-md"
+                      >Team / Members</span
+                    >
+                  </div>
+                  <span
+                    class="font-label-xs text-label-xs text-outline font-code-sm text-code-sm"
+                    >4</span
+                  >
+                </a>
+                <div class="pt-space-md mt-space-sm">
+                  <div
+                    class="font-label-xs text-label-xs text-outline uppercase tracking-wider mb-space-sm px-space-sm"
+                  >
+                    Destructive
+                  </div>
+                  <a
+                    class="group flex items-center gap-space-sm px-space-md py-space-sm rounded-DEFAULT hover:bg-error-container/20 text-error hover:text-error transition-colors"
+                    href="#"
+                  >
+                    <span class="material-symbols-outlined text-[18px]"
+                      >warning</span
+                    >
+                    <span class="font-body-md text-body-md font-medium"
+                      >Danger Zone</span
+                    >
+                  </a>
+                </div>
+              </nav>
+            </div>
+            <div
+              class="bg-surface-container p-space-md rounded-DEFAULT flex flex-col gap-space-sm"
+            >
+              <div class="flex items-center justify-between">
+                <span
+                  class="font-label-xs text-label-xs uppercase tracking-wider text-outline"
+                  >Compute Tier</span
+                >
+                <span
+                  class="font-label-xs text-label-xs text-secondary font-code-sm text-code-sm"
+                  >Pro Plus</span
+                >
+              </div>
+              <div
+                class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden"
+              >
+                <div class="bg-secondary h-full w-[68%]"></div>
+              </div>
+              <div
+                class="flex items-center justify-between font-code-sm text-code-sm text-on-surface-variant"
+              >
+                <span>Agent Threads</span>
+                <span class="text-on-surface font-medium">34 / 50</span>
+              </div>
+            </div>
+          </aside>
+          <main class="flex-1 min-w-0 flex flex-col gap-space-xl">
+            <section class="flex flex-col gap-space-xs pb-space-sm">
+              <div class="flex items-center gap-space-sm">
+                <h1
+                  class="font-headline-xl text-headline-xl text-on-surface tracking-tight"
+                >
+                  Profile Settings
+                </h1>
+                <span
+                  class="font-label-xs text-label-xs px-2 py-0.5 rounded-DEFAULT bg-primary/15 text-primary tracking-wide"
+                  >DEVELOPER CONSOLE</span
+                >
+              </div>
+              <p
+                class="font-body-md text-body-md text-on-surface-variant max-w-2xl"
+              >
+                Manage your personal information, developer persona, verified
+                endpoints, and account security preferences.
+              </p>
+            </section>
+            <section
+              class="bg-surface-container rounded-DEFAULT p-space-xl flex flex-col gap-space-xl shadow-sm"
+            >
+              <div
+                class="flex items-center justify-between pb-space-sm bg-surface-container-low px-space-md py-space-sm rounded-DEFAULT"
+              >
+                <div class="flex items-center gap-space-sm">
+                  <span
+                    class="material-symbols-outlined text-primary text-[20px]"
+                    >badge</span
+                  >
+                  <div>
+                    <h2
+                      class="font-headline-sm text-headline-sm text-on-surface"
+                    >
+                      Avatar &amp; Developer Identity
+                    </h2>
+                    <p
+                      class="font-body-sm text-body-sm text-on-surface-variant"
+                    >
+                      Visual appearance across autonomous agent review threads
+                      and commits.
+                    </p>
+                  </div>
+                </div>
+                <span class="font-code-sm text-code-sm text-outline"
+                  >SEC-UUID: #0192-AL-88</span
+                >
+              </div>
+              <div
+                class="flex flex-col md:flex-row items-start md:items-center gap-space-xl bg-surface-container-lowest p-space-lg rounded-DEFAULT"
+              >
+                <div class="relative flex-shrink-0">
+                  <div
+                    class="w-20 h-20 rounded-xl bg-gradient-to-tr from-primary-container via-inverse-primary to-secondary flex items-center justify-center text-on-primary-container font-headline-lg text-headline-lg font-bold tracking-tight shadow-md"
+                  >
+                    AL
+                  </div>
+                  <span
+                    class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-tertiary shadow-sm"
+                  ></span>
+                </div>
+                <div class="flex-1 flex flex-col gap-space-sm">
+                  <div class="flex flex-wrap items-center gap-space-sm">
+                    <button
+                      class="bg-primary-container hover:bg-inverse-primary text-on-primary-container px-space-md py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm flex items-center gap-space-xs transition-colors shadow-sm"
+                      type="button"
+                    >
+                      <span class="material-symbols-outlined text-[16px]"
+                        >upload</span
+                      >
+                      <span>Change avatar</span>
+                    </button>
+                    <button
+                      class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface px-space-md py-space-xs rounded-DEFAULT font-body-md text-body-md transition-colors"
+                      type="button"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <p class="font-body-sm text-body-sm text-outline">
+                    Recommended: 256x256px JPG, PNG or WebP. Max 2MB. SVG
+                    vectors automatically rasterized.
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
+                <div class="flex flex-col gap-space-xs">
+                  <label
+                    class="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between"
+                    for="fullName"
+                  >
+                    <span>Full name</span>
+                    <span class="font-label-xs text-label-xs text-outline"
+                      >REQUIRED</span
+                    >
+                  </label>
+                  <input
+                    class="w-full bg-surface-container-lowest px-space-md py-space-sm rounded-DEFAULT text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-low transition-colors"
+                    id="fullName"
+                    type="text"
+                    value="Ada Lovelace"
+                  />
+                  <span
+                    class="font-body-sm text-body-sm text-on-surface-variant"
+                    >Shown on pull requests, deployment logs, and agent audit
+                    trails.</span
+                  >
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                  <label
+                    class="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between"
+                    for="username"
+                  >
+                    <span>Username / Handle</span>
+                    <span class="font-code-sm text-code-sm text-secondary"
+                      >Public Namespace</span
+                    >
+                  </label>
+                  <div
+                    class="flex items-center w-full bg-surface-container-lowest rounded-DEFAULT px-space-md py-space-sm"
+                  >
+                    <span
+                      class="font-code-md text-code-md text-outline select-none"
+                      >kairopro.app/@</span
+                    >
+                    <input
+                      class="w-full bg-transparent text-secondary font-code-md text-code-md focus:outline-none ml-0.5"
+                      id="username"
+                      type="text"
+                      value="adalovelace"
+                    />
+                  </div>
+                  <span
+                    class="font-body-sm text-body-sm text-on-surface-variant"
+                    >Unique identifier used for tagging inside workflow
+                    runs.</span
+                  >
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                  <label
+                    class="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between"
+                    for="email"
+                  >
+                    <span>Primary Email address</span>
+                    <span
+                      class="inline-flex items-center gap-1 font-label-xs text-label-xs text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-DEFAULT"
+                    >
+                      <span class="material-symbols-outlined text-[12px]"
+                        >check_circle</span
+                      >
+                      Verified
                     </span>
-<span class="text-outline text-xs">•</span>
-<span class="font-code-sm text-code-sm text-on-surface-variant">Last synced 10m ago</span>
-</div>
-</div>
-</div>
-<button class="font-label-md text-label-md text-error hover:bg-error-container/20 px-space-sm py-space-xs rounded-DEFAULT transition-colors" type="button">
-                Disconnect
-              </button>
-</div>
-<div class="flex items-center justify-between pt-space-xs font-code-sm text-code-sm text-on-surface-variant bg-surface-container px-space-sm py-1 rounded-DEFAULT">
-<span>Sync scopes: repo, read:user, workflow</span>
-<span class="text-secondary cursor-pointer hover:underline">Re-authorize</span>
-</div>
-</div>
-<div class="bg-surface-container-lowest p-space-lg rounded-DEFAULT flex flex-col justify-between gap-space-md opacity-90 hover:opacity-100 transition-opacity">
-<div class="flex items-start justify-between">
-<div class="flex items-center gap-space-md">
-<div class="w-10 h-10 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface">
-<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-<path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 4.82 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0 1 18.6 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.51L23 13.45a.84.84 0 0 1-.35.94z"></path>
-</svg>
-</div>
-<div>
-<div class="flex items-center gap-space-xs">
-<span class="font-headline-sm text-headline-sm text-on-surface">GitLab</span>
-<span class="font-label-xs text-label-xs text-outline px-1.5 py-0.5 rounded-DEFAULT bg-surface-container-high">Self-hosted / Cloud</span>
-</div>
-<div class="flex items-center gap-2 mt-0.5">
-<span class="inline-flex items-center gap-1 font-label-xs text-label-xs text-outline">
-<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
-                      Not connected
-                    </span>
-</div>
-</div>
-</div>
-<button class="bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-md py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm flex items-center gap-1 transition-colors" type="button">
-<span class="material-symbols-outlined text-[16px]">add_link</span>
-<span>Connect</span>
-</button>
-</div>
-<div class="flex items-center justify-between pt-space-xs font-code-sm text-code-sm text-on-surface-variant bg-surface-container px-space-sm py-1 rounded-DEFAULT">
-<span>Target: gitlab.com &amp; custom domains</span>
-<span class="text-outline">Optional</span>
-</div>
-</div>
-</div>
-<div class="flex flex-col gap-space-md pt-space-sm">
-<div class="flex flex-wrap items-center justify-between gap-space-sm">
-<div>
-<h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-[18px] text-primary">key_vertical</span>
-<span>Registered SSH Keys</span>
-</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Deploy keys allowed to trigger CLI runs and inspect isolated sandbox pods.</p>
-</div>
-<button class="bg-primary-container hover:bg-inverse-primary text-on-primary-container px-space-md py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm flex items-center gap-space-xs transition-colors shadow-sm" type="button">
-<span class="material-symbols-outlined text-[16px]">add</span>
-<span>Add SSH Key</span>
-</button>
-</div>
-<div class="flex flex-col gap-space-sm">
-<div class="bg-surface-container-lowest p-space-md rounded-DEFAULT flex flex-col md:flex-row md:items-center justify-between gap-space-md">
-<div class="flex items-start gap-space-md">
-<div class="p-space-xs rounded-DEFAULT bg-surface-container text-secondary mt-0.5">
-<span class="material-symbols-outlined text-[20px]">laptop_mac</span>
-</div>
-<div class="flex flex-col gap-0.5">
-<div class="flex items-center gap-space-sm flex-wrap">
-<span class="font-code-lg text-code-lg text-on-surface font-semibold">id_ed25519_macbook</span>
-<span class="font-label-xs text-label-xs px-2 py-0.5 rounded-DEFAULT bg-tertiary/15 text-tertiary">Active</span>
-<span class="font-label-xs text-label-xs text-outline font-code-sm text-code-sm">ED25519</span>
-</div>
-<div class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-space-sm flex-wrap">
-<span class="text-outline">SHA256:7uK8x9pQ...9aQ2L</span>
-<span class="text-outline">•</span>
-<span>Added: Oct 12, 2024</span>
-<span class="text-outline">•</span>
-<span class="text-secondary">Last used: 2 hours ago</span>
-</div>
-</div>
-</div>
-<div class="flex items-center gap-space-xs self-end md:self-center">
-<button class="p-space-xs hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-DEFAULT transition-colors" title="Audit Log" type="button">
-<span class="material-symbols-outlined text-[18px]">history</span>
-</button>
-<button class="p-space-xs hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-DEFAULT transition-colors" title="Delete Key" type="button">
-<span class="material-symbols-outlined text-[18px]">delete</span>
-</button>
-</div>
-</div>
-<div class="bg-surface-container-lowest p-space-md rounded-DEFAULT flex flex-col md:flex-row md:items-center justify-between gap-space-md">
-<div class="flex items-start gap-space-md">
-<div class="p-space-xs rounded-DEFAULT bg-surface-container text-primary mt-0.5">
-<span class="material-symbols-outlined text-[20px]">dns</span>
-</div>
-<div class="flex flex-col gap-0.5">
-<div class="flex items-center gap-space-sm flex-wrap">
-<span class="font-code-lg text-code-lg text-on-surface font-semibold">id_rsa_workstation</span>
-<span class="font-label-xs text-label-xs px-2 py-0.5 rounded-DEFAULT bg-surface-container-high text-outline">Read/Write</span>
-<span class="font-label-xs text-label-xs text-outline font-code-sm text-code-sm">RSA-4096</span>
-</div>
-<div class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-space-sm flex-wrap">
-<span class="text-outline">SHA256:3xM4w2aP...1zP80</span>
-<span class="text-outline">•</span>
-<span>Added: Aug 04, 2024</span>
-<span class="text-outline">•</span>
-<span class="text-on-surface-variant">Last used: 3 days ago</span>
-</div>
-</div>
-</div>
-<div class="flex items-center gap-space-xs self-end md:self-center">
-<button class="p-space-xs hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-DEFAULT transition-colors" title="Audit Log" type="button">
-<span class="material-symbols-outlined text-[18px]">history</span>
-</button>
-<button class="p-space-xs hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-DEFAULT transition-colors" title="Delete Key" type="button">
-<span class="material-symbols-outlined text-[18px]">delete</span>
-</button>
-</div>
-</div>
-</div>
-</div>
-</section>
-<section class="bg-surface-container p-space-lg rounded-DEFAULT flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
-<div class="flex items-center gap-space-md">
-<div class="w-2.5 h-2.5 rounded-full bg-tertiary"></div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">
-            Changes to your profile and SSH keys take effect immediately across all active projects and runner pods.
-          </p>
-</div>
-<div class="flex items-center gap-space-sm self-end md:self-auto flex-shrink-0">
-<button class="bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-lg py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm transition-colors" type="button">
-            Cancel / Reset
-          </button>
-<button class="bg-primary-container hover:bg-inverse-primary text-on-primary-container px-space-xl py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm flex items-center gap-space-xs transition-colors shadow-md" id="saveBtn" type="button">
-<span class="material-symbols-outlined text-[18px]">save</span>
-<span>Save changes</span>
-</button>
-</div>
-</section>
-</main>
-</div>
-</div>
-<script>
-  (function() {
-    const saveBtn = document.getElementById('saveBtn');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        const originalHtml = saveBtn.innerHTML;
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span><span>Applying...</span>';
-        
-        setTimeout(() => {
-          saveBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check</span><span>Saved!</span>';
-          setTimeout(() => {
-            saveBtn.innerHTML = originalHtml;
-            saveBtn.disabled = false;
-          }, 1800);
-        }, 600);
-      });
-    }
-  })();
-</script></main><footer class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl"><div class="w-full px-space-xl flex flex-col md:flex-row items-center justify-between gap-space-lg"><div class="flex items-center gap-space-sm"><img alt="Brand logo. - Primary color: #6d5ef5
+                  </label>
+                  <div
+                    class="flex items-center justify-between bg-surface-container-lowest px-space-md py-space-sm rounded-DEFAULT"
+                  >
+                    <span class="font-code-md text-code-md text-on-surface"
+                      >ada@lovelace.dev</span
+                    >
+                    <button
+                      class="font-label-xs text-label-xs text-primary hover:text-primary-fixed transition-colors"
+                      type="button"
+                    >
+                      Change primary
+                    </button>
+                  </div>
+                  <span
+                    class="font-body-sm text-body-sm text-on-surface-variant"
+                    >Used for build failure webhooks and multi-factor auth
+                    challenges.</span
+                  >
+                </div>
+                <div class="flex flex-col gap-space-xs">
+                  <label
+                    class="font-headline-sm text-headline-sm text-on-surface"
+                    for="timezone"
+                  >
+                    Timezone
+                  </label>
+                  <div class="relative">
+                    <select
+                      class="w-full appearance-none bg-surface-container-lowest px-space-md py-space-sm rounded-DEFAULT text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-low cursor-pointer"
+                      id="timezone"
+                    >
+                      <option selected="" value="pst">
+                        UTC-8 (Pacific Standard Time - America/Los_Angeles)
+                      </option>
+                      <option value="utc">
+                        UTC+0 (Coordinated Universal Time - London)
+                      </option>
+                      <option value="est">
+                        UTC-5 (Eastern Standard Time - New York)
+                      </option>
+                      <option value="cet">
+                        UTC+1 (Central European Time - Berlin)
+                      </option>
+                      <option value="jst">
+                        UTC+9 (Japan Standard Time - Tokyo)
+                      </option>
+                    </select>
+                    <span
+                      class="material-symbols-outlined absolute right-3 top-2.5 text-outline pointer-events-none text-[18px]"
+                      >expand_more</span
+                    >
+                  </div>
+                  <span
+                    class="font-body-sm text-body-sm text-on-surface-variant"
+                    >Determines cron schedules and workflow recurrence
+                    charts.</span
+                  >
+                </div>
+                <div class="flex flex-col gap-space-xs md:col-span-2">
+                  <label
+                    class="font-headline-sm text-headline-sm text-on-surface flex items-center justify-between"
+                    for="bio"
+                  >
+                    <span>Bio &amp; Persona</span>
+                    <span class="font-code-sm text-code-sm text-outline"
+                      >69 / 240 chars</span
+                    >
+                  </label>
+                  <textarea
+                    class="w-full bg-surface-container-lowest px-space-md py-space-sm rounded-DEFAULT text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-low resize-none transition-colors"
+                    id="bio"
+                    rows="3"
+                  >
+Full-stack engineer building automated workflows and serverless tools.</textarea>
+                  <span
+                    class="font-body-sm text-body-sm text-on-surface-variant"
+                    >Brief context fed into autonomous pairing agents to align
+                    code styling and language conventions.</span
+                  >
+                </div>
+              </div>
+            </section>
+            <section
+              class="bg-surface-container rounded-DEFAULT p-space-xl flex flex-col gap-space-xl shadow-sm"
+            >
+              <div
+                class="flex items-center justify-between pb-space-sm bg-surface-container-low px-space-md py-space-sm rounded-DEFAULT"
+              >
+                <div class="flex items-center gap-space-sm">
+                  <span
+                    class="material-symbols-outlined text-secondary text-[20px]"
+                    >hub</span
+                  >
+                  <div>
+                    <h2
+                      class="font-headline-sm text-headline-sm text-on-surface"
+                    >
+                      Connected Accounts &amp; Git Providers
+                    </h2>
+                    <p
+                      class="font-body-sm text-body-sm text-on-surface-variant"
+                    >
+                      Authenticate repository sync triggers and deployment pull
+                      requests.
+                    </p>
+                  </div>
+                </div>
+                <span class="font-code-sm text-code-sm text-tertiary"
+                  >OAUTH 2.0 ACTIVE</span
+                >
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+                <div
+                  class="bg-surface-container-lowest p-space-lg rounded-DEFAULT flex flex-col justify-between gap-space-md"
+                >
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-space-md">
+                      <div
+                        class="w-10 h-10 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface"
+                      >
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                          <path
+                            clip-rule="evenodd"
+                            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                            fill-rule="evenodd"
+                          ></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-space-xs">
+                          <span
+                            class="font-headline-sm text-headline-sm text-on-surface"
+                            >GitHub</span
+                          >
+                          <span class="font-code-sm text-code-sm text-primary"
+                            >@adalovelace</span
+                          >
+                        </div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                          <span
+                            class="inline-flex items-center gap-1 font-label-xs text-label-xs text-tertiary"
+                          >
+                            <span
+                              class="w-1.5 h-1.5 rounded-full bg-tertiary"
+                            ></span>
+                            Connected
+                          </span>
+                          <span class="text-outline text-xs">•</span>
+                          <span
+                            class="font-code-sm text-code-sm text-on-surface-variant"
+                            >Last synced 10m ago</span
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      class="font-label-md text-label-md text-error hover:bg-error-container/20 px-space-sm py-space-xs rounded-DEFAULT transition-colors"
+                      type="button"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                  <div
+                    class="flex items-center justify-between pt-space-xs font-code-sm text-code-sm text-on-surface-variant bg-surface-container px-space-sm py-1 rounded-DEFAULT"
+                  >
+                    <span>Sync scopes: repo, read:user, workflow</span>
+                    <span class="text-secondary cursor-pointer hover:underline"
+                      >Re-authorize</span
+                    >
+                  </div>
+                </div>
+                <div
+                  class="bg-surface-container-lowest p-space-lg rounded-DEFAULT flex flex-col justify-between gap-space-md opacity-90 hover:opacity-100 transition-opacity"
+                >
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-space-md">
+                      <div
+                        class="w-10 h-10 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface"
+                      >
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                          <path
+                            d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 4.82 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0 1 18.6 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.51L23 13.45a.84.84 0 0 1-.35.94z"
+                          ></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-space-xs">
+                          <span
+                            class="font-headline-sm text-headline-sm text-on-surface"
+                            >GitLab</span
+                          >
+                          <span
+                            class="font-label-xs text-label-xs text-outline px-1.5 py-0.5 rounded-DEFAULT bg-surface-container-high"
+                            >Self-hosted / Cloud</span
+                          >
+                        </div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                          <span
+                            class="inline-flex items-center gap-1 font-label-xs text-label-xs text-outline"
+                          >
+                            <span
+                              class="w-1.5 h-1.5 rounded-full bg-outline-variant"
+                            ></span>
+                            Not connected
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      class="bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-md py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm flex items-center gap-1 transition-colors"
+                      type="button"
+                    >
+                      <span class="material-symbols-outlined text-[16px]"
+                        >add_link</span
+                      >
+                      <span>Connect</span>
+                    </button>
+                  </div>
+                  <div
+                    class="flex items-center justify-between pt-space-xs font-code-sm text-code-sm text-on-surface-variant bg-surface-container px-space-sm py-1 rounded-DEFAULT"
+                  >
+                    <span>Target: gitlab.com &amp; custom domains</span>
+                    <span class="text-outline">Optional</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-col gap-space-md pt-space-sm">
+                <div
+                  class="flex flex-wrap items-center justify-between gap-space-sm"
+                >
+                  <div>
+                    <h3
+                      class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-space-xs"
+                    >
+                      <span
+                        class="material-symbols-outlined text-[18px] text-primary"
+                        >key_vertical</span
+                      >
+                      <span>Registered SSH Keys</span>
+                    </h3>
+                    <p
+                      class="font-body-sm text-body-sm text-on-surface-variant"
+                    >
+                      Deploy keys allowed to trigger CLI runs and inspect
+                      isolated sandbox pods.
+                    </p>
+                  </div>
+                  <button
+                    class="bg-primary-container hover:bg-inverse-primary text-on-primary-container px-space-md py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm flex items-center gap-space-xs transition-colors shadow-sm"
+                    type="button"
+                  >
+                    <span class="material-symbols-outlined text-[16px]"
+                      >add</span
+                    >
+                    <span>Add SSH Key</span>
+                  </button>
+                </div>
+                <div class="flex flex-col gap-space-sm">
+                  <div
+                    class="bg-surface-container-lowest p-space-md rounded-DEFAULT flex flex-col md:flex-row md:items-center justify-between gap-space-md"
+                  >
+                    <div class="flex items-start gap-space-md">
+                      <div
+                        class="p-space-xs rounded-DEFAULT bg-surface-container text-secondary mt-0.5"
+                      >
+                        <span class="material-symbols-outlined text-[20px]"
+                          >laptop_mac</span
+                        >
+                      </div>
+                      <div class="flex flex-col gap-0.5">
+                        <div class="flex items-center gap-space-sm flex-wrap">
+                          <span
+                            class="font-code-lg text-code-lg text-on-surface font-semibold"
+                            >id_ed25519_macbook</span
+                          >
+                          <span
+                            class="font-label-xs text-label-xs px-2 py-0.5 rounded-DEFAULT bg-tertiary/15 text-tertiary"
+                            >Active</span
+                          >
+                          <span
+                            class="font-label-xs text-label-xs text-outline font-code-sm text-code-sm"
+                            >ED25519</span
+                          >
+                        </div>
+                        <div
+                          class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-space-sm flex-wrap"
+                        >
+                          <span class="text-outline"
+                            >SHA256:7uK8x9pQ...9aQ2L</span
+                          >
+                          <span class="text-outline">•</span>
+                          <span>Added: Oct 12, 2024</span>
+                          <span class="text-outline">•</span>
+                          <span class="text-secondary"
+                            >Last used: 2 hours ago</span
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="flex items-center gap-space-xs self-end md:self-center"
+                    >
+                      <button
+                        class="p-space-xs hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-DEFAULT transition-colors"
+                        title="Audit Log"
+                        type="button"
+                      >
+                        <span class="material-symbols-outlined text-[18px]"
+                          >history</span
+                        >
+                      </button>
+                      <button
+                        class="p-space-xs hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-DEFAULT transition-colors"
+                        title="Delete Key"
+                        type="button"
+                      >
+                        <span class="material-symbols-outlined text-[18px]"
+                          >delete</span
+                        >
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    class="bg-surface-container-lowest p-space-md rounded-DEFAULT flex flex-col md:flex-row md:items-center justify-between gap-space-md"
+                  >
+                    <div class="flex items-start gap-space-md">
+                      <div
+                        class="p-space-xs rounded-DEFAULT bg-surface-container text-primary mt-0.5"
+                      >
+                        <span class="material-symbols-outlined text-[20px]"
+                          >dns</span
+                        >
+                      </div>
+                      <div class="flex flex-col gap-0.5">
+                        <div class="flex items-center gap-space-sm flex-wrap">
+                          <span
+                            class="font-code-lg text-code-lg text-on-surface font-semibold"
+                            >id_rsa_workstation</span
+                          >
+                          <span
+                            class="font-label-xs text-label-xs px-2 py-0.5 rounded-DEFAULT bg-surface-container-high text-outline"
+                            >Read/Write</span
+                          >
+                          <span
+                            class="font-label-xs text-label-xs text-outline font-code-sm text-code-sm"
+                            >RSA-4096</span
+                          >
+                        </div>
+                        <div
+                          class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-space-sm flex-wrap"
+                        >
+                          <span class="text-outline"
+                            >SHA256:3xM4w2aP...1zP80</span
+                          >
+                          <span class="text-outline">•</span>
+                          <span>Added: Aug 04, 2024</span>
+                          <span class="text-outline">•</span>
+                          <span class="text-on-surface-variant"
+                            >Last used: 3 days ago</span
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="flex items-center gap-space-xs self-end md:self-center"
+                    >
+                      <button
+                        class="p-space-xs hover:bg-surface-container text-on-surface-variant hover:text-on-surface rounded-DEFAULT transition-colors"
+                        title="Audit Log"
+                        type="button"
+                      >
+                        <span class="material-symbols-outlined text-[18px]"
+                          >history</span
+                        >
+                      </button>
+                      <button
+                        class="p-space-xs hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-DEFAULT transition-colors"
+                        title="Delete Key"
+                        type="button"
+                      >
+                        <span class="material-symbols-outlined text-[18px]"
+                          >delete</span
+                        >
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section
+              class="bg-surface-container p-space-lg rounded-DEFAULT flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md"
+            >
+              <div class="flex items-center gap-space-md">
+                <div class="w-2.5 h-2.5 rounded-full bg-tertiary"></div>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">
+                  Changes to your profile and SSH keys take effect immediately
+                  across all active projects and runner pods.
+                </p>
+              </div>
+              <div
+                class="flex items-center gap-space-sm self-end md:self-auto flex-shrink-0"
+              >
+                <button
+                  class="bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-lg py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm transition-colors"
+                  type="button"
+                >
+                  Cancel / Reset
+                </button>
+                <button
+                  class="bg-primary-container hover:bg-inverse-primary text-on-primary-container px-space-xl py-space-xs rounded-DEFAULT font-headline-sm text-headline-sm flex items-center gap-space-xs transition-colors shadow-md"
+                  id="saveBtn"
+                  type="button"
+                >
+                  <span class="material-symbols-outlined text-[18px]"
+                    >save</span
+                  >
+                  <span>Save changes</span>
+                </button>
+              </div>
+            </section>
+          </main>
+        </div>
+      </div>
+      <script>
+        (function () {
+          const saveBtn = document.getElementById("saveBtn");
+          if (saveBtn) {
+            saveBtn.addEventListener("click", () => {
+              const originalHtml = saveBtn.innerHTML;
+              saveBtn.disabled = true;
+              saveBtn.innerHTML =
+                '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span><span>Applying...</span>';
+
+              setTimeout(() => {
+                saveBtn.innerHTML =
+                  '<span class="material-symbols-outlined text-[18px]">check</span><span>Saved!</span>';
+                setTimeout(() => {
+                  saveBtn.innerHTML = originalHtml;
+                  saveBtn.disabled = false;
+                }, 1800);
+              }, 600);
+            });
+          }
+        })();
+      </script>
+    </main>
+    <footer
+      class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl"
+    >
+      <div
+        class="w-full px-space-xl flex flex-col md:flex-row items-center justify-between gap-space-lg"
+      >
+        <div class="flex items-center gap-space-sm">
+          <img
+            alt="Brand logo. - Primary color: #6d5ef5
 - Font: inter
 - Mode: dark
 - Roundness: rounded-sm
-" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">KairoPro</span></div><div class="flex flex-wrap items-center justify-center gap-space-lg"><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="features" href="#">Features</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="pricing" href="#">Pricing</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="docs" href="#">Docs</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="github" href="#">GitHub</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="terms" href="#">Terms</a><a class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="privacy" href="#">Privacy</a></div><div class="text-on-surface-variant font-body-sm text-body-sm font-label-md text-label-md">© 2025 KairoPro Inc. All rights reserved.</div></div></footer></body></html>
+"
+            class="h-6 w-auto object-contain"
+            src="https://lh3.googleusercontent.com/aida/AEtjO1VLrQyYcGo1RjO7diuexQv8thWmYkgwudjOalRZMwgnhA2GgxGbTxPbq42qEOfONSQM_0PbkPN-v3np9L_zoDZD9Xt33lvBCznFbZo4e8sswPMibOfREFsrgUzjD0ieebWVo7EAgqh9KiGR3CWQOczzZ6s5so70ylAiQimND9Rw1qtU2ZzUxa1JIvaVeGOZp5L0xBHcyd5b2Uxyn2S0HBQTWhgSZ9bP7aArf0lEqtFTnY4Yo4z-Rei8hg8"
+          /><span
+            class="font-headline-sm text-headline-sm text-on-surface tracking-tight"
+            >KairoPro</span
+          >
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-space-lg">
+          <a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="features"
+            href="#"
+            >Features</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="pricing"
+            href="#"
+            >Pricing</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="docs"
+            href="#"
+            >Docs</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="github"
+            href="#"
+            >GitHub</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="terms"
+            href="#"
+            >Terms</a
+          ><a
+            class="text-on-surface-variant hover:text-on-surface transition-colors font-body-sm text-body-sm"
+            data-path="privacy"
+            href="#"
+            >Privacy</a
+          >
+        </div>
+        <div
+          class="text-on-surface-variant font-body-sm text-body-sm font-label-md text-label-md"
+        >
+          © 2025 KairoPro Inc. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

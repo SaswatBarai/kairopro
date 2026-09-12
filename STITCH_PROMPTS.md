@@ -6,7 +6,7 @@ Complete prompt set for generating KairoPro's marketing pages and application UI
 
 ## How to use this document
 
-**Stitch does not work with one big prompt.** It reads every prompt as a *fresh description of the whole screen* rather than an edit to the previous one, so a long prompt combining many changes makes it silently rebuild layouts and forget earlier decisions. This pack is therefore split into:
+**Stitch does not work with one big prompt.** It reads every prompt as a _fresh description of the whole screen_ rather than an edit to the previous one, so a long prompt combining many changes makes it silently rebuild layouts and forget earlier decisions. This pack is therefore split into:
 
 1. **One foundation prompt** — establishes the product, the vibe, and the shell
 2. **~25 single-screen prompts** — one screen per prompt, each with context, goal, layout, components, states, and copy
@@ -26,49 +26,49 @@ Work through them in order. Do not batch.
 
 ### Workflow
 
-| Step | Action |
-|------|--------|
-| 0 | Import / paste `DESIGN.md` into the project |
-| 1 | Run the Foundation prompt (Section 1) |
-| 2 | Generate marketing screens (Section 2) |
-| 3 | Generate auth screens (Section 3) |
-| 4 | Generate onboarding and gate screens (Section 4) |
-| 5 | Generate build and workspace screens (Section 5) |
-| 6 | Generate deploy and settings screens (Section 6) |
-| 7 | Refine using Section 7 patterns |
-| 8 | Export HTML/Tailwind, then port to Next.js + shadcn/ui |
+| Step | Action                                                 |
+| ---- | ------------------------------------------------------ |
+| 0    | Import / paste `DESIGN.md` into the project            |
+| 1    | Run the Foundation prompt (Section 1)                  |
+| 2    | Generate marketing screens (Section 2)                 |
+| 3    | Generate auth screens (Section 3)                      |
+| 4    | Generate onboarding and gate screens (Section 4)       |
+| 5    | Generate build and workspace screens (Section 5)       |
+| 6    | Generate deploy and settings screens (Section 6)       |
+| 7    | Refine using Section 7 patterns                        |
+| 8    | Export HTML/Tailwind, then port to Next.js + shadcn/ui |
 
 ### Screen inventory
 
-| # | Screen | Surface | Tier |
-|---|--------|---------|------|
-| A1 | Home / landing | Marketing | Core |
-| A2 | Features | Marketing | Core |
-| A3 | Pricing (beta) | Marketing | Core |
-| A4 | About | Marketing | Secondary |
-| A5 | Legal (Terms / Privacy) | Marketing | Secondary |
-| A6 | 404 | Marketing | Secondary |
-| B1 | Login | Auth | Core |
-| B2 | Register | Auth | Core |
-| B3 | Forgot password | Auth | Secondary |
-| C1 | New project — input | App | Core |
-| C2 | Agent questions | App | Core |
-| D1 | Gate 1 — PRD + design system | App | Core |
-| D2 | Gate 2 — data model | App | Core |
-| D3 | Gate 3 — app structure | App | Core |
-| E1 | Build in progress | App | Core |
-| E2 | Build complete / simplified | App | Core |
-| E3 | Cancel confirmation | App | Secondary |
-| F1 | Dashboard — empty | App | Core |
-| F2 | Dashboard — populated | App | Core |
-| G1 | Project workspace | App | Core |
-| G2 | Change request plan | App | Core |
-| G3 | History and undo | App | Secondary |
-| H1 | Deploy modal | App | Core |
-| H2 | GitHub export modal | App | Core |
-| H3 | Deploy success | App | Secondary |
-| I1 | Settings — profile | App | Secondary |
-| I2 | Settings — credentials | App | Core |
+| #   | Screen                       | Surface   | Tier      |
+| --- | ---------------------------- | --------- | --------- |
+| A1  | Home / landing               | Marketing | Core      |
+| A2  | Features                     | Marketing | Core      |
+| A3  | Pricing (beta)               | Marketing | Core      |
+| A4  | About                        | Marketing | Secondary |
+| A5  | Legal (Terms / Privacy)      | Marketing | Secondary |
+| A6  | 404                          | Marketing | Secondary |
+| B1  | Login                        | Auth      | Core      |
+| B2  | Register                     | Auth      | Core      |
+| B3  | Forgot password              | Auth      | Secondary |
+| C1  | New project — input          | App       | Core      |
+| C2  | Agent questions              | App       | Core      |
+| D1  | Gate 1 — PRD + design system | App       | Core      |
+| D2  | Gate 2 — data model          | App       | Core      |
+| D3  | Gate 3 — app structure       | App       | Core      |
+| E1  | Build in progress            | App       | Core      |
+| E2  | Build complete / simplified  | App       | Core      |
+| E3  | Cancel confirmation          | App       | Secondary |
+| F1  | Dashboard — empty            | App       | Core      |
+| F2  | Dashboard — populated        | App       | Core      |
+| G1  | Project workspace            | App       | Core      |
+| G2  | Change request plan          | App       | Core      |
+| G3  | History and undo             | App       | Secondary |
+| H1  | Deploy modal                 | App       | Core      |
+| H2  | GitHub export modal          | App       | Core      |
+| H3  | Deploy success               | App       | Secondary |
+| I1  | Settings — profile           | App       | Secondary |
+| I2  | Settings — credentials       | App       | Core      |
 
 ---
 
@@ -1059,18 +1059,21 @@ action.
 Use these sentence shapes when iterating. Name the screen and the component, and change one thing.
 
 **Tighten a layout**
+
 ```
 On the <screen name> screen, reduce the vertical gap between the <component>
 and the <component> below it to 24px. Do not change anything else.
 ```
 
 **Adjust a single component**
+
 ```
 On the <screen name> screen, in the <component name>, increase the button height
 to 44px and keep the label and colors exactly as they are.
 ```
 
 **Fix state visibility**
+
 ```
 On the <screen name> screen, make the <in-progress / completed / pending> state
 of the <component> clearly distinguishable. Use a filled cyan dot for in
@@ -1079,6 +1082,7 @@ muted grey for pending. Keep all other elements unchanged.
 ```
 
 **Enforce the palette**
+
 ```
 On the <screen name> screen, replace every use of cyan with the neutral surface
 color except for the live agent activity indicator, which stays cyan. Do not
@@ -1086,12 +1090,14 @@ change layout, spacing, or typography.
 ```
 
 **Improve density**
+
 ```
 On the <screen name> screen, set all body and panel text to 13px, set row heights
 to 32px, and reduce table cell padding. Keep the visual style identical.
 ```
 
 **Draft user-facing copy**
+
 ```
 On the <screen name> screen, rewrite the body text so it describes the outcome in
 plain language. Remove all technical terms, file names, error names, and status
@@ -1099,6 +1105,7 @@ codes. Keep the same length and layout.
 ```
 
 **Add a responsive breakpoint**
+
 ```
 On the <screen name> screen, add a mobile layout: collapse the left sidebar into
 a hamburger menu, stack the two columns vertically, and make the primary button
@@ -1132,11 +1139,11 @@ Create repository
 
 **The three load-bearing sentences:**
 
-- Simplified outcome: *"Your app is ready. Some features were simplified — you
-  can add them later from project settings."*
-- Undo scope: *"Undo restores code. Database changes are not reversed."*
-- Non-failure retry: *"Something interrupted the build. You can pick up where it
-  stopped."*
+- Simplified outcome: _"Your app is ready. Some features were simplified — you
+  can add them later from project settings."_
+- Undo scope: _"Undo restores code. Database changes are not reversed."_
+- Non-failure retry: _"Something interrupted the build. You can pick up where it
+  stopped."_
 
 **Words that must never appear in user-facing copy:** error, failed, failure,
 exception, stack trace, traceback, 500, 404 (except the 404 page title),
@@ -1150,13 +1157,13 @@ unless followed immediately by a recovery action.
 Per Stitch's documented weak spots, expect to correct these manually after
 generation:
 
-| Area | Likely problem | Fix |
-|------|----------------|-----|
-| D3 (App Structure) tables | Column spacing and alignment drift | Re-align by hand; set fixed column widths |
-| G1 (Workspace) | Four-region layout collapses or overflows | Rebuild the grid manually with explicit sizes |
-| E1 (Build view) terminal | Monospace wrapping and scroll behavior | Set explicit overflow and line-height |
-| I2 (Credentials) table | Masked input widths inconsistent | Fix input widths manually |
-| All screens | Excess container padding at small sizes | Apply the 8px grid by hand |
+| Area                      | Likely problem                            | Fix                                           |
+| ------------------------- | ----------------------------------------- | --------------------------------------------- |
+| D3 (App Structure) tables | Column spacing and alignment drift        | Re-align by hand; set fixed column widths     |
+| G1 (Workspace)            | Four-region layout collapses or overflows | Rebuild the grid manually with explicit sizes |
+| E1 (Build view) terminal  | Monospace wrapping and scroll behavior    | Set explicit overflow and line-height         |
+| I2 (Credentials) table    | Masked input widths inconsistent          | Fix input widths manually                     |
+| All screens               | Excess container padding at small sizes   | Apply the 8px grid by hand                    |
 
 Stitch also does not produce production React — it exports HTML and Tailwind
 scaffolding. Expect to port every screen to Next.js App Router components using

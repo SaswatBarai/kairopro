@@ -1,4 +1,6 @@
 import { FadeIn } from "@/components/landing/fade-in";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 const kw = "text-brand-purple";
 const fn = "text-brand-cyan";
@@ -33,12 +35,12 @@ export function CodeShowcase() {
 
         {/* Code editor display */}
         <FadeIn className="lg:col-span-7" delay={0.1}>
-          <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-brand-surface font-mono-tech text-xs shadow-xl">
+          <Card className="gap-0 overflow-hidden rounded-lg border-white/[0.08] bg-brand-surface py-0 font-mono-tech text-xs shadow-xl">
             <div className="flex h-9 items-center justify-between border-b border-white/[0.06] bg-brand-surface-muted px-4">
               <span className="text-[#e4e1e9]">src/app/api/tasks/route.ts</span>
-              <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-400">
+              <Badge variant="green" mono>
                 COMPILED (42ms)
-              </span>
+              </Badge>
             </div>
             <div className="overflow-x-auto p-4 text-[12px] leading-relaxed text-zinc-400">
               <p>
@@ -73,7 +75,8 @@ export function CodeShowcase() {
               </p>
               <p className="pl-4">
                 <span className={kw}>const</span> body ={" "}
-                <span className={kw}>await</span> req.<span className={fn}>json</span>();
+                <span className={kw}>await</span> req.
+                <span className={fn}>json</span>();
               </p>
               <p className="pl-4 text-zinc-500">
                 {"// Auto-injected validation schema derived from spec"}
@@ -95,7 +98,7 @@ export function CodeShowcase() {
               </p>
               <p>{"}"}</p>
             </div>
-          </div>
+          </Card>
         </FadeIn>
       </div>
     </section>

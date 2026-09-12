@@ -2,11 +2,11 @@
 
 Phase-wise plan for building KairoPro V1, split into three tracks: **Frontend**, **Backend**, and **AI**.
 
-| Document | Track |
-|----------|-------|
-| `IMPLEMENTATION_PLAN.md` (this file) | Master sequencing, dependencies, conventions |
-| `FRONTEND_PLAN.md` | FE-1 … FE-10 |
-| `BACKEND_AI_PLAN.md` | BE-1 … BE-11 and AI-1 … AI-9, organized by wave with integration gates inline |
+| Document                             | Track                                                                         |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| `IMPLEMENTATION_PLAN.md` (this file) | Master sequencing, dependencies, conventions                                  |
+| `FRONTEND_PLAN.md`                   | FE-1 … FE-10                                                                  |
+| `BACKEND_AI_PLAN.md`                 | BE-1 … BE-11 and AI-1 … AI-9, organized by wave with integration gates inline |
 
 **Backend and AI share one document because they are one work stream.** The AI track is blocked by backend work eight times, so the two are planned together with explicit seams, stubs, and integration gates. See `BACKEND_AI_PLAN.md` §1.
 
@@ -27,29 +27,29 @@ Three tracks are planned independently but share one foundation. The strategy is
 
 ## 2. Locked decisions
 
-| Decision | Choice | Consequence |
-|---|---|---|
-| Contracts | `packages/contracts/src/*.ts` — Zod schemas, types inferred | One source for types, runtime validation, MSW, and backend routes |
-| Initial render | React Server Components, fetching services directly | Read-only pages ship zero JS; no self-fetch anti-pattern |
-| Interactive data | TanStack Query, seeded with `initialData` | Polling, optimistic updates, pagination, cache invalidation |
-| Streams | Zustand ring buffers | High-frequency terminal and code output stays out of the query cache |
-| Mocking | MSW (browser + node) | One mock set serves dev and tests |
-| Unit tests | Vitest + React Testing Library | Fast, ESM-native, no Jest config friction |
-| E2E tests | Playwright, Phase FE-10 | Deferred until flows are stable |
-| Platform seams | Interfaces with local implementations | Redis/S3/multi-host later become file swaps |
-| Repo layout | pnpm workspaces + Turborepo | Package boundaries enforced structurally, not by lint |
-| Prisma | Prisma 7, `prisma-client` generator, explicit output path | `@kairopro/db` owns the client; see §2 Repository layout |
-| Styling | Tailwind CSS v4 — CSS-first `@theme`, no JS config | Matches the `DESIGN.md` export format exactly |
+| Decision         | Choice                                                      | Consequence                                                          |
+| ---------------- | ----------------------------------------------------------- | -------------------------------------------------------------------- |
+| Contracts        | `packages/contracts/src/*.ts` — Zod schemas, types inferred | One source for types, runtime validation, MSW, and backend routes    |
+| Initial render   | React Server Components, fetching services directly         | Read-only pages ship zero JS; no self-fetch anti-pattern             |
+| Interactive data | TanStack Query, seeded with `initialData`                   | Polling, optimistic updates, pagination, cache invalidation          |
+| Streams          | Zustand ring buffers                                        | High-frequency terminal and code output stays out of the query cache |
+| Mocking          | MSW (browser + node)                                        | One mock set serves dev and tests                                    |
+| Unit tests       | Vitest + React Testing Library                              | Fast, ESM-native, no Jest config friction                            |
+| E2E tests        | Playwright, Phase FE-10                                     | Deferred until flows are stable                                      |
+| Platform seams   | Interfaces with local implementations                       | Redis/S3/multi-host later become file swaps                          |
+| Repo layout      | pnpm workspaces + Turborepo                                 | Package boundaries enforced structurally, not by lint                |
+| Prisma           | Prisma 7, `prisma-client` generator, explicit output path   | `@kairopro/db` owns the client; see §2 Repository layout             |
+| Styling          | Tailwind CSS v4 — CSS-first `@theme`, no JS config          | Matches the `DESIGN.md` export format exactly                        |
 
 ### Data layer ownership
 
 This distinction is applied consistently across the frontend track.
 
-| Owner | Responsibility | Examples |
-|---|---|---|
-| **RSC** | Initial page render. Calls a service directly. | Dashboard list, gate content, settings |
+| Owner              | Responsibility                                                | Examples                                                           |
+| ------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **RSC**            | Initial page render. Calls a service directly.                | Dashboard list, gate content, settings                             |
 | **TanStack Query** | Anything that refetches while the user watches; all mutations | Build status polling, approve gate, version history, file contents |
-| **Zustand** | High-frequency append-only streams | Terminal lines, code deltas |
+| **Zustand**        | High-frequency append-only streams                            | Terminal lines, code deltas                                        |
 
 **Rule:** a TanStack `queryFn` only ever runs in the browser, so it always uses HTTP. Server-side data access goes through services. This avoids the dual-runtime `queryFn` problem entirely.
 
@@ -82,14 +82,14 @@ Dependencies flow one way: `web → core → {contracts, db}`. `templates` is re
 
 Blocks all three tracks. Nothing else starts until this is complete.
 
-| # | Phase | Deliverables | Exit criteria |
-|---|---|---|---|
-| P0.0 | Monorepo init | pnpm workspaces + Turborepo; `apps/web` + `packages/{contracts,db,core,templates}`; `tsconfig.base.json`; single root `.env` | `pnpm install` links exactly 5 workspace projects; the template skeleton is **not** one of them; `next` does not resolve from `packages/core` |
-| P0.1 | App scaffold | Next.js 16 App Router in `apps/web`, TypeScript 7 strict, Tailwind v4, shadcn/ui, ESLint + Prettier, Vitest | `pnpm dev` renders a page; `pnpm test` executes; no hardcoded hex |
-| P0.2 | Design tokens | `DESIGN.md` → `apps/web/src/app/theme.css` via `designmd export --format css-tailwind`; Inter and JetBrains Mono loaded | A token gallery page renders every color, type scale, and radius |
-| P0.3 | Test infrastructure | Vitest + RTL setup, MSW node server, `renderWithProviders` helper | One passing smoke test per setup area |
-| P0.4 | Contracts | Zod schemas in `@kairopro/contracts` for Project, Spec, Build, Input, Credential, Version, Usage, Error, plus all request/response shapes | Fixtures parse; types inferred; no hand-written duplicate types |
-| P0.5 | MSW handlers | A handler for every endpoint in the contract set; browser worker and node server | Every handler responds in dev and in tests |
+| #    | Phase               | Deliverables                                                                                                                              | Exit criteria                                                                                                                                 |
+| ---- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0.0 | Monorepo init       | pnpm workspaces + Turborepo; `apps/web` + `packages/{contracts,db,core,templates}`; `tsconfig.base.json`; single root `.env`              | `pnpm install` links exactly 5 workspace projects; the template skeleton is **not** one of them; `next` does not resolve from `packages/core` |
+| P0.1 | App scaffold        | Next.js 16 App Router in `apps/web`, TypeScript 7 strict, Tailwind v4, shadcn/ui, ESLint + Prettier, Vitest                               | `pnpm dev` renders a page; `pnpm test` executes; no hardcoded hex                                                                             |
+| P0.2 | Design tokens       | `DESIGN.md` → `apps/web/src/app/theme.css` via `designmd export --format css-tailwind`; Inter and JetBrains Mono loaded                   | A token gallery page renders every color, type scale, and radius                                                                              |
+| P0.3 | Test infrastructure | Vitest + RTL setup, MSW node server, `renderWithProviders` helper                                                                         | One passing smoke test per setup area                                                                                                         |
+| P0.4 | Contracts           | Zod schemas in `@kairopro/contracts` for Project, Spec, Build, Input, Credential, Version, Usage, Error, plus all request/response shapes | Fixtures parse; types inferred; no hand-written duplicate types                                                                               |
+| P0.5 | MSW handlers        | A handler for every endpoint in the contract set; browser worker and node server                                                          | Every handler responds in dev and in tests                                                                                                    |
 
 **P0.2 detail:** tokens are generated, never hand-written. The pipeline is:
 
@@ -100,7 +100,7 @@ pnpm design:export    # emits @theme CSS → apps/web/src/app/theme.css
 
 `DESIGN.md` is the source of truth for the KairoPro UI **and** for the generated app's theme. Editing a token means editing `DESIGN.md` and re-exporting — never editing CSS directly.
 
-**Tailwind v4 is CSS-first.** There is no `tailwind.config.ts`; the exported `@theme { … }` block *is* the configuration. That is why the `css-tailwind` export format maps onto this project with zero translation — the design artifact and the build config are the same file.
+**Tailwind v4 is CSS-first.** There is no `tailwind.config.ts`; the exported `@theme { … }` block _is_ the configuration. That is why the `css-tailwind` export format maps onto this project with zero translation — the design artifact and the build config are the same file.
 
 **P0.4 detail:** contracts live in `packages/contracts/src/` and export both the schema and its inferred type. Example shape:
 
@@ -108,12 +108,12 @@ pnpm design:export    # emits @theme CSS → apps/web/src/app/theme.css
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
-  status: z.enum(['DRAFT', 'SPECIFYING', 'BUILDING', 'READY', 'DEPLOYED']),
+  status: z.enum(["DRAFT", "SPECIFYING", "BUILDING", "READY", "DEPLOYED"]),
   previewUrl: z.string().url().nullable(),
   deployedUrl: z.string().url().nullable(),
   createdAt: z.string().datetime(),
-})
-export type Project = z.infer<typeof ProjectSchema>
+});
+export type Project = z.infer<typeof ProjectSchema>;
 ```
 
 ---
@@ -148,17 +148,17 @@ export type Project = z.infer<typeof ProjectSchema>
 
 ### Cross-track dependencies
 
-| Phase | Blocked by | Why |
-|-------|-----------|-----|
-| FE-1 … FE-10 | Phase 0 only | MSW satisfies every data need |
-| BE-1 … BE-5 | Phase 0 only | Contracts define the target |
-| AI-1, AI-2 | BE-1, BE-2 | Needs the data layer and the `ContainerRuntime` seam |
-| AI-4 | BE-4 | Workspace must exist to index |
-| AI-5 (Spec gen) | BE-6 | Specs must be storable |
-| AI-6 (Code gen) | BE-9 | Generated code must run somewhere |
-| AI-7 (Recovery) | AI-6, BE-10 | Needs a build to fail and a stream to report on |
-| AI-8 (Test agent) | AI-6, AI-7, BE-9 | Tests must execute |
-| AI-9 (Changes) | AI-4 … AI-8, BE-8 | Needs context, generation, verification, versioning |
+| Phase             | Blocked by        | Why                                                  |
+| ----------------- | ----------------- | ---------------------------------------------------- |
+| FE-1 … FE-10      | Phase 0 only      | MSW satisfies every data need                        |
+| BE-1 … BE-5       | Phase 0 only      | Contracts define the target                          |
+| AI-1, AI-2        | BE-1, BE-2        | Needs the data layer and the `ContainerRuntime` seam |
+| AI-4              | BE-4              | Workspace must exist to index                        |
+| AI-5 (Spec gen)   | BE-6              | Specs must be storable                               |
+| AI-6 (Code gen)   | BE-9              | Generated code must run somewhere                    |
+| AI-7 (Recovery)   | AI-6, BE-10       | Needs a build to fail and a stream to report on      |
+| AI-8 (Test agent) | AI-6, AI-7, BE-9  | Tests must execute                                   |
+| AI-9 (Changes)    | AI-4 … AI-8, BE-8 | Needs context, generation, verification, versioning  |
 
 **No frontend phase depends on any backend phase.** This is the property that makes the frontend-first strategy work, and it is verified mechanically:
 
@@ -271,15 +271,15 @@ These are repeated from `README.md` because they are the rules most likely to er
 
 ## 8. Risk register
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Mock drift from real API | Integration rework | Contracts in P0.4; MSW validates against them |
-| RSC/TanStack ownership confusion | Two sources of truth | Ownership table in §2, applied per phase |
-| `modules/` importing framework code | Blocks worker extraction | ESLint boundary rule from P0.1 |
-| Silent degradation hiding correctness bugs | Security holes | `recovery/rules.ts` policy in AI-7; explicit test assertions |
-| Dense UI screens (gates, workspace) | Visual drift from design | Screenshot diff in FE-10 against Stitch exports |
-| LLM provider not chosen | Blocks AI-1 provider impl | Interface work is provider-agnostic; only routing map waits |
-| Test agent scope (AI-8) | Delays first ship | Slot exists in the tree; deferring to V1.1 needs no structural change |
+| Risk                                       | Impact                    | Mitigation                                                            |
+| ------------------------------------------ | ------------------------- | --------------------------------------------------------------------- |
+| Mock drift from real API                   | Integration rework        | Contracts in P0.4; MSW validates against them                         |
+| RSC/TanStack ownership confusion           | Two sources of truth      | Ownership table in §2, applied per phase                              |
+| `modules/` importing framework code        | Blocks worker extraction  | ESLint boundary rule from P0.1                                        |
+| Silent degradation hiding correctness bugs | Security holes            | `recovery/rules.ts` policy in AI-7; explicit test assertions          |
+| Dense UI screens (gates, workspace)        | Visual drift from design  | Screenshot diff in FE-10 against Stitch exports                       |
+| LLM provider not chosen                    | Blocks AI-1 provider impl | Interface work is provider-agnostic; only routing map waits           |
+| Test agent scope (AI-8)                    | Delays first ship         | Slot exists in the tree; deferring to V1.1 needs no structural change |
 
 ---
 

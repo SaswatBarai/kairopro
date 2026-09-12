@@ -1,5 +1,8 @@
 import { FadeIn } from "@/components/landing/fade-in";
 import { SectionHeading } from "@/components/landing/section-heading";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 const checkpoints = [
   {
@@ -30,13 +33,46 @@ const checkpoints = [
 ];
 
 const streamLines = [
-  { n: "01", text: "[agent] initializing microvm sandbox container... ok", cls: "text-zinc-500" },
-  { n: "02", text: "[spec] parsed requirements from manifest: 100% match", cls: "text-zinc-500" },
-  { n: "03", text: "[agent] analyzing route /api/tasks/route.ts", cls: "text-zinc-100", tag: "[agent]", tagCls: "text-brand-cyan" },
-  { n: "04", text: "[patch] authorization guard added (RBAC enforce)", cls: "text-zinc-100", tag: "[patch]", tagCls: "text-brand-purple-light" },
-  { n: "05", text: "[test] 24 passed (0 failed, 48ms)", cls: "text-brand-green" },
-  { n: "06", text: "[deploy] production ready: artifact v2.4.1", cls: "font-medium text-emerald-400" },
-  { n: "07", text: "[agent] awaiting user checkout or export to github...", cls: "text-brand-cyan", caret: true },
+  {
+    n: "01",
+    text: "[agent] initializing microvm sandbox container... ok",
+    cls: "text-zinc-500",
+  },
+  {
+    n: "02",
+    text: "[spec] parsed requirements from manifest: 100% match",
+    cls: "text-zinc-500",
+  },
+  {
+    n: "03",
+    text: "[agent] analyzing route /api/tasks/route.ts",
+    cls: "text-zinc-100",
+    tag: "[agent]",
+    tagCls: "text-brand-cyan",
+  },
+  {
+    n: "04",
+    text: "[patch] authorization guard added (RBAC enforce)",
+    cls: "text-zinc-100",
+    tag: "[patch]",
+    tagCls: "text-brand-purple-light",
+  },
+  {
+    n: "05",
+    text: "[test] 24 passed (0 failed, 48ms)",
+    cls: "text-brand-green",
+  },
+  {
+    n: "06",
+    text: "[deploy] production ready: artifact v2.4.1",
+    cls: "font-medium text-emerald-400",
+  },
+  {
+    n: "07",
+    text: "[agent] awaiting user checkout or export to github...",
+    cls: "text-brand-cyan",
+    caret: true,
+  },
 ];
 
 export function AgentRuntime() {
@@ -53,7 +89,7 @@ export function AgentRuntime() {
 
       {/* Single large unified developer console */}
       <FadeIn delay={0.1}>
-        <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-brand-surface">
+        <Card className="gap-0 overflow-hidden rounded-lg border-white/[0.08] bg-brand-surface py-0 shadow-none">
           {/* Console bar */}
           <div className="flex h-10 items-center justify-between border-b border-white/[0.06] bg-brand-surface-muted px-5 font-mono-tech text-xs">
             <div className="flex items-center gap-3">
@@ -64,9 +100,9 @@ export function AgentRuntime() {
             </div>
             <div className="flex items-center gap-3 text-[11px]">
               <span className="text-zinc-500">SANDBOX #sandbox_081a</span>
-              <span className="rounded border border-brand-green/20 bg-brand-green/10 px-2 py-0.5 text-brand-green">
+              <Badge variant="green" mono>
                 ALL PASSING
-              </span>
+              </Badge>
             </div>
           </div>
 
@@ -96,7 +132,11 @@ export function AgentRuntime() {
                           : "text-sm text-zinc-500"
                     }
                   >
-                    {cp.state === "running" ? "●" : cp.state === "done" ? "✓" : "○"}
+                    {cp.state === "running"
+                      ? "●"
+                      : cp.state === "done"
+                        ? "✓"
+                        : "○"}
                   </span>
                   <div>
                     <div
@@ -148,13 +188,16 @@ export function AgentRuntime() {
                   ))}
                 </div>
               </div>
-              <div className="mt-6 flex items-center justify-between border-t border-white/[0.05] pt-3 text-[11px] text-zinc-500">
-                <span>PID: 10429</span>
-                <span>MEMORY: 248MB / 1024MB</span>
+              <div>
+                <Separator className="mb-3 bg-white/[0.05]" />
+                <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                  <span>PID: 10429</span>
+                  <span>MEMORY: 248MB / 1024MB</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </FadeIn>
     </section>
   );

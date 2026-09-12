@@ -23,18 +23,18 @@
 
 ## 1. What Changed From v1
 
-| Area | v1 | v2 | Reason |
-|------|----|----|--------|
-| Requirements gathering | One-shot: input → PRD | PM agent asks 3-5 bounded questions first | Cheapest place to catch a misunderstanding |
-| Spec artifacts | 3 (PRD, Data Model, App Structure) | 4 (+ Design System) | Design decisions must be captured before code, not improvised during it |
-| Design input | None | Reference site + logo + preset → extracted tokens | A reference URL is worth more than interrogating the user about typography |
-| Design output | None | Machine-consumable tokens (CSS vars + Tailwind config) | If design doesn't reach the code, the phase is theater |
-| Agent architecture | Workflow + single agent per phase | Phases + **one** independent agent boundary (testing) | Separate agents only pay off for parallelism, independence, or context isolation |
-| Testing | Fix loop consumes runtime errors | Independent test agent generates tests **from the spec** | Tests written from code test the implementation, not the requirements |
-| Ownership model | `Project.userId` | `Organization` + `Membership` (personal org in V1) | Turns the largest V2 rewrite into an additive change |
-| Metering | None | `UsageEvent` on every LLM call, build, container-minute | Turns V2 billing from retro-instrumentation into additive work |
-| Template | Single hardcoded template | `templateId` on Project, conventions in spec object | Protects the HeroUI V2 path |
-| Infrastructure seams | Direct `EventEmitter`, local paths | `EventBus` + `WorkspaceStore` interfaces | Protects the multi-host scaling path |
+| Area                   | v1                                 | v2                                                       | Reason                                                                           |
+| ---------------------- | ---------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Requirements gathering | One-shot: input → PRD              | PM agent asks 3-5 bounded questions first                | Cheapest place to catch a misunderstanding                                       |
+| Spec artifacts         | 3 (PRD, Data Model, App Structure) | 4 (+ Design System)                                      | Design decisions must be captured before code, not improvised during it          |
+| Design input           | None                               | Reference site + logo + preset → extracted tokens        | A reference URL is worth more than interrogating the user about typography       |
+| Design output          | None                               | Machine-consumable tokens (CSS vars + Tailwind config)   | If design doesn't reach the code, the phase is theater                           |
+| Agent architecture     | Workflow + single agent per phase  | Phases + **one** independent agent boundary (testing)    | Separate agents only pay off for parallelism, independence, or context isolation |
+| Testing                | Fix loop consumes runtime errors   | Independent test agent generates tests **from the spec** | Tests written from code test the implementation, not the requirements            |
+| Ownership model        | `Project.userId`                   | `Organization` + `Membership` (personal org in V1)       | Turns the largest V2 rewrite into an additive change                             |
+| Metering               | None                               | `UsageEvent` on every LLM call, build, container-minute  | Turns V2 billing from retro-instrumentation into additive work                   |
+| Template               | Single hardcoded template          | `templateId` on Project, conventions in spec object      | Protects the HeroUI V2 path                                                      |
+| Infrastructure seams   | Direct `EventEmitter`, local paths | `EventBus` + `WorkspaceStore` interfaces                 | Protects the multi-host scaling path                                             |
 
 ---
 
@@ -150,12 +150,12 @@ The critical design principle: **ask for a little, infer the rest.**
 
 **Ask (cheap, meaningful):**
 
-| Input | Required | Notes |
-|-------|----------|-------|
-| Reference site(s) | Optional | 1-3 URLs. Highest-value input — the system infers most tokens from these. |
-| Logo | Optional | Image upload. **Must have a text-wordmark fallback** so a missing logo never blocks the phase. |
-| Preset | Optional | Named choice: Clean SaaS, Bold Marketing, Dense Dashboard, Playful, Minimal. |
-| Freeform note | Optional | "Make it feel trustworthy" — used to pick a preset when none is chosen. |
+| Input             | Required | Notes                                                                                          |
+| ----------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| Reference site(s) | Optional | 1-3 URLs. Highest-value input — the system infers most tokens from these.                      |
+| Logo              | Optional | Image upload. **Must have a text-wordmark fallback** so a missing logo never blocks the phase. |
+| Preset            | Optional | Named choice: Clean SaaS, Bold Marketing, Dense Dashboard, Playful, Minimal.                   |
+| Freeform note     | Optional | "Make it feel trustworthy" — used to pick a preset when none is chosen.                        |
 
 **Infer (never interrogate):**
 
@@ -217,13 +217,21 @@ For the design phase to be real rather than decorative, its output must reach th
   "referenceSites": ["https://example.com"],
   "logo": { "url": "...", "fallback": "wordmark" },
   "tokens": {
-    "colors": { "primary": "hsl(221 83% 53%)", "..." : "..." },
-    "typography": { "family": "Inter", "scale": [12,14,16,20,24,32,48], "weights": [400,500,600] },
+    "colors": { "primary": "hsl(221 83% 53%)", "...": "..." },
+    "typography": {
+      "family": "Inter",
+      "scale": [12, 14, 16, 20, 24, 32, 48],
+      "weights": [400, 500, 600]
+    },
     "radius": "0.5rem",
     "density": "comfortable",
     "shadow": "soft"
   },
-  "componentStyle": { "button": "solid", "card": "bordered", "input": "outlined" }
+  "componentStyle": {
+    "button": "solid",
+    "card": "bordered",
+    "input": "outlined"
+  }
 }
 ```
 
@@ -233,7 +241,7 @@ The design spec is stored like any other spec (`DesignSpec` type), approved with
 
 Per-screen layout decisions require knowing the pages, which is App Structure. Therefore:
 
-- **Gate 1 (with PRD):** design *system* — tokens, type, shape, component style
+- **Gate 1 (with PRD):** design _system_ — tokens, type, shape, component style
 - **During build (after App Structure):** per-screen layout, derived from the design system + the approved page list
 
 The design system is global and stable. Screen layouts are downstream and mechanical.
@@ -263,7 +271,7 @@ Everything else is a phase.
 
 ### 5.2 The Cost of Splitting
 
-Separate agents do not just cost handoffs. They cost **contract drift**: two isolated contexts each invent half of an interface, and they disagree — `/api/tasks` returns `{ items: [] }` on one side and `[]` on the other; the form posts `dueDate` while the schema has `deadline`. Adding agents *causes* the class of bug it was meant to prevent unless contracts are frozen first.
+Separate agents do not just cost handoffs. They cost **contract drift**: two isolated contexts each invent half of an interface, and they disagree — `/api/tasks` returns `{ items: [] }` on one side and `[]` on the other; the form posts `dueDate` while the schema has `deadline`. Adding agents _causes_ the class of bug it was meant to prevent unless contracts are frozen first.
 
 ### 5.3 The Decision
 
@@ -313,13 +321,13 @@ Until this is disambiguated, no "AI services agent" is scoped. See [Open Questio
 
 ### 6.2 What Must Be Frozen
 
-| Contract | Source | Consumed By |
-|----------|--------|-------------|
-| Entity types and fields | Data Model (Prisma schema) | Backend, Frontend, Tests |
-| API request/response shapes | App Structure | Backend, Frontend, Tests |
-| Route list and methods | App Structure | Backend, Frontend, Tests |
-| Auth model and roles | PRD | Backend, Frontend, Tests |
-| Design tokens | Design Spec | Frontend, Tests |
+| Contract                    | Source                     | Consumed By              |
+| --------------------------- | -------------------------- | ------------------------ |
+| Entity types and fields     | Data Model (Prisma schema) | Backend, Frontend, Tests |
+| API request/response shapes | App Structure              | Backend, Frontend, Tests |
+| Route list and methods      | App Structure              | Backend, Frontend, Tests |
+| Auth model and roles        | PRD                        | Backend, Frontend, Tests |
+| Design tokens               | Design Spec                | Frontend, Tests          |
 
 ### 6.3 Enforcement
 
@@ -360,14 +368,14 @@ Three gates. Not four.
 
 Each phase gets a scoped tool set. The agent cannot use tools irrelevant to its phase, which reduces both error surface and context size.
 
-| Phase | Tools Available |
-|-------|-----------------|
-| PM Agent | none (pure conversation + structured output) |
-| Design | none (pure analysis + structured output); may fetch reference site HTML |
-| Backend | `read_file`, `write_file`, `edit_file`, `list_files`, `search_code`, `run_command`, `install_dependency` |
-| Frontend | `read_file`, `write_file`, `edit_file`, `list_files`, `search_code`, `install_dependency` |
-| Test Agent | `read_file`, `write_file`, `search_code`, `run_command`, `run_tests`, `list_files` |
-| Fix loop | full tool set including `read_logs`, `inspect_error`, `start_server`, `stop_server`, `take_screenshot` |
+| Phase      | Tools Available                                                                                          |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| PM Agent   | none (pure conversation + structured output)                                                             |
+| Design     | none (pure analysis + structured output); may fetch reference site HTML                                  |
+| Backend    | `read_file`, `write_file`, `edit_file`, `list_files`, `search_code`, `run_command`, `install_dependency` |
+| Frontend   | `read_file`, `write_file`, `edit_file`, `list_files`, `search_code`, `install_dependency`                |
+| Test Agent | `read_file`, `write_file`, `search_code`, `run_command`, `run_tests`, `list_files`                       |
+| Fix loop   | full tool set including `read_logs`, `inspect_error`, `start_server`, `stop_server`, `take_screenshot`   |
 
 Note that Backend and Frontend are denied `start_server` / browser tools — those belong to the run-and-test phase, not to code authoring.
 
@@ -389,11 +397,11 @@ This is the one handoff that pays for itself, for a specific reason: **tests wri
 
 ### 9.3 Outputs
 
-| Level | Scope | Example |
-|-------|-------|---------|
-| Unit | Pure functions, validation, business rules | "rejects a task with an empty title" |
-| Integration | API routes against a real DB | "POST /api/tasks creates a task and returns 201" |
-| E2E | Full user flows in a browser | "a manager can create a task and assign it" |
+| Level       | Scope                                      | Example                                          |
+| ----------- | ------------------------------------------ | ------------------------------------------------ |
+| Unit        | Pure functions, validation, business rules | "rejects a task with an empty title"             |
+| Integration | API routes against a real DB               | "POST /api/tasks creates a task and returns 201" |
+| E2E         | Full user flows in a browser               | "a manager can create a task and assign it"      |
 
 ### 9.4 Flow
 
@@ -463,15 +471,15 @@ If a test fails, the fix loop fixes the implementation. It may only modify a tes
 
 Items marked **now** must be built into V1 as described; otherwise V2 becomes a rewrite rather than an addition.
 
-| V2 Feature | V1 Must Have (now, cheap) | Without It (V2 cost) |
-|-----------|---------------------------|----------------------|
-| Billing / plans | `UsageEvent` on every LLM call + build + container-minute | Retro-instrument agent, build, execution modules — High |
-| HeroUI | `templateId` on Project; conventions in spec object | Fork template, prompts, context, tests, all generated code — High |
-| Team accounts | `Organization` + `Membership`, personal org auto-created | Rewrite schema, auth, every service, every route — High |
-| Multi-host scaling | `EventBus` + `WorkspaceStore` interfaces | Rewrite every local-path and in-process-bus assumption — Medium |
-| Vector search | `retrieve()` as single entry point | Edit every context call site — Low (already designed as a seam) |
-| Custom domains | reverse proxy already supports it; add mapping table | Low either way |
-| Multiple LLM providers | provider interface already abstract | None if interface is respected |
+| V2 Feature             | V1 Must Have (now, cheap)                                 | Without It (V2 cost)                                              |
+| ---------------------- | --------------------------------------------------------- | ----------------------------------------------------------------- |
+| Billing / plans        | `UsageEvent` on every LLM call + build + container-minute | Retro-instrument agent, build, execution modules — High           |
+| HeroUI                 | `templateId` on Project; conventions in spec object       | Fork template, prompts, context, tests, all generated code — High |
+| Team accounts          | `Organization` + `Membership`, personal org auto-created  | Rewrite schema, auth, every service, every route — High           |
+| Multi-host scaling     | `EventBus` + `WorkspaceStore` interfaces                  | Rewrite every local-path and in-process-bus assumption — Medium   |
+| Vector search          | `retrieve()` as single entry point                        | Edit every context call site — Low (already designed as a seam)   |
+| Custom domains         | reverse proxy already supports it; add mapping table      | Low either way                                                    |
+| Multiple LLM providers | provider interface already abstract                       | None if interface is respected                                    |
 
 **Not convertible cheaply — remains a rewrite regardless:** collaborative editing. SSE is one-directional; real-time collaborative editing requires bidirectional sync (CRDT or OT), which replaces the real-time layer. Keep this out of V2 unless it is a core requirement.
 

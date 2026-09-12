@@ -7,4 +7,4 @@
  *
  * Populated in BE-1.
  */
-export {}
+export {};

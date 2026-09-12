@@ -4,13 +4,17 @@ import { motion } from "motion/react";
 
 import { FadeIn } from "@/components/landing/fade-in";
 import { SectionHeading } from "@/components/landing/section-heading";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 const specRequirements = [
   {
     id: "req-1",
     title: "### 1. Multi-tenant RBAC",
     titleClass: "text-zinc-100 group-hover:text-brand-purple-light",
-    detail: "Role hierarchy: ADMIN, DEVELOPER, AUDITOR. Scoped to Organization ID.",
+    detail:
+      "Role hierarchy: ADMIN, DEVELOPER, AUDITOR. Scoped to Organization ID.",
   },
   {
     id: "req-2",
@@ -33,19 +37,19 @@ const taskRows = [
     id: "TASK-102: Migrate auth middleware",
     dot: "bg-emerald-400",
     priority: "P0",
-    badge: "border-rose-500/20 bg-rose-500/10 text-rose-400",
+    badgeVariant: "rose" as const,
   },
   {
     id: "TASK-103: Seed tenant partition keys",
     dot: "bg-amber-400",
     priority: "P1",
-    badge: "border-amber-500/20 bg-amber-500/10 text-amber-300",
+    badgeVariant: "amber" as const,
   },
   {
     id: "TASK-104: Vitest integration contracts",
     dot: "bg-brand-cyan",
     priority: "P2",
-    badge: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+    badgeVariant: "green" as const,
   },
 ];
 
@@ -66,7 +70,7 @@ export function SpecToSoftware() {
       <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
         {/* Left: Product specification (markdown PRD view) */}
         <FadeIn className="lg:col-span-5" delay={0.1}>
-          <div className="flex h-full flex-col justify-between rounded-lg border border-white/[0.08] bg-brand-surface p-5 font-mono-tech text-xs">
+          <Card className="h-full justify-between gap-0 rounded-lg border-white/[0.08] bg-brand-surface p-5 font-mono-tech text-xs shadow-none">
             <div>
               <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-3 text-[11px] text-zinc-500">
                 <div className="flex items-center gap-2">
@@ -75,9 +79,9 @@ export function SpecToSoftware() {
                     SPECIFICATION // specs/task_suite.md
                   </span>
                 </div>
-                <span className="rounded bg-brand-purple/10 px-2 py-0.5 text-brand-purple">
+                <Badge variant="purple" mono>
                   SOURCE OF TRUTH
-                </span>
+                </Badge>
               </div>
               <div className="space-y-3 text-[11.5px] leading-relaxed text-zinc-400">
                 <div className="italic text-zinc-500">
@@ -101,24 +105,27 @@ export function SpecToSoftware() {
                 ))}
               </div>
             </div>
-            <div className="mt-6 flex items-center justify-between border-t border-white/[0.06] pt-4 text-[11px] text-zinc-500">
-              <span>Spec SHA: 8fbc190</span>
-              <span className="flex items-center gap-1 text-emerald-400">
-                <svg
-                  className="h-3.5 w-3.5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-                Strict Spec Pass
-              </span>
+            <div>
+              <Separator className="mb-4 bg-white/[0.06]" />
+              <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                <span>Spec SHA: 8fbc190</span>
+                <span className="flex items-center gap-1 text-emerald-400">
+                  <svg
+                    className="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  Strict Spec Pass
+                </span>
+              </div>
             </div>
-          </div>
+          </Card>
         </FadeIn>
 
         {/* Center: data stream line (hidden on small screens) */}
@@ -142,7 +149,7 @@ export function SpecToSoftware() {
 
         {/* Right: working application preview */}
         <FadeIn className="lg:col-span-5" delay={0.2}>
-          <div className="flex h-full flex-col justify-between rounded-lg border border-white/[0.08] bg-brand-surface p-5">
+          <Card className="h-full justify-between gap-0 rounded-lg border-white/[0.08] bg-brand-surface p-5 shadow-none">
             <div>
               <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-3 text-xs">
                 <div className="flex items-center gap-2">
@@ -155,9 +162,9 @@ export function SpecToSoftware() {
                     localhost:3000/app/tasks
                   </span>
                 </div>
-                <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono-tech text-[10px] text-emerald-400">
+                <Badge variant="green" mono>
                   LIVE COMPONENT
-                </span>
+                </Badge>
               </div>
 
               {/* Simulated application component */}
@@ -189,25 +196,27 @@ export function SpecToSoftware() {
                           {row.id}
                         </span>
                       </div>
-                      <span
-                        className={`rounded border px-1.5 py-0.5 font-mono-tech text-[10px] ${row.badge}`}
-                      >
+                      <Badge variant={row.badgeVariant} mono>
                         {row.priority}
-                      </span>
+                      </Badge>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 flex items-center justify-between border-t border-white/[0.05] pt-3 font-mono-tech text-[10px] text-zinc-500">
+                <Separator className="mt-4 bg-white/[0.05]" />
+                <div className="mt-3 flex items-center justify-between font-mono-tech text-[10px] text-zinc-500">
                   <span>DATABASE: PostgreSQL 15</span>
                   <span>STATUS: 200 OK (3ms)</span>
                 </div>
               </div>
             </div>
-            <div className="mt-6 flex items-center justify-between border-t border-white/[0.06] pt-4 font-mono-tech text-[11px] text-zinc-500">
-              <span>Next.js 14.2 App Router</span>
-              <span className="text-brand-cyan">Dynamic Edge SSR</span>
+            <div>
+              <Separator className="mb-4 bg-white/[0.06]" />
+              <div className="flex items-center justify-between font-mono-tech text-[11px] text-zinc-500">
+                <span>Next.js 14.2 App Router</span>
+                <span className="text-brand-cyan">Dynamic Edge SSR</span>
+              </div>
             </div>
-          </div>
+          </Card>
         </FadeIn>
       </div>
     </section>

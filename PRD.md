@@ -167,6 +167,7 @@ KairoPro generates real, customizable, production-grade code that the user owns 
 **Purpose:** Marketing, value proposition, call to action
 
 **Sections:**
+
 - Hero section: Headline, subheadline, CTA button ("Start Building")
 - How it works: 3-step visual (Describe → Review → Deploy)
 - Feature highlights: AI generation, real-time preview, one-click deploy
@@ -174,6 +175,7 @@ KairoPro generates real, customizable, production-grade code that the user owns 
 - Footer: Links, social, contact
 
 **Requirements:**
+
 - SEO-optimized (server-side rendered)
 - Fast load time (< 2 seconds)
 - Mobile responsive
@@ -182,6 +184,7 @@ KairoPro generates real, customizable, production-grade code that the user owns 
 ### 4.2 Authentication Pages
 
 **Signup Page:**
+
 - Email/password fields
 - Google OAuth button
 - "Already have an account? Log in" link
@@ -189,12 +192,14 @@ KairoPro generates real, customizable, production-grade code that the user owns 
 - Error messages for duplicate email, weak password, etc.
 
 **Login Page:**
+
 - Email/password fields
 - Google OAuth button
 - "Don't have an account? Sign up" link
 - "Forgot password?" link (V2 — for V1, show message "Contact support")
 
 **Requirements:**
+
 - NextAuth.js handles all auth logic
 - Session persists across page reloads
 - Redirect to dashboard after login
@@ -205,11 +210,13 @@ KairoPro generates real, customizable, production-grade code that the user owns 
 **Purpose:** List of projects, create new project
 
 **Empty State:**
+
 - Illustration or icon
 - "Create your first project" CTA
 - Brief description of what KairoPro does
 
 **With Projects:**
+
 - Grid or list view of projects
 - Each project card shows:
   - Project name
@@ -221,6 +228,7 @@ KairoPro generates real, customizable, production-grade code that the user owns 
 - Search/filter projects (V2)
 
 **Project Actions:**
+
 - Open project (navigates to project view)
 - Delete project (with confirmation)
 - Duplicate project (V2)
@@ -230,6 +238,7 @@ KairoPro generates real, customizable, production-grade code that the user owns 
 **Purpose:** Collect user requirements for the project
 
 **Layout:**
+
 - Left panel: Input area
 - Right panel: AI chat/preview (optional, shows AI understanding)
 
@@ -254,6 +263,7 @@ KairoPro generates real, customizable, production-grade code that the user owns 
    - AI processes all inputs together
 
 **Flow:**
+
 ```
 User enters description and/or uploads files
        ↓
@@ -267,6 +277,7 @@ Navigates to Approval Flow (Step 1: PRD)
 ```
 
 **Edge Cases:**
+
 - Empty input: Disable "Generate PRD" button, show validation message
 - Very long input (> 10,000 characters): Truncate with warning
 - Unsupported file format: Show error, suggest supported formats
@@ -280,10 +291,12 @@ Navigates to Approval Flow (Step 1: PRD)
 **Step 1: PRD Review**
 
 **Layout:**
+
 - Left panel: Generated PRD document
 - Right panel: Chat/feedback area
 
 **PRD Document Contains:**
+
 - App name and description
 - Target audience
 - Features list (with priority: must-have, nice-to-have)
@@ -294,6 +307,7 @@ Navigates to Approval Flow (Step 1: PRD)
 - Assumptions and questions
 
 **User Actions:**
+
 - Approve: Moves to Step 2 (Data Model)
 - Request changes: Types feedback in chat, AI revises PRD
 - Start over: Goes back to input flow
@@ -301,16 +315,19 @@ Navigates to Approval Flow (Step 1: PRD)
 **Step 2: Data Model Review**
 
 **Layout:**
+
 - Left panel: Visual entity-relationship diagram + Prisma schema
 - Right panel: Chat/feedback area
 
 **Data Model Contains:**
+
 - Entity list with fields, types, and constraints
 - Relationships between entities (one-to-many, many-to-many)
 - Prisma schema code
 - Indexes and unique constraints
 
 **User Actions:**
+
 - Approve: Moves to Step 3 (App Structure)
 - Request changes: Types feedback, AI revises data model
 - Go back: Returns to Step 1 (PRD) — downstream steps need re-approval
@@ -318,10 +335,12 @@ Navigates to Approval Flow (Step 1: PRD)
 **Step 3: App Structure Review**
 
 **Layout:**
+
 - Left panel: Page list, API endpoints, component tree
 - Right panel: Chat/feedback area
 
 **App Structure Contains:**
+
 - Page list with routes and descriptions
 - API endpoints with methods and descriptions
 - Component breakdown
@@ -329,16 +348,19 @@ Navigates to Approval Flow (Step 1: PRD)
 - Authentication requirements per page
 
 **User Actions:**
+
 - Approve: Starts build phase
 - Request changes: Types feedback, AI revises app structure
 - Go back: Returns to Step 2 (Data Model) — downstream steps need re-approval
 
 **Revision Handling:**
+
 - When a user changes an earlier section (e.g., edits the PRD after approving the data model), downstream sections are flagged for re-approval
 - V1: User must re-approve flagged sections manually
 - V2: AI automatically regenerates downstream sections
 
 **Chat/Feedback Area:**
+
 - User types natural language feedback
 - AI processes feedback and revises the spec
 - Revision history is maintained
@@ -349,6 +371,7 @@ Navigates to Approval Flow (Step 1: PRD)
 **Purpose:** Show real-time build progress
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Project: TaskManager          [Cancel Build]             │
@@ -409,12 +432,14 @@ Navigates to Approval Flow (Step 1: PRD)
    - User can pause/resume scrolling
 
 **Cancel Build:**
+
 - "Cancel Build" button in top-right corner
 - Confirmation dialog: "Cancel build? Progress will be saved up to the last completed step."
 - On cancel: System stops at next safe checkpoint, preserves everything generated so far
 - User can then: request changes, continue from checkpoint, or delete project
 
 **Build Completion:**
+
 - Success: Green checkmark, preview URL displayed, "View App" button
 - Partial success: Green checkmark with note about simplified features
 - Failure: Internal logging, user sees "Something went wrong. Our team has been notified. You can try again."
@@ -424,6 +449,7 @@ Navigates to Approval Flow (Step 1: PRD)
 **Purpose:** View, interact with, and modify the generated project
 
 **Layout:**
+
 ```
 ┌──────────────────────────────────────────────────────────┐
 │ Project: TaskManager        [Preview] [Deploy] [Export]  │
@@ -445,27 +471,32 @@ Navigates to Approval Flow (Step 1: PRD)
 ```
 
 **Left Panel: File Explorer**
+
 - Tree view of all project files
 - Click to open file in code editor
 - Color-coded by type (components, pages, API routes, etc.)
 
 **Center Panel: Code Editor (Monaco)**
+
 - Syntax highlighting
 - Read-only by default (V1)
 - V2: Editable with AI-assisted changes
 
 **Bottom Panel: Tabs**
+
 - Terminal: Shows running server logs
 - Logs: Shows application logs
 - Preview: Embedded iframe of the running app
 
 **Right Panel: AI Chat**
+
 - User types change requests in natural language
 - AI responds with planned changes
 - User approves or modifies
 - AI applies changes, runs tests, shows result
 
 **Change Request Flow:**
+
 ```
 User: "Add a deadline field to tasks"
        ↓
@@ -486,6 +517,7 @@ Preview updates
 ```
 
 **History Panel:**
+
 - List of all changes with timestamps
 - Each entry shows: change description, timestamp, undo button
 - "Undo" reverts to previous state
@@ -496,6 +528,7 @@ Preview updates
 **Purpose:** Deploy the project or export to GitHub
 
 **Deploy on KairoPro:**
+
 ```
 User clicks "Deploy"
        ↓
@@ -517,6 +550,7 @@ Success screen with live URL
 ```
 
 **Export to GitHub:**
+
 ```
 User clicks "Export to GitHub"
        ↓
@@ -617,6 +651,7 @@ Your app needs the following integrations:
 ```
 
 **Rules:**
+
 - Credentials are collected during the approval phase, not during the build
 - Each credential is optional — user can skip and add later
 - Credentials are stored encrypted (AES-256) at rest
@@ -631,6 +666,7 @@ Your app needs the following integrations:
 ### 6.1 Three-Step Approval Process
 
 **Why three steps:**
+
 - PRD catches "you misunderstood what I want"
 - Data Model catches "I need subtasks" or "users should have roles"
 - App Structure catches "I need a settings page" or "that API is missing search"
@@ -645,9 +681,11 @@ Your app needs the following integrations:
 # Project Name: TaskManager
 
 ## Description
+
 A task management application for teams to organize, track, and complete work.
 
 ## Target Audience
+
 - Small to medium-sized teams
 - Project managers
 - Individual contributors
@@ -655,6 +693,7 @@ A task management application for teams to organize, track, and complete work.
 ## Features
 
 ### Must-Have
+
 - User authentication (email/password)
 - Create, read, update, delete tasks
 - Assign tasks to team members
@@ -664,17 +703,20 @@ A task management application for teams to organize, track, and complete work.
 - Dashboard with task overview
 
 ### Nice-to-Have
+
 - Due dates and reminders
 - File attachments
 - Activity log
 - Search and filters
 
 ## User Roles
+
 - Admin: Full access, manage team, manage all tasks
 - Manager: Manage team tasks, assign tasks
 - Member: View and update own tasks
 
 ## User Stories
+
 1. As a Manager, I want to create tasks so that I can assign work to my team.
 2. As a Member, I want to see my assigned tasks so that I know what to work on.
 3. As an Admin, I want to manage team members so that I can control access.
@@ -682,15 +724,18 @@ A task management application for teams to organize, track, and complete work.
 5. As a Member, I want to update task status so that my manager knows progress.
 
 ## Third-Party Integrations
+
 - Google OAuth (authentication)
 
 ## Assumptions
+
 - Single team per account (V1)
 - No real-time notifications (V1)
 - Email/password as primary auth, Google OAuth as optional
 ```
 
 **User Actions:**
+
 - Approve: Moves to Step 2
 - Request changes: Types feedback, AI revises PRD
 - Start over: Goes back to input flow
@@ -759,11 +804,13 @@ enum Priority {
 ```
 
 **Visual Representation:**
+
 - Entity-relationship diagram showing all models and their connections
 - Field list with types and constraints
 - Relationships clearly labeled
 
 **User Actions:**
+
 - Approve: Moves to Step 3
 - Request changes: Types feedback, AI revises data model
 - Go back: Returns to Step 1 (PRD) — Step 3 will need re-approval
@@ -812,6 +859,7 @@ Components:
 ```
 
 **User Actions:**
+
 - Approve: Starts build phase
 - Request changes: Types feedback, AI revises app structure
 - Go back: Returns to Step 2 (Data Model)
@@ -828,6 +876,7 @@ When the user requests changes:
 6. Loop continues until approved
 
 **Change Highlighting:**
+
 - Added sections: Green highlight
 - Removed sections: Red highlight with strikethrough
 - Modified sections: Yellow highlight with before/after comparison
@@ -984,12 +1033,12 @@ The AI **never shows errors to the user**. The user always receives a working ap
 
 **Examples:**
 
-| What Failed | What User Gets | What User Sees |
-|-------------|---------------|----------------|
-| Google OAuth setup | Email/password login only | "Your app is ready! Login uses email/password. You can add Google login from settings." |
-| Complex analytics dashboard | Simple dashboard with basic stats | "Your app is ready! Here's your dashboard." |
-| Advanced search with filters | Basic search | "Your app is ready! Search is available on the tasks page." |
-| File upload feature | Feature omitted | "Your app is ready! You can add file attachments later." |
+| What Failed                  | What User Gets                    | What User Sees                                                                          |
+| ---------------------------- | --------------------------------- | --------------------------------------------------------------------------------------- |
+| Google OAuth setup           | Email/password login only         | "Your app is ready! Login uses email/password. You can add Google login from settings." |
+| Complex analytics dashboard  | Simple dashboard with basic stats | "Your app is ready! Here's your dashboard."                                             |
+| Advanced search with filters | Basic search                      | "Your app is ready! Search is available on the tasks page."                             |
+| File upload feature          | Feature omitted                   | "Your app is ready! You can add file attachments later."                                |
 
 ### 8.2 Error Recovery Flow
 
@@ -1092,6 +1141,7 @@ User: "Add a deadline field to tasks"
 ### 9.2 Smart Context (V1)
 
 **Project Summary (always included):**
+
 ```
 Project: TaskManager
 Stack: Next.js 14, PostgreSQL, Prisma, shadcn/ui, NextAuth
@@ -1103,6 +1153,7 @@ Conventions: App Router, server components, server actions, Zod validation
 ```
 
 **File Index:**
+
 ```json
 {
   "prisma/schema.prisma": "Database schema - defines User, Team, Task models",
@@ -1116,6 +1167,7 @@ Conventions: App Router, server components, server actions, Zod validation
 ```
 
 **Keyword + Dependency Matching:**
+
 - User says "deadline" + "tasks" → search file index for "task" → find relevant files
 - Dependency graph: changing Prisma schema → also update API routes and UI components
 
@@ -1134,6 +1186,7 @@ AI: "I'll make these changes:
 ```
 
 User can:
+
 - Approve: AI applies changes
 - Modify: "Also add a priority field" → AI updates plan
 - Cancel: No changes made
@@ -1176,12 +1229,12 @@ git commit -m "Add team management page"
 
 ### 10.3 User-Facing Operations
 
-| User Action | Git Operation | UI Representation |
-|------------|---------------|-------------------|
-| View history | `git log --oneline` | List of changes with timestamps |
-| View changes | `git diff` | Simplified diff view (added/removed lines) |
-| Undo last change | `git revert HEAD` | "Undo" button, shows what was reverted |
-| Restore previous version | `git checkout {commit}` | "Restore" button on history entry |
+| User Action              | Git Operation           | UI Representation                          |
+| ------------------------ | ----------------------- | ------------------------------------------ |
+| View history             | `git log --oneline`     | List of changes with timestamps            |
+| View changes             | `git diff`              | Simplified diff view (added/removed lines) |
+| Undo last change         | `git revert HEAD`       | "Undo" button, shows what was reverted     |
+| Restore previous version | `git checkout {commit}` | "Restore" button on history entry          |
 
 ### 10.4 History UI
 
@@ -1207,12 +1260,14 @@ History:
 After build completion:
 
 **Separate URL:**
+
 - Format: `https://{project-name}.preview.kairopro.dev`
 - Always available
 - Works reliably for all features including OAuth
 - Updated in real-time during builds
 
 **Iframe Preview:**
+
 - Embedded in KairoPro project view
 - May have edge cases with OAuth flows and same-origin policy
 - Responsive sizing
@@ -1359,58 +1414,58 @@ Success screen with:
 
 ### 14.1 Input Edge Cases
 
-| Scenario | Handling |
-|----------|----------|
-| Empty input | Disable "Generate PRD" button, show validation message |
-| Very long input (> 10,000 chars) | Truncate with warning |
-| Unsupported file format | Show error, suggest supported formats |
-| File too large (> 10MB) | Show error with size limit |
-| Upload fails | Show retry option |
-| Conflicting requirements | AI asks for clarification in PRD |
-| Ambiguous requirements | AI makes assumptions, lists them in PRD for review |
+| Scenario                         | Handling                                               |
+| -------------------------------- | ------------------------------------------------------ |
+| Empty input                      | Disable "Generate PRD" button, show validation message |
+| Very long input (> 10,000 chars) | Truncate with warning                                  |
+| Unsupported file format          | Show error, suggest supported formats                  |
+| File too large (> 10MB)          | Show error with size limit                             |
+| Upload fails                     | Show retry option                                      |
+| Conflicting requirements         | AI asks for clarification in PRD                       |
+| Ambiguous requirements           | AI makes assumptions, lists them in PRD for review     |
 
 ### 14.2 Build Edge Cases
 
-| Scenario | Handling |
-|----------|----------|
-| LLM API timeout | Retry 3 times, then show "Something went wrong" |
-| LLM generates invalid code | Fix loop (up to 3 attempts per file) |
-| LLM generates conflicting code | Fix loop with simpler approach |
-| Docker container fails to start | Retry with fresh container |
-| Database migration fails | Retry, then simplify schema |
-| npm install fails | Retry with cache clear |
-| Port already in use | Assign different port |
-| Build takes > 10 minutes | Show "Still working..." message, continue |
-| Build crashes completely | Show "Something went wrong" message, offer retry |
+| Scenario                        | Handling                                         |
+| ------------------------------- | ------------------------------------------------ |
+| LLM API timeout                 | Retry 3 times, then show "Something went wrong"  |
+| LLM generates invalid code      | Fix loop (up to 3 attempts per file)             |
+| LLM generates conflicting code  | Fix loop with simpler approach                   |
+| Docker container fails to start | Retry with fresh container                       |
+| Database migration fails        | Retry, then simplify schema                      |
+| npm install fails               | Retry with cache clear                           |
+| Port already in use             | Assign different port                            |
+| Build takes > 10 minutes        | Show "Still working..." message, continue        |
+| Build crashes completely        | Show "Something went wrong" message, offer retry |
 
 ### 14.3 Preview Edge Cases
 
-| Scenario | Handling |
-|----------|----------|
-| App crashes on load | Fix loop, then simplify |
-| OAuth redirect in iframe | Show "Open in new tab" button |
-| Slow app response | Show loading indicator |
-| App not accessible | Check container health, restart if needed |
+| Scenario                 | Handling                                  |
+| ------------------------ | ----------------------------------------- |
+| App crashes on load      | Fix loop, then simplify                   |
+| OAuth redirect in iframe | Show "Open in new tab" button             |
+| Slow app response        | Show loading indicator                    |
+| App not accessible       | Check container health, restart if needed |
 
 ### 14.4 Deployment Edge Cases
 
-| Scenario | Handling |
-|----------|----------|
-| Subdomain already taken | Suggest alternatives |
-| SSL certificate fails | Retry, then show error |
+| Scenario                | Handling                             |
+| ----------------------- | ------------------------------------ |
+| Subdomain already taken | Suggest alternatives                 |
+| SSL certificate fails   | Retry, then show error               |
 | Container won't stay up | Check logs, restart, then show error |
-| GitHub OAuth fails | Show error with retry |
-| GitHub repo name taken | Suggest alternatives |
+| GitHub OAuth fails      | Show error with retry                |
+| GitHub repo name taken  | Suggest alternatives                 |
 
 ### 14.5 Change Request Edge Cases
 
-| Scenario | Handling |
-|----------|----------|
-| Change conflicts with existing code | AI resolves conflict, shows plan |
-| Change requires database migration | AI generates migration, applies it |
-| Change breaks existing functionality | Fix loop, then simplify |
-| Change is too complex | AI breaks it into smaller steps |
-| Change is ambiguous | AI asks for clarification |
+| Scenario                             | Handling                           |
+| ------------------------------------ | ---------------------------------- |
+| Change conflicts with existing code  | AI resolves conflict, shows plan   |
+| Change requires database migration   | AI generates migration, applies it |
+| Change breaks existing functionality | Fix loop, then simplify            |
+| Change is too complex                | AI breaks it into smaller steps    |
+| Change is ambiguous                  | AI asks for clarification          |
 
 ---
 
