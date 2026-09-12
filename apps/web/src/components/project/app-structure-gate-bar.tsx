@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   ArrowRight,
@@ -15,12 +16,16 @@ import { cn } from "@/lib/utils";
 type BuildState = "idle" | "provisioning" | "started";
 
 export function AppStructureGateBar() {
+  const router = useRouter();
   const [buildState, setBuildState] = useState<BuildState>("idle");
 
   const onStartBuild = () => {
     if (buildState !== "idle") return;
     setBuildState("provisioning");
-    window.setTimeout(() => setBuildState("started"), 1200);
+    window.setTimeout(() => {
+      setBuildState("started");
+      window.setTimeout(() => router.push("/projects/new/build"), 900);
+    }, 1200);
   };
 
   return (

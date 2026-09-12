@@ -6,7 +6,9 @@ node_modules/
 .next/
 out/
 dist/
-build/
+# Root-anchored: an unanchored `build/` would also ignore source dirs
+# like apps/web/src/app/(dashboard)/projects/new/build.
+/build/
 .turbo/
 *.tsbuildinfo
 next-env.d.ts
