@@ -9,11 +9,14 @@
     "pnpm": ">=10"
   },
   "scripts": {
+    "prepare": "husky",
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "db:generate": "pnpm --filter @kairopro/db db:generate",
     "db:migrate": "pnpm --filter @kairopro/db db:migrate",
     "db:seed": "pnpm --filter @kairopro/db db:seed",
@@ -22,6 +25,8 @@
     "design:export": "npx -p @google/design.md designmd export --format css-tailwind DESIGN.md > apps/web/src/app/theme.css"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
     "prettier": "^3.4.2",
     "turbo": "^2.10.12",
     "typescript": "^7.0.2"
