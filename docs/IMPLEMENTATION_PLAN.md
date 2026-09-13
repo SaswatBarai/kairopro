@@ -94,14 +94,14 @@ Blocks all three tracks. Nothing else starts until this is complete.
 
 **Status (audited 2026-09-13):**
 
-| #    | Status                 | Note                                                                                                                             |
-| ---- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| P0.0 | Done                   | Five workspace projects; the template skeleton is not one of them; `next` does not resolve from `packages/core`                  |
-| P0.1 | Done                   | The app builds and runs; `pnpm test` is not functional yet (P0.3)                                                                |
-| P0.2 | Partial                | `design:export` was never run — no `theme.css`; brand tokens are hand-written in `apps/web/src/app/globals.css` (open item §9.5) |
-| P0.3 | Not started            | No Vitest config anywhere; lands alongside BE-1's integration tests                                                              |
-| P0.4 | Not started — **next** | Prerequisite for every BE phase whose routes validate responses                                                                  |
-| P0.5 | Skipped by decision    | The frontend shipped without MSW; pages rewire directly to real endpoints                                                        |
+| #    | Status              | Note                                                                                                                             |
+| ---- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| P0.0 | Done                | Five workspace projects; the template skeleton is not one of them; `next` does not resolve from `packages/core`                  |
+| P0.1 | Done                | The app builds and runs; `pnpm test` is not functional yet (P0.3)                                                                |
+| P0.2 | Partial             | `design:export` was never run — no `theme.css`; brand tokens are hand-written in `apps/web/src/app/globals.css` (open item §9.5) |
+| P0.3 | Not started         | No Vitest config anywhere; lands alongside BE-1's integration tests                                                              |
+| P0.4 | Done                | Shipped as `BACKEND_AI_PLAN.md` Phase 0 — schemas + inferred types, service registry, upload constraints, PM bounds, fixtures    |
+| P0.5 | Skipped by decision | The frontend shipped without MSW; pages rewire directly to real endpoints                                                        |
 
 **P0.2 detail:** tokens are generated, never hand-written. The pipeline is:
 

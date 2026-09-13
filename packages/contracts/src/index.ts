@@ -2,9 +2,17 @@
  * @kairopro/contracts
  *
  * Zod schemas and inferred types shared by the frontend, the backend routes,
- * and the MSW handlers. Isomorphic: no Node built-ins, no server-only code,
- * no internal dependencies beyond zod.
+ * and the agent. Isomorphic: no Node built-ins, no server-only code, no
+ * internal dependencies beyond zod.
  *
- * Populated in Phase 0 (P0.4).
+ * Written in Phase 0 (P0.4) against the shapes the shipped pages display.
  */
-export {};
+export * from "./error";
+export * from "./auth";
+export * from "./project";
+export * from "./spec";
+export * from "./build";
+export * from "./input";
+export * from "./credential";
+export * from "./version";
+export * from "./usage";
