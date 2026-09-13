@@ -23,6 +23,11 @@ export const metadata: Metadata = {
   title: "KairoPro — Autonomous Full-Stack Compiler & Runtime",
   description:
     "KairoPro reads your product specification, designs the architecture, writes the code, runs the application, fixes failures, and ships it.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
