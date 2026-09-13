@@ -13,6 +13,7 @@ import { ActivityRail } from "./activity-rail";
 import { AgentPanel } from "./agent-panel";
 import { CodeEditor } from "./code-editor";
 import { CommandPalette } from "./command-palette";
+import { DeployModal } from "./deploy-modal";
 import { FileExplorer } from "./file-explorer";
 import { CHECKPOINTS, HistoryDrawer } from "./history-drawer";
 import {
@@ -69,6 +70,7 @@ export function WorkspaceApp() {
   const [diffMode, setDiffMode] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [deployOpen, setDeployOpen] = useState(false);
   const [checkpointId, setCheckpointId] = useState(CHECKPOINTS[0]?.id ?? "");
   const [savedFile, setSavedFile] = useState<string | null>(null);
   const [resizing, setResizing] = useState<ResizeTarget | null>(null);
@@ -175,6 +177,7 @@ export function WorkspaceApp() {
       else if (id === "preview") preview();
       else if (id === "ask") askKairo();
       else if (id === "history") setHistoryOpen(true);
+      else if (id === "deploy") setDeployOpen(true);
     },
     [run, restart, toggleTerminal, preview, askKairo],
   );
@@ -243,6 +246,7 @@ export function WorkspaceApp() {
         onPreview={preview}
         onSave={save}
         onOpenHistory={() => setHistoryOpen(true)}
+        onDeploy={() => setDeployOpen(true)}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -340,6 +344,12 @@ export function WorkspaceApp() {
         onView={viewCheckpoint}
         onUndoCurrent={undoCurrentCheckpoint}
         onRevertTo={revertToCheckpoint}
+      />
+
+      <DeployModal
+        open={deployOpen}
+        onClose={() => setDeployOpen(false)}
+        onDeployed={flashSaved}
       />
     </div>
   );

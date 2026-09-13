@@ -5,6 +5,7 @@ import {
   Eye,
   GitFork,
   History,
+  Rocket,
   Save,
   Share,
   Terminal,
@@ -18,6 +19,7 @@ interface WorkspaceHeaderProps {
   onPreview: () => void;
   onSave: () => void;
   onOpenHistory: () => void;
+  onDeploy: () => void;
 }
 
 const HEADER_LABEL: Record<SandboxState, string> = {
@@ -34,6 +36,7 @@ export function WorkspaceHeader({
   onPreview,
   onSave,
   onOpenHistory,
+  onDeploy,
 }: WorkspaceHeaderProps) {
   const status = SANDBOX_STATUS[sandboxState];
 
@@ -72,6 +75,14 @@ export function WorkspaceHeader({
           <ChevronDown className="h-3 w-3 text-zinc-500" />
         </button>
         <span className="hidden h-4 w-px bg-white/10 sm:block" />
+        <button
+          type="button"
+          title="Deploy to production"
+          onClick={onDeploy}
+          className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+        >
+          <Rocket className="h-4 w-4" />
+        </button>
         <button
           type="button"
           title="History & checkpoints"

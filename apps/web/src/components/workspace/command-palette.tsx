@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Search,
   Terminal,
+  Zap,
   Ellipsis,
 } from "lucide-react";
 
@@ -33,6 +34,7 @@ interface CommandItem {
 const COMMANDS: CommandItem[] = [
   { id: "run", icon: Rocket, label: "Run sandbox" },
   { id: "restart", icon: RotateCcw, label: "Restart sandbox" },
+  { id: "deploy", icon: Zap, label: "Deploy to production" },
   { id: "toggle-terminal", icon: Terminal, label: "Toggle terminal" },
   { id: "preview", icon: Eye, label: "Open preview" },
   { id: "ask", icon: Bot, label: "Ask Kairo" },
