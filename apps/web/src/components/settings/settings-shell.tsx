@@ -33,8 +33,8 @@ export function SettingsShell({ children }: { children: ReactNode }) {
   const leaf = pathname.split("/").filter(Boolean).pop() ?? "profile";
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-brand-dark">
-      <div className="flex w-full flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] bg-white/[0.03] px-4 py-3 sm:px-6">
+    <div className="flex min-h-screen w-full flex-col bg-brand-dark lg:h-screen lg:overflow-hidden">
+      <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] bg-white/[0.03] px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 font-mono-tech text-[11px] font-medium tracking-[0.03em] text-zinc-300">
             <span className="cursor-pointer transition-colors hover:text-zinc-100">
@@ -75,7 +75,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-6 sm:px-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-start">
         <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-64">
           <div>
             <div className="mb-2 px-2 font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -174,7 +174,9 @@ export function SettingsShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1 lg:min-h-0 lg:overflow-y-auto">
+          {children}
+        </main>
       </div>
     </div>
   );
