@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { GithubMark } from "./export-modal";
 import { FILES, basename, dirname, fileTone } from "./code-content";
 
 interface CommandPaletteProps {
@@ -27,7 +29,7 @@ interface CommandPaletteProps {
 
 interface CommandItem {
   id: string;
-  icon: typeof Rocket;
+  icon: ComponentType<{ className?: string }>;
   label: string;
 }
 
@@ -35,6 +37,7 @@ const COMMANDS: CommandItem[] = [
   { id: "run", icon: Rocket, label: "Run sandbox" },
   { id: "restart", icon: RotateCcw, label: "Restart sandbox" },
   { id: "deploy", icon: Zap, label: "Deploy to production" },
+  { id: "export", icon: GithubMark, label: "Export to GitHub" },
   { id: "toggle-terminal", icon: Terminal, label: "Toggle terminal" },
   { id: "preview", icon: Eye, label: "Open preview" },
   { id: "ask", icon: Bot, label: "Ask Kairo" },

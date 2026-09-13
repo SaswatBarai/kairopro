@@ -14,6 +14,7 @@ import { AgentPanel } from "./agent-panel";
 import { CodeEditor } from "./code-editor";
 import { CommandPalette } from "./command-palette";
 import { DeployModal } from "./deploy-modal";
+import { ExportModal } from "./export-modal";
 import { FileExplorer } from "./file-explorer";
 import { CHECKPOINTS, HistoryDrawer } from "./history-drawer";
 import {
@@ -71,6 +72,7 @@ export function WorkspaceApp() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [deployOpen, setDeployOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [checkpointId, setCheckpointId] = useState(CHECKPOINTS[0]?.id ?? "");
   const [savedFile, setSavedFile] = useState<string | null>(null);
   const [resizing, setResizing] = useState<ResizeTarget | null>(null);
@@ -178,6 +180,7 @@ export function WorkspaceApp() {
       else if (id === "ask") askKairo();
       else if (id === "history") setHistoryOpen(true);
       else if (id === "deploy") setDeployOpen(true);
+      else if (id === "export") setExportOpen(true);
     },
     [run, restart, toggleTerminal, preview, askKairo],
   );
@@ -247,6 +250,7 @@ export function WorkspaceApp() {
         onSave={save}
         onOpenHistory={() => setHistoryOpen(true)}
         onDeploy={() => setDeployOpen(true)}
+        onExport={() => setExportOpen(true)}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -350,6 +354,12 @@ export function WorkspaceApp() {
         open={deployOpen}
         onClose={() => setDeployOpen(false)}
         onDeployed={flashSaved}
+      />
+
+      <ExportModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        onExported={flashSaved}
       />
     </div>
   );

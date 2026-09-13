@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { GithubMark } from "./export-modal";
 import { SANDBOX_STATUS, type SandboxState } from "./sandbox-panel";
 
 interface WorkspaceHeaderProps {
@@ -20,6 +21,7 @@ interface WorkspaceHeaderProps {
   onSave: () => void;
   onOpenHistory: () => void;
   onDeploy: () => void;
+  onExport: () => void;
 }
 
 const HEADER_LABEL: Record<SandboxState, string> = {
@@ -37,6 +39,7 @@ export function WorkspaceHeader({
   onSave,
   onOpenHistory,
   onDeploy,
+  onExport,
 }: WorkspaceHeaderProps) {
   const status = SANDBOX_STATUS[sandboxState];
 
@@ -90,6 +93,14 @@ export function WorkspaceHeader({
           className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
         >
           <History className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          title="Export to GitHub"
+          onClick={onExport}
+          className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+        >
+          <GithubMark className="h-4 w-4" />
         </button>
         <button
           type="button"
