@@ -34,6 +34,7 @@ const NAV_ITEMS = [
     id: "billing",
     icon: CreditCard,
     label: "Billing & Usage",
+    href: "/settings/billing",
     badge: { text: "Tier 2", tone: "zinc" },
   },
   {
