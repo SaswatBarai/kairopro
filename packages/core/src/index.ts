@@ -15,3 +15,51 @@
 
 export { db } from "./platform/db/client";
 export type { PrismaClient } from "@kairopro/db";
+
+// Typed errors — every module throws these; routes map them (Phase 3+).
+export * from "./lib/errors";
+
+// Platform seams. Consumers import the interface or the selector — never an
+// implementation directly (tests and the selectors themselves excepted).
+export { eventBus } from "./platform/events";
+export type {
+  EventBus,
+  BuildChannel,
+  BuildEvent,
+  BusChannels,
+  EventHandler,
+  Unsubscribe,
+} from "./platform/events";
+
+export { getWorkspaceStore } from "./platform/workspace";
+export type { WorkspaceStore } from "./platform/workspace";
+
+export { getContainerRuntime } from "./platform/container";
+export type {
+  ContainerRuntime,
+  ContainerHealth,
+  ExecInput,
+  ExecResult,
+  ProvisionInput,
+  ProvisionedContainer,
+} from "./platform/container";
+
+export {
+  ENCRYPTION_KEY_ENV,
+  decryptField,
+  encryptField,
+  generateEncryptionKey,
+  getEncryptionKey,
+  loadEncryptionKey,
+} from "./platform/crypto/encryption";
+export type { EncryptedRecord } from "./platform/crypto/encryption";
+
+export { createLogger, logger, withCorrelation } from "./platform/logger";
+export type {
+  CorrelationFields,
+  CreateLoggerOptions,
+  Logger,
+} from "./platform/logger";
+
+export { scheduler } from "./platform/jobs/scheduler";
+export type { Scheduler } from "./platform/jobs/scheduler";
