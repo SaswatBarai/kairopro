@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import {
@@ -58,6 +59,7 @@ function ResizeHandle({
 }
 
 export function WorkspaceApp() {
+  const router = useRouter();
   const [explorerOpen, setExplorerOpen] = useState(true);
   const [explorerWidth, setExplorerWidth] = useState(240);
   const [agentOpen, setAgentOpen] = useState(true);
@@ -183,8 +185,9 @@ export function WorkspaceApp() {
       else if (id === "history") setHistoryOpen(true);
       else if (id === "deploy") setDeployOpen(true);
       else if (id === "export") setExportOpen(true);
+      else if (id === "settings") router.push("/settings/profile");
     },
-    [run, restart, toggleTerminal, preview, askKairo],
+    [run, restart, toggleTerminal, preview, askKairo, router],
   );
 
   const acceptChanges = useCallback(() => {
