@@ -2,7 +2,9 @@
 
 Phases BE-1 … BE-11 (Backend) and AI-1 … AI-9 (AI), organized by wave with the integration gates that bind them.
 
-**Frontend is planned separately** in `FRONTEND_PLAN.md`. It is built first and is fully independent — MSW serves every endpoint from the shared contracts, so no frontend phase waits on anything in this document.
+**The frontend has already shipped** — every visual surface (marketing, auth, dashboard, input flow, gates, build, workspace, deploy, settings) is ported from the Stitch exports in `designs/stitch/` and merged to `main`. It was built **visual-first, with mock data hardcoded inside components**: there are no MSW handlers, no contracts consumption, and no TanStack Query or Zustand usage yet — those dependencies are installed, and their planned homes (`apps/web/src/lib/{queries,sse,validation}`, `apps/web/src/app/api/**`) are `.gitkeep` placeholders.
+
+**Consequence for this document:** integration is no longer "flip MSW off" — it is **rewiring each shipped page to real data as its backend phase lands**. The data-layer ownership rules in `IMPLEMENTATION_PLAN.md §2` (RSC initial render calls a service directly; TanStack Query for anything that refetches; SSE → Zustand ring buffers for streams) apply to that rewire. §0 maps each phase to the page it unlocks.
 
 ---
 
@@ -13,6 +15,53 @@ Phases are grouped into four waves. Within each wave, phases appear **in the ord
 Every phase states: **Goal · Depends on · Deliverables · Exit criteria · Tests · Notes.**
 
 Integration gates (`I-1` … `I-8`) appear inline, immediately after the phases they bind. **A wave is not complete until its gates pass.** Both tracks can have every unit test green while a gate fails — that is the specific failure this structure exists to catch.
+
+---
+
+## 0. Current repository state
+
+_Audited 2026-09-13 — after the frontend build, before BE-1._
+
+**Exists**
+
+- `apps/web` — the complete UI: every screen from `designs/stitch/` ported to App Router pages, all with in-component mock data
+- Workspace scaffolding matching the ownership table in §4: `packages/{contracts,db,core,templates}` with the full directory tree as `.gitkeep` placeholders — nothing populated
+- Staged dependencies: `@kairopro/core` already carries dockerode, simple-git, pino, mammoth, pdf-parse, zod, vitest; `apps/web` carries zod, msw, TanStack Query, Zustand (all unused so far)
+- Root scripts `db:generate` / `db:migrate` / `db:seed` / `db:studio` wired to `@kairopro/db` (Prisma 7, `prisma-client` generator, explicit output path)
+- A `DATABASE_URL` for the planned dev stack in the root `.env`
+
+**Does not exist yet**
+
+- `packages/db/prisma/schema.prisma` — no schema, migration, seed, or generated client (BE-1)
+- `packages/contracts` content (P0.4) — **prerequisite for every phase whose routes return contract-validated responses**; write it against the shapes the shipped pages already display
+- Any test infrastructure (P0.3) — no Vitest config anywhere; lands alongside BE-1's integration tests
+- The dev database itself — decision below; the compose file is created in BE-1
+- `apps/web/src/app/theme.css` — `design:export` (P0.2) was never run; brand tokens are hand-written in `apps/web/src/app/globals.css`. Tracked in `IMPLEMENTATION_PLAN.md §9`
+
+**Decisions locked since this document was written**
+
+| Decision             | Choice                                                                                                                                                                                 | Consequence                                                                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Dev/test database    | PostgreSQL 18 via a compose file in `docker/` (created in BE-1)                                                                                                                        | Migrations target it; integration tests use a throwaway database on the same engine                                                        |
+| MSW layer (P0.5)     | **Skipped**                                                                                                                                                                            | The frontend shipped without it; pages rewire directly to real endpoints as phases land. MSW may return later for frontend unit tests only |
+| Primary LLM provider | **Mock-first** — the `LLMProvider` interface and deterministic mock provider are built now; the concrete provider (Anthropic vs OpenAI) is chosen when real generation is first needed | Everything downstream proceeds offline; only `router.ts` model names and `providers/*.ts` wait                                             |
+| F2 dashboard design  | Folded into the BE-4 rewire                                                                                                                                                            | The live dashboard is the F1 dual-state design; when BE-4 lands, rewire it to the F2 populated design with real data                       |
+
+**Phase → shipped-page unlock map**
+
+The UI components stay; only the data source changes. RSC pages call services directly for initial render; interactive concerns move to TanStack Query; streams move to SSE + Zustand.
+
+| Phase       | Unlocks                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| BE-3        | `(auth)` pages go real · middleware guards `(dashboard)` · `/settings/profile` shows the real user |
+| BE-4        | `/dashboard` (rewired to the F2 design) · project create/delete                                    |
+| BE-5        | `/projects/new` input step persists (text + uploads)                                               |
+| BE-6 + AI-5 | `/projects/new/{spec,data-model,app-structure}` gates read real, generated specs                   |
+| BE-7        | `/settings/credentials` — real encrypted vault                                                     |
+| BE-8        | Workspace history drawer (G3) — checkpoints become real git commits                                |
+| BE-10       | `/projects/new/build` (E1/E2/E3) streams real logs · workspace terminal + preview                  |
+| BE-11       | Deploy (H1), GitHub export (H2), deploy success (H3) go real                                       |
+| AI-9        | Workspace agent panel (G2) drives real change requests                                             |
 
 ---
 
@@ -216,6 +265,8 @@ BE-11 Deploy ───────────▶ AI-9  Change requests
 
 **BE-9 and BE-10 are on the critical path for the second half.** AI-6, AI-7, and AI-8 all wait on execution and streaming. If the backend slips there, three AI phases stall simultaneously.
 
+**A third, added by the current state (§0):** P0.4 (contracts) precedes BE-1 in practice. No route from BE-3 onward can return a contract-validated response until the schemas exist, and the rewire of each shipped page imports the same types. Write the contracts first, against the shapes the pages already display.
+
 ---
 
 ## 7. The 12 seams
@@ -318,6 +369,8 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 - `UsageEvent` and `Membership` ship in V1 even though nothing user-visible depends on them. They are the two cheapest decisions that keep V2 billing and team accounts additive rather than a rewrite.
 - `Organization` is introduced now with a single auto-created personal org. Invisible to the user in V1.
 - Do not model per-user ownership as the access boundary. Access is via `Membership`.
+- Dev database: create `docker/docker-compose.yml` (PostgreSQL 18, user `kairopro`, db `kairopro_dev`, port 5432) — the root `.env` already carries its `DATABASE_URL`. Integration tests use a throwaway database on the same engine, never the dev one.
+- The seed should match the demo identity the shipped UI already displays as static mock: user `ada@lovelace.dev` (Ada Lovelace), personal org `kairo-core`, and a `DEPLOYED` project "TaskFlow" (`taskflow.kairopro.app`, template `nextjs-shadcn`) with approved specs and a completed build. The settings pages render this same identity today — the seed makes it real.
 
 ---
 
@@ -1011,7 +1064,7 @@ BE-10 ──▶ AI-7
 - `packages/core/src/modules/build/logs.ts` — persist `BuildLog` rows with per-build `seq`
 - `apps/web/src/app/api/projects/[id]/builds/route.ts` — start, list
 - `apps/web/src/app/api/projects/[id]/builds/[buildId]/{route,cancel,stream}.ts`
-- `packages/core/packages/core/src/modules/build/sse/encode.ts` — frame encoding with `id`, `event`, `data`
+- `packages/core/src/modules/build/sse/encode.ts` — frame encoding with `id`, `event`, `data`
 
 **Exit criteria**
 
@@ -1385,9 +1438,11 @@ Every phase declares and enforces: max iterations, max tokens, max wall-clock, m
 
 **Project-wide open items live in `IMPLEMENTATION_PLAN.md §9`** — that is the canonical list.
 
-Two of them bear directly on this document:
+Decisions recorded in §0: dev database (PostgreSQL via Docker), MSW skipped, mock-first LLM, F2 folded into the BE-4 rewire.
 
-- **Primary LLM provider undecided** blocks the concrete provider in AI-1 and the model names in `router.ts`. The interface, mock provider, and every downstream phase proceed regardless.
+Two items still bear directly on this document:
+
+- **Concrete LLM provider undecided** (Anthropic vs OpenAI) — the mock-first decision unblocks the AI-1 interface, the mock provider, and every downstream phase; only `router.ts` model names and the concrete `providers/*.ts` wait for an API key.
 - **AI-8 (Test Agent) may ship in V1.1** — confirm before starting Wave 3.
 
 ---

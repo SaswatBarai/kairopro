@@ -17,29 +17,30 @@ Phase-wise plan for building KairoPro V1, split into three tracks: **Frontend**,
 Three tracks are planned independently but share one foundation. The strategy is:
 
 1. **Contracts first.** Zod schemas define every request and response before any implementation exists. Both tracks consume them.
-2. **Frontend first, genuinely independent.** MSW serves every endpoint from the contracts, so the entire frontend ships before the backend is real. Flipping MSW off is the integration step.
-3. **Backend follows the contracts**, not the other way around. The contracts were written to match the frontend's needs, so the backend implements to a fixed target.
+2. **Frontend shipped first, visual-first.** Every screen is built from the Stitch exports with mock data hardcoded in components. The MSW layer (P0.5) was never built and is skipped by decision — integration is now a **per-page rewire**: each backend phase swaps its page's hardcoded data for real services and endpoints.
+3. **Contracts still come first for the backend.** P0.4 is written against the shapes the shipped pages already display, so the backend implements to a fixed target and the rewire is a data-source swap, not a redesign.
 4. **AI is last and deepest.** It depends on backend storage, execution, and streaming, and on the frontend's spec and build surfaces existing to display its output.
 
-**Why frontend first is safe:** the only real risk in starting with the frontend is building against imagined APIs. Shared contracts eliminate that — the mock handlers validate against the same schemas the backend will use, so a mock cannot describe something the backend won't produce.
+**Why frontend-first still worked:** the only real risk in building the frontend ahead of the backend is building against imagined APIs. The shipped pages now serve as the concrete API target — P0.4 writes the contracts by reading them off the pages, so the backend still implements to a fixed target.
 
 ---
 
 ## 2. Locked decisions
 
-| Decision         | Choice                                                      | Consequence                                                          |
-| ---------------- | ----------------------------------------------------------- | -------------------------------------------------------------------- |
-| Contracts        | `packages/contracts/src/*.ts` — Zod schemas, types inferred | One source for types, runtime validation, MSW, and backend routes    |
-| Initial render   | React Server Components, fetching services directly         | Read-only pages ship zero JS; no self-fetch anti-pattern             |
-| Interactive data | TanStack Query, seeded with `initialData`                   | Polling, optimistic updates, pagination, cache invalidation          |
-| Streams          | Zustand ring buffers                                        | High-frequency terminal and code output stays out of the query cache |
-| Mocking          | MSW (browser + node)                                        | One mock set serves dev and tests                                    |
-| Unit tests       | Vitest + React Testing Library                              | Fast, ESM-native, no Jest config friction                            |
-| E2E tests        | Playwright, Phase FE-10                                     | Deferred until flows are stable                                      |
-| Platform seams   | Interfaces with local implementations                       | Redis/S3/multi-host later become file swaps                          |
-| Repo layout      | pnpm workspaces + Turborepo                                 | Package boundaries enforced structurally, not by lint                |
-| Prisma           | Prisma 7, `prisma-client` generator, explicit output path   | `@kairopro/db` owns the client; see §2 Repository layout             |
-| Styling          | Tailwind CSS v4 — CSS-first `@theme`, no JS config          | Matches the `DESIGN.md` export format exactly                        |
+| Decision         | Choice                                                      | Consequence                                                                           |
+| ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Contracts        | `packages/contracts/src/*.ts` — Zod schemas, types inferred | One source for types, runtime validation, MSW, and backend routes                     |
+| Initial render   | React Server Components, fetching services directly         | Read-only pages ship zero JS; no self-fetch anti-pattern                              |
+| Interactive data | TanStack Query, seeded with `initialData`                   | Polling, optimistic updates, pagination, cache invalidation                           |
+| Streams          | Zustand ring buffers                                        | High-frequency terminal and code output stays out of the query cache                  |
+| Mocking          | None in dev — MSW skipped by decision (2026-09-13)          | Frontend shipped with in-component mocks; MSW may return for frontend unit tests only |
+| Dev database     | PostgreSQL 18 via compose in `docker/` (created in BE-1)    | Single engine for dev and throwaway test databases                                    |
+| Unit tests       | Vitest + React Testing Library                              | Fast, ESM-native, no Jest config friction                                             |
+| E2E tests        | Playwright, Phase FE-10                                     | Deferred until flows are stable                                                       |
+| Platform seams   | Interfaces with local implementations                       | Redis/S3/multi-host later become file swaps                                           |
+| Repo layout      | pnpm workspaces + Turborepo                                 | Package boundaries enforced structurally, not by lint                                 |
+| Prisma           | Prisma 7, `prisma-client` generator, explicit output path   | `@kairopro/db` owns the client; see §2 Repository layout                              |
+| Styling          | Tailwind CSS v4 — CSS-first `@theme`, no JS config          | Matches the `DESIGN.md` export format exactly                                         |
 
 ### Data layer ownership
 
@@ -90,6 +91,17 @@ Blocks all three tracks. Nothing else starts until this is complete.
 | P0.3 | Test infrastructure | Vitest + RTL setup, MSW node server, `renderWithProviders` helper                                                                         | One passing smoke test per setup area                                                                                                         |
 | P0.4 | Contracts           | Zod schemas in `@kairopro/contracts` for Project, Spec, Build, Input, Credential, Version, Usage, Error, plus all request/response shapes | Fixtures parse; types inferred; no hand-written duplicate types                                                                               |
 | P0.5 | MSW handlers        | A handler for every endpoint in the contract set; browser worker and node server                                                          | Every handler responds in dev and in tests                                                                                                    |
+
+**Status (audited 2026-09-13):**
+
+| #    | Status                 | Note                                                                                                                             |
+| ---- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| P0.0 | Done                   | Five workspace projects; the template skeleton is not one of them; `next` does not resolve from `packages/core`                  |
+| P0.1 | Done                   | The app builds and runs; `pnpm test` is not functional yet (P0.3)                                                                |
+| P0.2 | Partial                | `design:export` was never run — no `theme.css`; brand tokens are hand-written in `apps/web/src/app/globals.css` (open item §9.5) |
+| P0.3 | Not started            | No Vitest config anywhere; lands alongside BE-1's integration tests                                                              |
+| P0.4 | Not started — **next** | Prerequisite for every BE phase whose routes validate responses                                                                  |
+| P0.5 | Skipped by decision    | The frontend shipped without MSW; pages rewire directly to real endpoints                                                        |
 
 **P0.2 detail:** tokens are generated, never hand-written. The pipeline is:
 
@@ -285,10 +297,11 @@ These are repeated from `README.md` because they are the rules most likely to er
 
 ## 9. Open items
 
-1. **Primary LLM provider not chosen** — Anthropic vs OpenAI. Blocks the concrete provider implementation in AI-1 and the `router.ts` model map. The interface work proceeds regardless.
+1. **Primary LLM provider not chosen** — Anthropic vs OpenAI. Partially resolved (2026-09-13): **mock-first is locked** — the interface, mock provider, and every downstream phase proceed offline; only the concrete provider and `router.ts` model names wait for an API key.
 2. **"AI services agent" undefined** — carried from `PRDv2.md §12`. Three possible readings (generated apps using AI, KairoPro's own agent infrastructure, or a design-time decision about where generated apps call an LLM). Not in any phase until disambiguated.
-3. **AI-8 (Test Agent) may be deferred to V1.1** — the most expensive purely-quality phase. Deferring removes no structural work.
-4. **Auth provider for the platform** — Google OAuth requires credentials before FE-3 can be tested against a real provider. MSW covers it until then.
+3. **AI-8 (Test Agent) may be deferred to V1.1** — the most expensive purely-quality phase. Deferring removes no structural work. Confirm before Wave 3.
+4. **Auth provider for the platform** — Google OAuth requires credentials before BE-3 can be tested against a real provider. Credentials-only dev works without them.
+5. **Design token source divergence** (added 2026-09-13) — brand tokens are hand-written in `apps/web/src/app/globals.css`; `design:export` (P0.2) has never been run and `theme.css` does not exist. Either adopt DESIGN.md as the source and re-export, or amend P0.2 to bless `globals.css`. Blocks no backend phase; AI-5's design generation depends on DESIGN.md tooling working.
 
 ---
 

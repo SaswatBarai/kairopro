@@ -2,7 +2,7 @@
 
 An AI-powered development platform. A user describes an application — or uploads a PRD, spec, or design file — and KairoPro generates a complete full-stack web app, runs it, tests it, fixes its own errors, and delivers a live preview they can deploy or export to GitHub.
 
-> **Status: pre-implementation.** This repository currently contains product and architecture documentation plus the agreed directory structure. No application code has been written yet.
+> **Status: frontend complete; backend starting.** Every visual surface is ported from the Stitch exports and merged to `main` — with mock data hardcoded in components. The backend follows `docs/BACKEND_AI_PLAN.md` from P0.4 (contracts) and BE-1 (data layer); each phase rewires a shipped page to real data. The current state is audited in `docs/BACKEND_AI_PLAN.md §0`.
 
 ---
 
@@ -30,7 +30,7 @@ An AI-powered development platform. A user describes an application — or uploa
 
 ### Build order
 
-The frontend is built first and is fully independent — MSW serves every endpoint from the shared contracts, so no frontend phase waits on the backend. Flipping MSW off is the integration step.
+The frontend shipped first, visual-first — every screen built from the Stitch exports with mock data hardcoded in components (the MSW layer was skipped by decision). Integration is per-phase: each backend phase rewires its page to real services, with contracts (P0.4) written first against the shapes the pages already display.
 
 ```
 Phase 0  ── shared: toolchain · tokens · tests · contracts · MSW
@@ -244,6 +244,7 @@ pnpm design:export    # DESIGN.md → apps/web/src/app/theme.css
 
 ## Open items
 
-- **Primary LLM provider not chosen** (Anthropic vs OpenAI). Blocks the model routing map and Phase 3.
+- **Primary LLM provider not chosen** (Anthropic vs OpenAI) — mock-first is locked; the concrete provider waits for an API key.
 - **"AI services agent" is undefined** — recorded as an open question in `PRDv2.md §12`. Three readings lead to different work.
 - **V1 scope is larger than `PRD.md` describes** — PRDv2 added the PM agent, design phase, test agent, and contract freezing. The first ship may defer the test agent to V1.1.
+- **Design token source divergence** — brand tokens are hand-written in `apps/web/src/app/globals.css`; `design:export` (P0.2) has never been run.

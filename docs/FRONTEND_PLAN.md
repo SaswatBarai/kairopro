@@ -2,6 +2,8 @@
 
 Phases FE-1 through FE-10. Builds entirely against mocked contracts; no phase depends on the backend.
 
+> **Status (2026-09-13): shipped, differently than planned.** The visual surfaces of FE-1 … FE-9 are built and merged — ported directly from the Stitch exports in `designs/stitch/`, with mock data hardcoded in components. The MSW layer this plan assumed was never built and is skipped by decision. The data-layer rules below (RSC · TanStack Query · Zustand · contracts) are still the target — they now apply to the **backend-integration rewire** of each page, mapped phase-by-phase in `BACKEND_AI_PLAN.md §0`. FE-10 (hardening, screenshot diffing) remains future work.
+
 **Screen IDs** (`A1`, `B1`, …) refer to `STITCH_PROMPTS.md`. **Tokens** refer to `DESIGN.md`.
 
 ---
