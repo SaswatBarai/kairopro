@@ -1,4 +1,4 @@
-import { mkdir, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -43,7 +43,7 @@ describe("git.service (BE-4)", () => {
       await initRepo(parent);
       await commitAll(parent, "parent commit");
       const child = join(parent, "workspace");
-      await mkdir(child);
+      mkdirSync(child);
       expect(await headCommit(child)).toBeNull();
     } finally {
       rmSync(parent, { recursive: true, force: true });
