@@ -1,6 +1,6 @@
 # KairoPro — Backend & AI Implementation Plan
 
-Phases BE-1 … BE-11 (Backend) and AI-1 … AI-9 (AI), organized by wave with the integration gates that bind them.
+Implementation runs as a single linear sequence — **Phase 0 … Phase 20** — with the integration gates that bind them. The legacy IDs (BE-1 … BE-11 backend, AI-1 … AI-9 agent) are kept in headers and cross-references as durable identifiers.
 
 **The frontend has already shipped** — every visual surface (marketing, auth, dashboard, input flow, gates, build, workspace, deploy, settings) is ported from the Stitch exports in `designs/stitch/` and merged to `main`. It was built **visual-first, with mock data hardcoded inside components**: there are no MSW handlers, no contracts consumption, and no TanStack Query or Zustand usage yet — those dependencies are installed, and their planned homes (`apps/web/src/lib/{queries,sse,validation}`, `apps/web/src/app/api/**`) are `.gitkeep` placeholders.
 
@@ -10,11 +10,11 @@ Phases BE-1 … BE-11 (Backend) and AI-1 … AI-9 (AI), organized by wave with t
 
 ## How to read this document
 
-Phases are grouped into four waves. Within each wave, phases appear **in the order they should be started**, which is not always numeric order — the critical path matters more than the numbering.
+The plan is one linear sequence — Phase 0 … Phase 20 — in exactly the order the phases should be implemented. It was serialized from the original two-track design (backend ‖ AI) when the project moved to a single implementer; §1 explains why the order is what it is.
 
 Every phase states: **Goal · Depends on · Deliverables · Exit criteria · Tests · Notes.**
 
-Integration gates (`I-1` … `I-8`) appear inline, immediately after the phases they bind. **A wave is not complete until its gates pass.** Both tracks can have every unit test green while a gate fails — that is the specific failure this structure exists to catch.
+Integration gates (`I-1` … `I-8`) appear inline, immediately after the phases they bind. **A phase's unit tests can all be green while its gate fails** — that is the specific failure this structure exists to catch.
 
 ---
 
@@ -51,23 +51,23 @@ _Audited 2026-09-13 — after the frontend build, before BE-1._
 
 The UI components stay; only the data source changes. RSC pages call services directly for initial render; interactive concerns move to TanStack Query; streams move to SSE + Zustand.
 
-| Phase       | Unlocks                                                                                            |
-| ----------- | -------------------------------------------------------------------------------------------------- |
-| BE-3        | `(auth)` pages go real · middleware guards `(dashboard)` · `/settings/profile` shows the real user |
-| BE-4        | `/dashboard` (rewired to the F2 design) · project create/delete                                    |
-| BE-5        | `/projects/new` input step persists (text + uploads)                                               |
-| BE-6 + AI-5 | `/projects/new/{spec,data-model,app-structure}` gates read real, generated specs                   |
-| BE-7        | `/settings/credentials` — real encrypted vault                                                     |
-| BE-8        | Workspace history drawer (G3) — checkpoints become real git commits                                |
-| BE-10       | `/projects/new/build` (E1/E2/E3) streams real logs · workspace terminal + preview                  |
-| BE-11       | Deploy (H1), GitHub export (H2), deploy success (H3) go real                                       |
-| AI-9        | Workspace agent panel (G2) drives real change requests                                             |
+| Phase        | Unlocks                                                                                            |
+| ------------ | -------------------------------------------------------------------------------------------------- |
+| Phase 3      | `(auth)` pages go real · middleware guards `(dashboard)` · `/settings/profile` shows the real user |
+| Phase 4      | `/dashboard` (rewired to the F2 design) · project create/delete                                    |
+| Phase 5      | `/projects/new` input step persists (text + uploads)                                               |
+| Phase 6 + 11 | `/projects/new/{spec,data-model,app-structure}` gates read real, generated specs                   |
+| Phase 12     | `/settings/credentials` — real encrypted vault                                                     |
+| Phase 13     | Workspace history drawer (G3) — checkpoints become real git commits                                |
+| Phase 15     | `/projects/new/build` (E1/E2/E3) streams real logs · workspace terminal + preview                  |
+| Phase 19     | Deploy (H1), GitHub export (H2), deploy success (H3) go real                                       |
+| Phase 20     | Workspace agent panel (G2) drives real change requests                                             |
 
 ---
 
-## 1. Why these tracks share one document
+## 1. Why one document, and why the sequence is linear
 
-The AI track is blocked by backend work **eight times**:
+This plan was originally drawn for **two parallel tracks** — backend (BE-1 … BE-11) and AI (AI-1 … AI-9) — because the agent track is blocked by backend work **eight times**:
 
 | AI phase | Blocked by | Needs                                      |
 | -------- | ---------- | ------------------------------------------ |
@@ -80,9 +80,9 @@ The AI track is blocked by backend work **eight times**:
 | AI-8     | BE-9       | Tests must execute                         |
 | AI-9     | BE-8       | Versioning for applied changes             |
 
-Built sequentially, the AI track idles for most of the project. Built in parallel without coordination, the two halves integrate badly — mismatched interfaces, two owners for the same file, duplicated work.
+Built sequentially, the agent track idles for most of the project. Built in parallel without coordination, the two halves integrate badly — mismatched interfaces, two owners for the same file, duplicated work.
 
-So they are planned as **one work stream** with explicit seams, stubs, and gates.
+With **one implementer working sequentially**, that dependency graph collapses into the linear order this document now uses. The table stays because it explains the order: every agent phase sits immediately after the backend phase that unblocks it, and no phase's **Depends on** ever points forward.
 
 ---
 
@@ -139,7 +139,7 @@ Iterations, retries, tokens, and wall-clock all have hard caps. An unbounded loo
 
 ## 4. Ownership — no two writers
 
-Merge conflicts arise when two tracks edit the same file. The split is by directory.
+The split was drawn for two parallel writers; with one implementer it still applies — as commit-sized boundaries and review checkpoints. It is by directory.
 
 | Path                                      | Owner       | Rule                                            |
 | ----------------------------------------- | ----------- | ----------------------------------------------- |
@@ -222,50 +222,46 @@ export const StubContainerRuntime: ContainerRuntime = {
 
 ---
 
-## 6. The critical path
+## 6. The phase roadmap
 
 ```
-BE-1  Data layer
-  │
-  ▼
-BE-2  Platform seams  ◀──── HIGHEST LEVERAGE
-  │                          unblocks AI-1 and AI-2
-  ├──────────────────────────┐
-  ▼                          ▼
-BE-3  Auth + org          AI-1  LLM provider
-  │                          │
-  ▼                          ▼
-BE-4  Project + usage     AI-2  Tools ──▶ AI-3  Prompts
-  │                          │
-  ▼                          ▼
-BE-5  Input               AI-4  Context
-  │                          │
-  ▼                          ▼
-BE-6  Spec  ────────────▶ AI-5  Spec generation
-  │
-  ▼
-BE-7  Credential ───────▶ (AI continues on I-3 work)
-  │
-  ▼
-BE-8  Version ──────────▶ (feeds AI-9)
-  │
-  ▼
-BE-9  Execution ────────▶ AI-6  Code gen ──▶ AI-8  Test agent
-  │
-  ▼
-BE-10 Build + SSE ──────▶ AI-7  Recovery
-  │
-  ▼
-BE-11 Deploy ───────────▶ AI-9  Change requests
+Phase 0   Contracts
+Phase 1   Data layer (BE-1)
+Phase 2   Platform seams (BE-2)        ← highest leverage
+Phase 3   Auth + organization (BE-3)   → login/register real, dashboard guarded
+Phase 4   Project + usage (BE-4)       → dashboard rewired to real data (F2)
+Phase 5   Input (BE-5)
+Phase 6   Spec (BE-6)
+Phase 7   LLM provider (AI-1, mock-first)
+Phase 8   Prompts (AI-3)              ── Gate I-1
+Phase 9   Tool registry (AI-2)
+Phase 10  Context builder (AI-4)      ── Gate I-2
+Phase 11  Spec generation (AI-5)      ── Gate I-3
+Phase 12  Credential (BE-7)
+Phase 13  Version (BE-8)              ── Gate I-4
+Phase 14  Execution (BE-9)
+Phase 15  Build orchestration + SSE (BE-10)
+Phase 16  Code generation (AI-6)      ── Gate I-5
+Phase 17  Recovery (AI-7)             ── Gate I-6
+Phase 18  Test agent (AI-8, V1.1?)    ── Gate I-7
+Phase 19  Deploy + export + jobs (BE-11)
+Phase 20  Change requests (AI-9)      ── Gate I-8
 ```
 
-**Two conclusions.**
+**Milestones**
 
-**BE-2 is the single highest-leverage phase in the project.** It is small — three interfaces, a crypto helper, a logger, a scheduler — and it unblocks two AI phases. Build it first.
+- After **Phase 4** — the app is real: auth works, the dashboard lists actual projects.
+- After **Phase 11** — the agent is real for specs: describe an app → generated, approvable specs.
+- After **Phase 16** — the product is real: approved specs → a running app in a container.
+- After **Phase 20** — V1 complete: deploy → change → redeploy.
 
-**BE-9 and BE-10 are on the critical path for the second half.** AI-6, AI-7, and AI-8 all wait on execution and streaming. If the backend slips there, three AI phases stall simultaneously.
+**Three conclusions.**
 
-**A third, added by the current state (§0):** P0.4 (contracts) precedes BE-1 in practice. No route from BE-3 onward can return a contract-validated response until the schemas exist, and the rewire of each shipped page imports the same types. Write the contracts first, against the shapes the pages already display.
+**Phase 2 is the single highest-leverage phase in the project.** It is small — three interfaces, a crypto helper, a logger, a scheduler — and it unblocks the entire agent half of the sequence.
+
+**Phases 14–15 are the highest-risk.** Three agent phases (16, 17, 18) wait on execution and streaming. A slip there stalls everything after it.
+
+**Phase 0 precedes Phase 1 in practice.** No route from Phase 3 onward can return a contract-validated response until the schemas exist, and the rewire of each shipped page imports the same types. Write the contracts first, against the shapes the pages already display.
 
 ---
 
@@ -288,7 +284,7 @@ Every interface that crosses the boundary.
 | 11  | Contracts             | `lib/contracts`                 | Both, and the frontend               | Zod schemas; single source of types                            |
 | 12  | Error types           | `lib/errors`                    | Both                                 | Typed errors mapped at the route boundary                      |
 
-Each seam gets its TypeScript interface written **before** either side implements it. The interface is the coordination artifact — it is what lets two tracks work simultaneously without talking.
+Each seam gets its TypeScript interface written **before** either side implements it. The interface is the coordination artifact — it is what both sides of each seam are written against, one phase after another.
 
 ```ts
 // packages/core/src/platform/container/runtime.ts — written in BE-2, implemented in BE-9
@@ -309,27 +305,45 @@ export interface ContainerRuntime {
 
 ---
 
-# Wave 1 — Foundations and core
+# The phases
 
-**Start order matters more in this wave than any other.**
+## Phase 0: Contracts (P0.4)
 
-```
-BE-1 → BE-2 → ┌ AI-1 ──────────────────────┐
-              ├ AI-3 ──────────────────┐   │
-              └ BE-3 → BE-4 ──────┐    │   │
-                                  ▼    ▼   ▼
-                             AI-2 → AI-4  BE-5
-```
+**Goal:** the Zod contract set every route validates against and every shipped page rewires to — written off the shapes the pages already display.
 
-Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
+**Depends on:** nothing — the shipped frontend is the target.
+
+**Deliverables**
+
+- `packages/contracts/src/{error,auth,project,spec,build,input,credential,version,usage}.ts` — schemas plus inferred types
+- `packages/contracts/src/index.ts` — the single export surface
+- The credential service registry (`google_oauth`, `stripe`, `sendgrid`, `aws_s3` with their required env keys) — in contracts so frontend, backend, and agent cannot drift
+- Upload constraints (type allowlist, 10MB max, 5 files max) shared with the frontend
+- PM-questions bounds (3–5 questions, 2–4 options each) — the contract the questions page renders against
+
+**Exit criteria**
+
+- Fixtures representing the shipped pages' demo data parse against every schema
+- Invalid fixtures (bad status, bad email, out-of-bounds questions) are rejected
+- Every exported type is inferred from a schema — no hand-written duplicates
+- `@kairopro/contracts` depends on nothing beyond zod
+
+**Tests**
+
+- `fixtures.test.ts` — one parse assertion per schema, plus the bounds assertions above
+
+**Notes**
+
+- This is P0.4 from `IMPLEMENTATION_PLAN.md`, promoted to Phase 0 here because it is the prerequisite for every phase whose routes return contract-validated responses (Phase 3 onward).
+- P0.5 (MSW handlers) is skipped by decision — see §0.
 
 ---
 
-## BE-1: Data layer
+## Phase 1: Data layer (BE-1)
 
 **Goal:** the complete Prisma schema, migrations, and seed.
 
-**Depends on:** P0.1
+**Depends on:** Phase 0 (contracts)
 
 **Deliverables**
 
@@ -374,11 +388,11 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 
 ---
 
-## BE-2: Platform seams ← highest leverage in the project
+## Phase 2: Platform seams (BE-2) — highest leverage in the project
 
 **Goal:** every piece of swappable infrastructure behind an interface, with a tested local implementation **and a stub** where the real implementation arrives later.
 
-**Depends on:** BE-1
+**Depends on:** Phase 1 (BE-1)
 
 **Deliverables**
 
@@ -415,15 +429,180 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 
 - **The path-traversal test is a security test.** Resolve the real path with symlinks followed, then assert containment. String prefix comparison fails on case-insensitive filesystems and symlinks.
 - The scheduler must not `await` inside `setInterval` without overlap protection, or a slow job stacks.
-- Writing all three interfaces here — even though only `WorkspaceStore` and `EventBus` have real implementations — is what unblocks AI-1 and AI-2 in parallel with BE-3.
+- Writing all three interfaces here — even though only `WorkspaceStore` and `EventBus` have real implementations — is what unblocks Phases 7 and 9 the moment it lands.
 
 ---
 
-## AI-1: LLM provider
+## Phase 3: Auth and organization (BE-3)
+
+**Goal:** NextAuth with credentials and Google, plus the tenancy layer and access helpers.
+
+**Depends on:** Phase 1, Phase 2 (BE-1, BE-2)
+
+**Deliverables**
+
+- `apps/web/src/lib/auth.ts` — NextAuth config: credentials provider (Argon2 or bcrypt), Google provider, JWT sessions
+- `apps/web/src/app/api/auth/[...nextauth]/route.ts`
+- `packages/core/src/modules/org/org.service.ts` — create personal org on signup
+- `packages/core/src/modules/org/membership.repository.ts`
+- `packages/core/src/modules/org/access.ts` — `ownerOf(projectId, ctx)`, `canEdit(projectId, ctx)`, `assertMember(orgId, ctx)`
+- `apps/web/src/lib/request-context.ts` — build `RequestContext` from the session
+- `apps/web/src/app/api/auth/register/route.ts` — signup creating user + org + membership atomically
+- `apps/web/src/middleware.ts` — protect `(dashboard)` routes
+
+**Exit criteria**
+
+- Registration creates a user, an organization, and an owner membership atomically — a partial failure rolls back all three
+- Login works with credentials and with Google
+- Session carries `userId` and the active `orgId`
+- `ownerOf()` returns the project only when the caller has a membership in its org
+- **Access failures return 404, not 403**, for projects the caller does not belong to
+- Middleware redirects unauthenticated dashboard access to login, preserving the intended destination
+- Passwords hashed with a per-user salt; plaintext never logged
+
+**Tests**
+
+- `register` — creates all three records; duplicate email returns a conflict; rollback leaves nothing behind
+- `access` — returns the project for a member; null for a non-member; null for a nonexistent project
+- `requestContext` — builds from a session; throws when unauthenticated
+- Route-level — a foreign project id returns 404 with a body identical to a nonexistent id's
+
+**Notes**
+
+- **404 over 403 is deliberate.** A 403 confirms the project exists, which leaks information across tenants.
+- Personal-org creation must be inside the same transaction as user creation, or a failure halfway leaves an orphan user who cannot create projects.
+- `access.ts` is the seam that makes V2 team accounts additive. Every route goes through it rather than checking `userId` inline.
+
+---
+
+## Phase 4: Project and usage (BE-4)
+
+**Goal:** project CRUD, workspace allocation, and usage metering.
+
+**Depends on:** Phase 3 (BE-3)
+
+**Deliverables**
+
+- `packages/core/src/modules/project/project.service.ts`, `project.repository.ts`
+- `packages/core/src/modules/project/workspace.ts` — allocate workspace, `git init`, initial commit
+- `packages/core/src/modules/version/git.service.ts` — commit helpers (BE-8 builds on this)
+- `packages/core/src/modules/usage/usage.service.ts` — `emit(kind, quantity, ctx)`; `usage.repository.ts`
+- `apps/web/src/app/api/projects/route.ts` — list, create
+- `apps/web/src/app/api/projects/[id]/route.ts` — get, patch, delete
+
+**Exit criteria**
+
+- Creating a project allocates a workspace, initializes a git repository, and makes an initial commit
+- The workspace path is stored on the project and **never derived from user input**
+- Deleting a project removes the database row and the workspace directory
+- Status transitions are validated — an illegal transition throws `ConflictError`
+- **`emit()` never throws into the caller's path** (metering must not break a build)
+- Listing returns only projects in the caller's org
+- Routes return contract-validated responses
+
+**Tests**
+
+- `project.service` — create produces DB row + workspace + git repo; delete removes both; list scopes to org
+- `workspace` — `git init` succeeds; a second init is idempotent; initial commit exists
+- Status transitions — table-driven over legal and illegal pairs
+- `usage.service` — emit writes a row; a repository failure is swallowed and logged, not thrown
+- `usage` — every emission point (LLM call, build start, container-minute) is covered
+
+**Notes**
+
+- **Metering failure must never fail the caller.** Wrap `emit` so a metering outage degrades to a logged warning. This is the one place where swallowing an error is correct.
+- The workspace path derives from the project **id**, never the name. Names are user input.
+- **This is the seam that unblocks AI-4.** The agent's context builder needs a real workspace with real files to index.
+
+---
+
+## Phase 5: Input (BE-5)
+
+**Goal:** accept text and files, store safely, extract text for the agent.
+
+**Depends on:** Phase 4 (BE-4)
+
+**Deliverables**
+
+- `packages/core/src/modules/input/input.service.ts`, `input.repository.ts`
+- `packages/core/src/modules/input/storage.ts` — write uploads under the uploads root
+- `packages/core/src/modules/input/extract/` — `pdf.ts`, `docx.ts`, `text.ts`, `image.ts`
+- `packages/contracts/src/upload.ts` — type allowlist, size and count limits (shared with frontend)
+- `apps/web/src/app/api/projects/[id]/inputs/route.ts` — list, create (multipart)
+- `apps/web/src/app/api/projects/[id]/inputs/[inputId]/route.ts` — delete
+
+**Exit criteria**
+
+- Only allowlisted types accepted: PDF, DOCX, TXT, MD, PNG, JPG, SVG
+- Files over 10MB rejected **before** being written to disk
+- A sixth file for one project rejected
+- Stored filenames are generated, **never taken from the upload**
+- Extraction returns text for PDF, DOCX, TXT, MD
+- Images stored and passed through as vision input rather than extracted
+- Extraction failure records the input with a null extraction and does not fail the request
+- Deleting a project removes its uploads
+
+**Tests**
+
+- `upload` validation — table-driven over accepted, rejected, oversize, count overflow
+- `storage` — a hostile filename (`../../etc/passwd`) is replaced, not honored
+- `extract/pdf`, `extract/docx` — extract expected text from small fixtures
+- `extract` — a corrupt file returns null rather than throwing
+- Route — multipart accepted; oversize rejected with the contract's error shape
+
+**Notes**
+
+- **Never trust the uploaded filename or the client-declared MIME type.** Sniff the content and generate the stored name.
+- Extraction is best-effort. A scanned PDF with no text layer should produce a documented null, not a failed request.
+
+---
+
+## Phase 6: Spec (BE-6)
+
+**Goal:** store, version, approve, and stale the four spec artifacts.
+
+**Depends on:** Phase 5 (BE-5)
+
+**Deliverables**
+
+- `packages/core/src/modules/spec/spec.service.ts`, `spec.repository.ts`
+- `packages/core/src/modules/spec/versioning.ts` — create a new version rather than mutating
+- `packages/core/src/modules/spec/staleness.ts` — mark downstream specs STALE when an upstream spec is approved
+- `packages/core/src/modules/design/design.service.ts` — DESIGN.md parse, serialize, lint, and export
+- `apps/web/src/app/api/projects/[id]/specs/route.ts` — list (latest per type)
+- `apps/web/src/app/api/projects/[id]/specs/generate/route.ts` — trigger generation (wired to AI-5)
+- `apps/web/src/app/api/projects/[id]/specs/[specId]/{approve,revise,reject}/route.ts`
+
+**Exit criteria**
+
+- Four spec types: `PRD`, `DESIGN`, `DATA_MODEL`, `APP_STRUCTURE`
+- Approving a spec creates an approval record and **does not mutate prior versions**
+- Revising creates a new version; the previous version remains retrievable
+- Approving an upstream spec marks **all** downstream approved specs STALE
+- A STALE spec cannot be re-approved without being revised or explicitly re-confirmed
+- List responses return only the latest version per type
+- `design.service` round-trips a DESIGN.md document and exports to `css-tailwind` and `json-tailwind`
+
+**Tests**
+
+- `versioning` — revise creates version n+1; version n is unchanged and still fetchable
+- `staleness` — table-driven: approving PRD stales DESIGN, DATA_MODEL, APP_STRUCTURE; approving APP_STRUCTURE stales nothing
+- Approve — approving a STALE spec returns a conflict
+- `design.service` — parse → serialize is stable; lint surfaces a broken token reference; export produces a non-empty `@theme` block
+
+**Notes**
+
+- **Staleness is the rule that keeps the pipeline honest.** Without it, a user can edit the PRD and the app is built from a data model derived from the old PRD. **Test the block, not just the state.**
+- Specs stored as JSONB with a Zod schema per type. Validate on write so a malformed spec never reaches the database.
+- `design.service` shells out to the `@google/design.md` CLI. Wrap it so a CLI failure returns a typed error rather than crashing the request.
+
+---
+
+## Phase 7: LLM provider (AI-1)
 
 **Goal:** a provider-agnostic interface for model calls with structured output and streaming.
 
-**Depends on:** BE-2
+**Depends on:** Phase 2 (BE-2)
 
 **Deliverables**
 
@@ -462,11 +641,11 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 
 ---
 
-## AI-3: Prompt infrastructure
+## Phase 8: Prompt infrastructure (AI-3)
 
 **Goal:** prompts as versioned, reviewable, testable artifacts.
 
-**Depends on:** AI-1
+**Depends on:** Phase 7 (AI-1)
 
 **Deliverables**
 
@@ -494,98 +673,31 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 
 - **The convention-leak test protects the second-template path.** If `shadcn` appears in a prompt string, adding a second UI library means editing prompts instead of adding a template. Conventions belong in context, injected at call time.
 - Prompt fixtures are intentionally brittle. A prompt change that alters output should require updating a fixture — that is the point.
-- Runs in parallel with BE-3. This phase has no backend dependency beyond AI-1.
+- Fits anywhere after Phase 7; it has no dependency beyond the LLM provider.
 
 ---
 
-## BE-3: Auth and organization
+### ══ INTEGRATION GATE I-1 ══
 
-**Goal:** NextAuth with credentials and Google, plus the tenancy layer and access helpers.
+**Pairs:** AI-1, AI-3 ↔ BE-1, BE-2, BE-4
 
-**Depends on:** BE-1, BE-2
+**Proves:** the agent can call a model, record usage, and write files it is given.
 
-**Deliverables**
+- [ ] A model call through the mock provider records a `UsageEvent` via the real service
+- [ ] A schema-violating response retries and then fails cleanly
+- [ ] Prompt fixtures render deterministically
+- [ ] No prompt contains a hardcoded stack convention
+- [ ] Stub runtime refuses to start in production
 
-- `apps/web/src/lib/auth.ts` — NextAuth config: credentials provider (Argon2 or bcrypt), Google provider, JWT sessions
-- `apps/web/src/app/api/auth/[...nextauth]/route.ts`
-- `packages/core/src/modules/org/org.service.ts` — create personal org on signup
-- `packages/core/src/modules/org/membership.repository.ts`
-- `packages/core/src/modules/org/access.ts` — `ownerOf(projectId, ctx)`, `canEdit(projectId, ctx)`, `assertMember(orgId, ctx)`
-- `apps/web/src/lib/request-context.ts` — build `RequestContext` from the session
-- `apps/web/src/app/api/auth/register/route.ts` — signup creating user + org + membership atomically
-- `apps/web/src/middleware.ts` — protect `(dashboard)` routes
-
-**Exit criteria**
-
-- Registration creates a user, an organization, and an owner membership atomically — a partial failure rolls back all three
-- Login works with credentials and with Google
-- Session carries `userId` and the active `orgId`
-- `ownerOf()` returns the project only when the caller has a membership in its org
-- **Access failures return 404, not 403**, for projects the caller does not belong to
-- Middleware redirects unauthenticated dashboard access to login, preserving the intended destination
-- Passwords hashed with a per-user salt; plaintext never logged
-
-**Tests**
-
-- `register` — creates all three records; duplicate email returns a conflict; rollback leaves nothing behind
-- `access` — returns the project for a member; null for a non-member; null for a nonexistent project
-- `requestContext` — builds from a session; throws when unauthenticated
-- Route-level — a foreign project id returns 404 with a body identical to a nonexistent id's
-
-**Notes**
-
-- **404 over 403 is deliberate.** A 403 confirms the project exists, which leaks information across tenants.
-- Personal-org creation must be inside the same transaction as user creation, or a failure halfway leaves an orphan user who cannot create projects.
-- `access.ts` is the seam that makes V2 team accounts additive. Every route goes through it rather than checking `userId` inline.
+**Exit criteria:** all five pass. Until they do, no AI phase may depend on a real model call.
 
 ---
 
-## BE-4: Project and usage
-
-**Goal:** project CRUD, workspace allocation, and usage metering.
-
-**Depends on:** BE-3
-
-**Deliverables**
-
-- `packages/core/src/modules/project/project.service.ts`, `project.repository.ts`
-- `packages/core/src/modules/project/workspace.ts` — allocate workspace, `git init`, initial commit
-- `packages/core/src/modules/version/git.service.ts` — commit helpers (BE-8 builds on this)
-- `packages/core/src/modules/usage/usage.service.ts` — `emit(kind, quantity, ctx)`; `usage.repository.ts`
-- `apps/web/src/app/api/projects/route.ts` — list, create
-- `apps/web/src/app/api/projects/[id]/route.ts` — get, patch, delete
-
-**Exit criteria**
-
-- Creating a project allocates a workspace, initializes a git repository, and makes an initial commit
-- The workspace path is stored on the project and **never derived from user input**
-- Deleting a project removes the database row and the workspace directory
-- Status transitions are validated — an illegal transition throws `ConflictError`
-- **`emit()` never throws into the caller's path** (metering must not break a build)
-- Listing returns only projects in the caller's org
-- Routes return contract-validated responses
-
-**Tests**
-
-- `project.service` — create produces DB row + workspace + git repo; delete removes both; list scopes to org
-- `workspace` — `git init` succeeds; a second init is idempotent; initial commit exists
-- Status transitions — table-driven over legal and illegal pairs
-- `usage.service` — emit writes a row; a repository failure is swallowed and logged, not thrown
-- `usage` — every emission point (LLM call, build start, container-minute) is covered
-
-**Notes**
-
-- **Metering failure must never fail the caller.** Wrap `emit` so a metering outage degrades to a logged warning. This is the one place where swallowing an error is correct.
-- The workspace path derives from the project **id**, never the name. Names are user input.
-- **This is the seam that unblocks AI-4.** The agent's context builder needs a real workspace with real files to index.
-
----
-
-## AI-2: Tool registry
+## Phase 9: Tool registry (AI-2)
 
 **Goal:** the agent's interface to the workspace, with hard safety boundaries.
 
-**Depends on:** AI-1, BE-2
+**Depends on:** Phase 7, Phase 2 (AI-1, BE-2)
 
 **Deliverables**
 
@@ -626,11 +738,11 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 
 ---
 
-## AI-4: Context builder
+## Phase 10: Context builder (AI-4)
 
 **Goal:** assemble the smallest set of files that lets the agent do the task correctly.
 
-**Depends on:** AI-2, **BE-4**
+**Depends on:** Phase 9, **Phase 4** (AI-2, BE-4)
 
 **Deliverables**
 
@@ -669,63 +781,6 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 
 ---
 
-## BE-5: Input
-
-**Goal:** accept text and files, store safely, extract text for the agent.
-
-**Depends on:** BE-4
-
-**Deliverables**
-
-- `packages/core/src/modules/input/input.service.ts`, `input.repository.ts`
-- `packages/core/src/modules/input/storage.ts` — write uploads under the uploads root
-- `packages/core/src/modules/input/extract/` — `pdf.ts`, `docx.ts`, `text.ts`, `image.ts`
-- `packages/contracts/src/upload.ts` — type allowlist, size and count limits (shared with frontend)
-- `apps/web/src/app/api/projects/[id]/inputs/route.ts` — list, create (multipart)
-- `apps/web/src/app/api/projects/[id]/inputs/[inputId]/route.ts` — delete
-
-**Exit criteria**
-
-- Only allowlisted types accepted: PDF, DOCX, TXT, MD, PNG, JPG, SVG
-- Files over 10MB rejected **before** being written to disk
-- A sixth file for one project rejected
-- Stored filenames are generated, **never taken from the upload**
-- Extraction returns text for PDF, DOCX, TXT, MD
-- Images stored and passed through as vision input rather than extracted
-- Extraction failure records the input with a null extraction and does not fail the request
-- Deleting a project removes its uploads
-
-**Tests**
-
-- `upload` validation — table-driven over accepted, rejected, oversize, count overflow
-- `storage` — a hostile filename (`../../etc/passwd`) is replaced, not honored
-- `extract/pdf`, `extract/docx` — extract expected text from small fixtures
-- `extract` — a corrupt file returns null rather than throwing
-- Route — multipart accepted; oversize rejected with the contract's error shape
-
-**Notes**
-
-- **Never trust the uploaded filename or the client-declared MIME type.** Sniff the content and generate the stored name.
-- Extraction is best-effort. A scanned PDF with no text layer should produce a documented null, not a failed request.
-
----
-
-### ══ INTEGRATION GATE I-1 ══
-
-**Pairs:** AI-1, AI-3 ↔ BE-1, BE-2, BE-4
-
-**Proves:** the agent can call a model, record usage, and write files it is given.
-
-- [ ] A model call through the mock provider records a `UsageEvent` via the real service
-- [ ] A schema-violating response retries and then fails cleanly
-- [ ] Prompt fixtures render deterministically
-- [ ] No prompt contains a hardcoded stack convention
-- [ ] Stub runtime refuses to start in production
-
-**Exit criteria:** all five pass. Until they do, no AI phase may depend on a real model call.
-
----
-
 ### ══ INTEGRATION GATE I-2 ══
 
 **Pairs:** AI-2, AI-4 ↔ BE-3, BE-4
@@ -742,64 +797,11 @@ Phases: **BE-1, BE-2, AI-1, AI-3, BE-3, BE-4, AI-2, AI-4, BE-5**
 
 ---
 
-# Wave 2 — Specs and gates
-
-Phases: **BE-6, AI-5, BE-7, BE-8**
-
-```
-BE-5 → BE-6 ──▶ AI-5
-       BE-7
-       BE-8
-```
-
----
-
-## BE-6: Spec
-
-**Goal:** store, version, approve, and stale the four spec artifacts.
-
-**Depends on:** BE-5
-
-**Deliverables**
-
-- `packages/core/src/modules/spec/spec.service.ts`, `spec.repository.ts`
-- `packages/core/src/modules/spec/versioning.ts` — create a new version rather than mutating
-- `packages/core/src/modules/spec/staleness.ts` — mark downstream specs STALE when an upstream spec is approved
-- `packages/core/src/modules/design/design.service.ts` — DESIGN.md parse, serialize, lint, and export
-- `apps/web/src/app/api/projects/[id]/specs/route.ts` — list (latest per type)
-- `apps/web/src/app/api/projects/[id]/specs/generate/route.ts` — trigger generation (wired to AI-5)
-- `apps/web/src/app/api/projects/[id]/specs/[specId]/{approve,revise,reject}/route.ts`
-
-**Exit criteria**
-
-- Four spec types: `PRD`, `DESIGN`, `DATA_MODEL`, `APP_STRUCTURE`
-- Approving a spec creates an approval record and **does not mutate prior versions**
-- Revising creates a new version; the previous version remains retrievable
-- Approving an upstream spec marks **all** downstream approved specs STALE
-- A STALE spec cannot be re-approved without being revised or explicitly re-confirmed
-- List responses return only the latest version per type
-- `design.service` round-trips a DESIGN.md document and exports to `css-tailwind` and `json-tailwind`
-
-**Tests**
-
-- `versioning` — revise creates version n+1; version n is unchanged and still fetchable
-- `staleness` — table-driven: approving PRD stales DESIGN, DATA_MODEL, APP_STRUCTURE; approving APP_STRUCTURE stales nothing
-- Approve — approving a STALE spec returns a conflict
-- `design.service` — parse → serialize is stable; lint surfaces a broken token reference; export produces a non-empty `@theme` block
-
-**Notes**
-
-- **Staleness is the rule that keeps the pipeline honest.** Without it, a user can edit the PRD and the app is built from a data model derived from the old PRD. **Test the block, not just the state.**
-- Specs stored as JSONB with a Zod schema per type. Validate on write so a malformed spec never reaches the database.
-- `design.service` shells out to the `@google/design.md` CLI. Wrap it so a CLI failure returns a typed error rather than crashing the request.
-
----
-
-## AI-5: Spec generation
+## Phase 11: Spec generation (AI-5)
 
 **Goal:** turn user input into four schema-valid, approvable specs.
 
-**Depends on:** AI-3, AI-4, **BE-6**
+**Depends on:** Phase 8, Phase 10, **Phase 6** (AI-3, AI-4, BE-6)
 
 **Deliverables**
 
@@ -837,11 +839,28 @@ BE-5 → BE-6 ──▶ AI-5
 
 ---
 
-## BE-7: Credential
+### ══ INTEGRATION GATE I-3 ══
+
+**Pairs:** AI-5 ↔ BE-5, BE-6
+
+**Proves:** real user input becomes four validated, stored, approvable specs.
+
+- [ ] A real PDF upload extracts text and feeds spec generation
+- [ ] All four specs are generated, validate against their schemas, and persist
+- [ ] The design spec exports to real Tailwind CSS
+- [ ] The PRD contains a structured business-rules section with all six subsections
+- [ ] Revising an upstream spec marks downstream specs STALE, and approving a STALE spec is blocked
+- [ ] Generation streams progress events
+
+**Exit criteria:** all six pass.
+
+---
+
+## Phase 12: Credential (BE-7)
 
 **Goal:** store third-party keys encrypted, return them masked, inject them at run time.
 
-**Depends on:** BE-3, BE-6
+**Depends on:** Phase 3, Phase 6 (BE-3, BE-6)
 
 **Deliverables**
 
@@ -875,11 +894,11 @@ BE-5 → BE-6 ──▶ AI-5
 
 ---
 
-## BE-8: Version
+## Phase 13: Version (BE-8)
 
 **Goal:** git-backed history, diffs, and revert.
 
-**Depends on:** BE-4
+**Depends on:** Phase 4 (BE-4)
 
 **Deliverables**
 
@@ -913,23 +932,6 @@ BE-5 → BE-6 ──▶ AI-5
 
 ---
 
-### ══ INTEGRATION GATE I-3 ══
-
-**Pairs:** AI-5 ↔ BE-5, BE-6
-
-**Proves:** real user input becomes four validated, stored, approvable specs.
-
-- [ ] A real PDF upload extracts text and feeds spec generation
-- [ ] All four specs are generated, validate against their schemas, and persist
-- [ ] The design spec exports to real Tailwind CSS
-- [ ] The PRD contains a structured business-rules section with all six subsections
-- [ ] Revising an upstream spec marks downstream specs STALE, and approving a STALE spec is blocked
-- [ ] Generation streams progress events
-
-**Exit criteria:** all six pass.
-
----
-
 ### ══ INTEGRATION GATE I-4 ══
 
 **Pairs:** BE-7, BE-8
@@ -941,30 +943,15 @@ BE-5 → BE-6 ──▶ AI-5
 - [ ] A revert produces a new commit and leaves history linear
 - [ ] Revert on a dirty workspace refuses
 
-**Exit criteria:** all four pass. **This is a backend-only gate** — the AI track continues on I-3 refinements in parallel. It is the one point where the two tracks legitimately diverge.
+**Exit criteria:** all four pass. **This is a backend-only gate** — it follows immediately after Gate I-3, with no agent work in between.
 
 ---
 
-# Wave 3 — Execution and verification
-
-Phases: **BE-9, BE-10, AI-6, AI-7, AI-8**
-
-```
-BE-9 ──▶ AI-6 ──▶ AI-7
-  │        └────▶ AI-8
-  └────────────────────▶ (both)
-BE-10 ──▶ AI-7
-```
-
-**This is the highest-risk wave.** Three AI phases wait on execution and streaming; a backend slip here stalls all three.
-
----
-
-## BE-9: Execution
+## Phase 14: Execution (BE-9)
 
 **Goal:** provision, run, stream, and tear down per-project containers.
 
-**Depends on:** BE-7, BE-8
+**Depends on:** Phase 12, Phase 13 (BE-7, BE-8)
 
 **Deliverables**
 
@@ -1007,11 +994,54 @@ BE-10 ──▶ AI-7
 
 ---
 
-## AI-6: Code generation
+## Phase 15: Build orchestration and SSE (BE-10)
+
+**Goal:** drive the build workflow, stream it, support cancel and resume.
+
+**Depends on:** Phase 14, Phase 6 (BE-9, BE-6)
+
+**Deliverables**
+
+- `packages/core/src/modules/build/build.service.ts` — start, cancel, status
+- `packages/core/src/modules/build/workflow.ts` — **step sequence, checkpointing, cancel checks (backend-owned)**
+- `packages/core/src/modules/build/logs.ts` — persist `BuildLog` rows with per-build `seq`
+- `apps/web/src/app/api/projects/[id]/builds/route.ts` — start, list
+- `apps/web/src/app/api/projects/[id]/builds/[buildId]/{route,cancel,stream}.ts`
+- `packages/core/src/modules/build/sse/encode.ts` — frame encoding with `id`, `event`, `data`
+
+**Exit criteria**
+
+- Starting a build creates a `Build` row and returns an id immediately; work continues asynchronously
+- Only one active build per project; a second start returns a conflict
+- **Every emitted event is persisted with a monotonic `seq` before being sent**
+- SSE replays from `Last-Event-ID` on reconnect with no gaps and no duplicates
+- A keepalive comment is sent every 15 seconds
+- Cancel sets the flag; the workflow stops at the next safe boundary and records a checkpoint
+- A cancelled build leaves the workspace consistent with a checkpoint commit
+- Cancel is idempotent
+- An internal error is written to `InternalError`; the client receives only a generic status
+
+**Tests**
+
+- `logs` — sequence increments per build; a concurrent writer cannot produce a duplicate (constraint enforced)
+- SSE — replay from a given id returns exactly the following events; a kept-alive connection stays open
+- `workflow` — checks cancel at every step boundary; a cancelled run records a checkpoint
+- Cancel — idempotent; a second call returns the same state
+- **Error path — an injected failure writes `InternalError` and the SSE stream emits a user-safe terminal event with no stack trace**
+
+**Notes**
+
+- **Persist before you emit.** If the event goes out first and persistence fails, a reconnecting client loses it. Write, then send.
+- Reconnection correctness is the whole point of the `seq` column. **Test the replay path directly** rather than trusting the happy path.
+- Cancel stops at a boundary, not mid-write. A half-written file is worse than a delayed cancel.
+
+---
+
+## Phase 16: Code generation (AI-6)
 
 **Goal:** turn approved specs into a project that type-checks and builds.
 
-**Depends on:** AI-5, AI-4, **BE-9**
+**Depends on:** Phase 11, Phase 10, **Phase 14** (AI-5, AI-4, BE-9)
 
 **Deliverables**
 
@@ -1051,54 +1081,28 @@ BE-10 ──▶ AI-7
 
 ---
 
-## BE-10: Build orchestration and SSE
+### ══ INTEGRATION GATE I-5 ══
 
-**Goal:** drive the build workflow, stream it, support cancel and resume.
+**Pairs:** AI-6 ↔ BE-9
 
-**Depends on:** BE-9, BE-6
+**Proves:** approved specs become a running application.
 
-**Deliverables**
+- [ ] Scaffolding copies the template and commits
+- [ ] Contracts are frozen and imported by both API routes and components
+- [ ] Generated code type-checks after each file
+- [ ] The project builds and runs in a real container
+- [ ] The app responds `200` at its preview URL
+- [ ] Containers run non-root with resource limits
 
-- `packages/core/src/modules/build/build.service.ts` — start, cancel, status
-- `packages/core/src/modules/build/workflow.ts` — **step sequence, checkpointing, cancel checks (backend-owned)**
-- `packages/core/src/modules/build/logs.ts` — persist `BuildLog` rows with per-build `seq`
-- `apps/web/src/app/api/projects/[id]/builds/route.ts` — start, list
-- `apps/web/src/app/api/projects/[id]/builds/[buildId]/{route,cancel,stream}.ts`
-- `packages/core/src/modules/build/sse/encode.ts` — frame encoding with `id`, `event`, `data`
-
-**Exit criteria**
-
-- Starting a build creates a `Build` row and returns an id immediately; work continues asynchronously
-- Only one active build per project; a second start returns a conflict
-- **Every emitted event is persisted with a monotonic `seq` before being sent**
-- SSE replays from `Last-Event-ID` on reconnect with no gaps and no duplicates
-- A keepalive comment is sent every 15 seconds
-- Cancel sets the flag; the workflow stops at the next safe boundary and records a checkpoint
-- A cancelled build leaves the workspace consistent with a checkpoint commit
-- Cancel is idempotent
-- An internal error is written to `InternalError`; the client receives only a generic status
-
-**Tests**
-
-- `logs` — sequence increments per build; a concurrent writer cannot produce a duplicate (constraint enforced)
-- SSE — replay from a given id returns exactly the following events; a kept-alive connection stays open
-- `workflow` — checks cancel at every step boundary; a cancelled run records a checkpoint
-- Cancel — idempotent; a second call returns the same state
-- **Error path — an injected failure writes `InternalError` and the SSE stream emits a user-safe terminal event with no stack trace**
-
-**Notes**
-
-- **Persist before you emit.** If the event goes out first and persistence fails, a reconnecting client loses it. Write, then send.
-- Reconnection correctness is the whole point of the `seq` column. **Test the replay path directly** rather than trusting the happy path.
-- Cancel stops at a boundary, not mid-write. A half-written file is worse than a delayed cancel.
+**Exit criteria:** all six pass. **This is the largest integration point in the project** and the one most likely to surface interface mismatches.
 
 ---
 
-## AI-7: Recovery
+## Phase 17: Recovery (AI-7)
 
 **Goal:** bound failure, recover where possible, never degrade correctness silently.
 
-**Depends on:** AI-6, **BE-10**
+**Depends on:** Phase 16, **Phase 15** (AI-6, BE-10)
 
 **Deliverables**
 
@@ -1137,11 +1141,28 @@ BE-10 ──▶ AI-7
 
 ---
 
-## AI-8: Test agent
+### ══ INTEGRATION GATE I-6 ══
+
+**Pairs:** AI-7 ↔ BE-10
+
+**Proves:** builds stream reliably and failures are handled per policy.
+
+- [ ] A build emits status, terminal, and code events
+- [ ] Every event is persisted before it is sent
+- [ ] A forced disconnect and reconnect resumes with no gaps or duplicates
+- [ ] A deliberately broken generation triggers the fix loop and recovers
+- [ ] A never-degradable failure halts rather than silently simplifying
+- [ ] No user-facing message contains a technical error
+
+**Exit criteria:** all six pass.
+
+---
+
+## Phase 18: Test agent (AI-8)
 
 **Goal:** an independent agent that verifies the app against the spec, not against the code.
 
-**Depends on:** AI-6, AI-7, **BE-9**
+**Depends on:** Phase 16, Phase 17, **Phase 14** (AI-6, AI-7, BE-9)
 
 **Deliverables**
 
@@ -1178,40 +1199,6 @@ BE-10 ──▶ AI-7
 
 ---
 
-### ══ INTEGRATION GATE I-5 ══
-
-**Pairs:** AI-6 ↔ BE-9
-
-**Proves:** approved specs become a running application.
-
-- [ ] Scaffolding copies the template and commits
-- [ ] Contracts are frozen and imported by both API routes and components
-- [ ] Generated code type-checks after each file
-- [ ] The project builds and runs in a real container
-- [ ] The app responds `200` at its preview URL
-- [ ] Containers run non-root with resource limits
-
-**Exit criteria:** all six pass. **This is the largest integration point in the project** and the one most likely to surface interface mismatches.
-
----
-
-### ══ INTEGRATION GATE I-6 ══
-
-**Pairs:** AI-7 ↔ BE-10
-
-**Proves:** builds stream reliably and failures are handled per policy.
-
-- [ ] A build emits status, terminal, and code events
-- [ ] Every event is persisted before it is sent
-- [ ] A forced disconnect and reconnect resumes with no gaps or duplicates
-- [ ] A deliberately broken generation triggers the fix loop and recovers
-- [ ] A never-degradable failure halts rather than silently simplifying
-- [ ] No user-facing message contains a technical error
-
-**Exit criteria:** all six pass.
-
----
-
 ### ══ INTEGRATION GATE I-7 ══
 
 **Pairs:** AI-8 ↔ BE-9
@@ -1229,22 +1216,11 @@ BE-10 ──▶ AI-7
 
 ---
 
-# Wave 4 — Delivery
-
-Phases: **BE-11, AI-9**
-
-```
-BE-11 ──▶ AI-9
-BE-8  ──▶ AI-9
-```
-
----
-
-## BE-11: Deploy, export, and jobs
+## Phase 19: Deploy, export, and jobs (BE-11)
 
 **Goal:** deploy to a live URL, export to GitHub, keep the host from silting up.
 
-**Depends on:** BE-10
+**Depends on:** Phase 15 (BE-10)
 
 **Deliverables**
 
@@ -1288,11 +1264,11 @@ BE-8  ──▶ AI-9
 
 ---
 
-## AI-9: Change requests
+## Phase 20: Change requests (AI-9)
 
 **Goal:** modify an existing project without breaking what already works.
 
-**Depends on:** AI-4, AI-6, AI-7, AI-8, **BE-8**
+**Depends on:** Phase 10, Phase 16, Phase 17, Phase 18, **Phase 13** (AI-4, AI-6, AI-7, AI-8, BE-8)
 
 **Deliverables**
 
@@ -1349,24 +1325,24 @@ BE-8  ──▶ AI-9
 
 ## Integration test matrix
 
-These tests belong to neither track alone. They live in `tests/integration/` and are owned jointly.
+These tests belong to no single phase. They live in `tests/integration/` and verify the seams between phases.
 
-| Test                               | Proves                                           | Wave |
+| Test                               | Proves                                           | Gate |
 | ---------------------------------- | ------------------------------------------------ | ---- |
-| `model-call-records-usage`         | AI-1 → BE-4 seam                                 | 1    |
-| `stub-runtime-refuses-production`  | The stub cannot run generated code in production | 1    |
-| `agent-edits-become-commits`       | AI-2 → BE-8 seam                                 | 1    |
-| `context-retrieval-real-workspace` | AI-4 reads a real indexed project                | 1    |
-| `upload-to-specs`                  | BE-5 → AI-5 → BE-6 pipeline                      | 2    |
-| `spec-revision-stales-downstream`  | BE-6 staleness rule under real generation        | 2    |
-| `credential-never-logged`          | BE-7 during a full generation run                | 2    |
-| `specs-to-running-app`             | AI-6 → BE-9 end to end                           | 3    |
-| `build-stream-resume`              | BE-10 SSE with an AI-generated build             | 3    |
-| `recovery-respects-rules`          | AI-7 halts on a never-degradable failure         | 3    |
-| `test-agent-no-implementation`     | AI-8 context isolation under real conditions     | 3    |
-| `full-flow`                        | I-8 complete                                     | 4    |
+| `model-call-records-usage`         | Phase 7 → Phase 4 seam                           | I-1  |
+| `stub-runtime-refuses-production`  | The stub cannot run generated code in production | I-1  |
+| `agent-edits-become-commits`       | Phase 9 → Phase 13 seam                          | I-2  |
+| `context-retrieval-real-workspace` | Phase 10 reads a real indexed project            | I-2  |
+| `upload-to-specs`                  | Phase 5 → Phase 11 → Phase 6 pipeline            | I-3  |
+| `spec-revision-stales-downstream`  | Phase 6 staleness rule under real generation     | I-3  |
+| `credential-never-logged`          | Phase 12 during a full generation run            | I-4  |
+| `specs-to-running-app`             | Phase 16 → Phase 14 end to end                   | I-5  |
+| `build-stream-resume`              | Phase 15 SSE with an agent-generated build       | I-6  |
+| `recovery-respects-rules`          | Phase 17 halts on a never-degradable failure     | I-6  |
+| `test-agent-no-implementation`     | Phase 18 context isolation under real conditions | I-7  |
+| `full-flow`                        | I-8 complete                                     | I-8  |
 
-**Common failure mode these catch:** both tracks pass their own tests while the seam between them is wrong — a shape mismatch, a missing field, or an ownership dispute that only appears when the halves run together.
+**Common failure mode these catch:** each phase passes its own tests while the seam between phases is wrong — a shape mismatch, a missing field, or an ownership dispute that only appears when the phases run together.
 
 ---
 
@@ -1420,16 +1396,16 @@ Every phase declares and enforces: max iterations, max tokens, max wall-clock, m
 
 ## Risk register
 
-**Project-wide risks live in `IMPLEMENTATION_PLAN.md §8`.** This table covers only the risks specific to running these two tracks in parallel.
+**Project-wide risks live in `IMPLEMENTATION_PLAN.md §8`.** This table covers only the risks specific to this sequence.
 
 | Risk                                                | Impact                                          | Mitigation                                                                      |
 | --------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------- |
-| **BE-2 deprioritized**                              | AI cannot start at all                          | **BE-2 is the highest-leverage phase — build it first**                         |
-| Seam interface changes after AI-2 starts            | Rework on both sides                            | Interfaces frozen in BE-2; changes require both owners                          |
-| Stub behavior diverges from the real implementation | AI passes against the stub, fails in production | One integration test per seam, run at the wave gate                             |
-| Two tracks edit `workflow.ts`                       | Merge conflicts, unclear ownership              | Backend owns the engine; AI owns the steps; `WorkflowStep` is the contract      |
-| **BE-9 or BE-10 slips**                             | AI-6, AI-7, AI-8 stall together                 | Stub runtime lets AI-6 and AI-8 develop early; only real verification waits     |
-| Integration gates skipped under schedule pressure   | Two green tracks, broken product                | Gates are pass/fail and block wave completion                                   |
+| **Phase 2 deprioritized**                           | AI cannot start at all                          | **Phase 2 is the highest-leverage phase — build it first**                      |
+| Seam interface changes after AI-2 starts            | Rework on both sides                            | Interfaces frozen in Phase 2; changes are a deliberate, reviewed decision       |
+| Stub behavior diverges from the real implementation | AI passes against the stub, fails in production | One integration test per seam, run at its integration gate                      |
+| Edits cross the `workflow.ts` ownership boundary    | Merge conflicts, unclear ownership              | Backend owns the engine; AI owns the steps; `WorkflowStep` is the contract      |
+| **Phase 14 or 15 slips**                            | AI-6, AI-7, AI-8 stall together                 | The stub runtime de-risks Phases 16 and 18 — they cannot stall on Docker        |
+| Integration gates skipped under schedule pressure   | All phases green, product broken                | Gates are pass/fail and block the next phase                                    |
 | Ownership boundary crossed under time pressure      | Merge conflicts, unclear accountability         | Ownership table in §4; changes across a boundary require a request, not an edit |
 
 ---
@@ -1443,7 +1419,7 @@ Decisions recorded in §0: dev database (PostgreSQL via Docker), MSW skipped, mo
 Two items still bear directly on this document:
 
 - **Concrete LLM provider undecided** (Anthropic vs OpenAI) — the mock-first decision unblocks the AI-1 interface, the mock provider, and every downstream phase; only `router.ts` model names and the concrete `providers/*.ts` wait for an API key.
-- **AI-8 (Test Agent) may ship in V1.1** — confirm before starting Wave 3.
+- **AI-8 (Test Agent) may ship in V1.1** — confirm before starting Phase 18.
 
 ---
 
@@ -1451,7 +1427,7 @@ Two items still bear directly on this document:
 
 - [ ] Every seam in §7 has an interface written before its implementation
 - [ ] Every stub fails closed in production
-- [ ] BE-1 … BE-11 and AI-1 … AI-9 complete, each with passing tests
+- [ ] Phase 0 … Phase 20 complete, each with passing tests
 - [ ] All eight integration gates (I-1 … I-8) pass
 - [ ] Every test in the integration matrix passes
 - [ ] No file has been edited across an ownership boundary

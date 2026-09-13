@@ -2,13 +2,13 @@
 
 Phase-wise plan for building KairoPro V1, split into three tracks: **Frontend**, **Backend**, and **AI**.
 
-| Document                             | Track                                                                         |
-| ------------------------------------ | ----------------------------------------------------------------------------- |
-| `IMPLEMENTATION_PLAN.md` (this file) | Master sequencing, dependencies, conventions                                  |
-| `FRONTEND_PLAN.md`                   | FE-1 … FE-10                                                                  |
-| `BACKEND_AI_PLAN.md`                 | BE-1 … BE-11 and AI-1 … AI-9, organized by wave with integration gates inline |
+| Document                             | Track                                                                                                                                     |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `IMPLEMENTATION_PLAN.md` (this file) | Master sequencing, dependencies, conventions                                                                                              |
+| `FRONTEND_PLAN.md`                   | FE-1 … FE-10                                                                                                                              |
+| `BACKEND_AI_PLAN.md`                 | Phase 0 … Phase 20 — one linear sequence (legacy IDs BE-1 … BE-11, AI-1 … AI-9 kept as durable identifiers) with integration gates inline |
 
-**Backend and AI share one document because they are one work stream.** The AI track is blocked by backend work eight times, so the two are planned together with explicit seams, stubs, and integration gates. See `BACKEND_AI_PLAN.md` §1.
+**Backend and AI share one document because they are one work stream.** The AI track was blocked by backend work eight times, so the two were planned together with explicit seams, stubs, and integration gates — and are now serialized into a single linear sequence, Phase 0 … Phase 20, for one implementer. See `BACKEND_AI_PLAN.md` §1.
 
 ---
 
@@ -16,7 +16,7 @@ Phase-wise plan for building KairoPro V1, split into three tracks: **Frontend**,
 
 Three tracks are planned independently but share one foundation. The strategy is:
 
-1. **Contracts first.** Zod schemas define every request and response before any implementation exists. Both tracks consume them.
+1. **Contracts first.** Zod schemas define every request and response before any implementation exists. Every phase consumes them.
 2. **Frontend shipped first, visual-first.** Every screen is built from the Stitch exports with mock data hardcoded in components. The MSW layer (P0.5) was never built and is skipped by decision — integration is now a **per-page rewire**: each backend phase swaps its page's hardcoded data for real services and endpoints.
 3. **Contracts still come first for the backend.** P0.4 is written against the shapes the shipped pages already display, so the backend implements to a fixed target and the rewire is a data-source swap, not a redesign.
 4. **AI is last and deepest.** It depends on backend storage, execution, and streaming, and on the frontend's spec and build surfaces existing to display its output.
@@ -132,8 +132,10 @@ export type Project = z.infer<typeof ProjectSchema>;
 
 ## 4. Dependency graph
 
+The original three-track design, kept as the design record. As executed: the frontend shipped first, and the backend/AI phases run as the linear **Phase 0 … Phase 20** sequence in `BACKEND_AI_PLAN.md`. (`P0` below is this plan's shared-foundation phase — the P0.x items — not that document's Phase 0.)
+
 ```
-                        Phase 0
+                         P0
         toolchain · tokens · tests · contracts · MSW
                             │
         ┌───────────────────┼───────────────────┐
@@ -162,8 +164,8 @@ export type Project = z.infer<typeof ProjectSchema>;
 
 | Phase             | Blocked by        | Why                                                  |
 | ----------------- | ----------------- | ---------------------------------------------------- |
-| FE-1 … FE-10      | Phase 0 only      | MSW satisfies every data need                        |
-| BE-1 … BE-5       | Phase 0 only      | Contracts define the target                          |
+| FE-1 … FE-10      | P0 only           | MSW satisfies every data need                        |
+| BE-1 … BE-5       | P0 only           | Contracts define the target                          |
 | AI-1, AI-2        | BE-1, BE-2        | Needs the data layer and the `ContainerRuntime` seam |
 | AI-4              | BE-4              | Workspace must exist to index                        |
 | AI-5 (Spec gen)   | BE-6              | Specs must be storable                               |
@@ -184,6 +186,8 @@ awk '/^## FE-/{f=$0} /^\*\*Depends on:\*\*/{if ($0 ~ /BE-/) print f" -> "$0}' do
 ## 5. Wave plan
 
 > **Detail lives in `BACKEND_AI_PLAN.md`** for the backend and AI phases, and in `FRONTEND_PLAN.md` for the frontend phases. This section is the summary view across all three tracks.
+>
+> **Status:** the frontend has shipped, and the backend/AI work now runs as **one linear sequence — Phase 0 … Phase 20** (`BACKEND_AI_PLAN.md`), not in parallel. The wave groupings below remain as milestone framing; the execution order to follow is the phase order in that document.
 
 ### Wave 1 — Foundation and core surfaces
 

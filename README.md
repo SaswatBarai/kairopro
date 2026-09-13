@@ -2,7 +2,7 @@
 
 An AI-powered development platform. A user describes an application — or uploads a PRD, spec, or design file — and KairoPro generates a complete full-stack web app, runs it, tests it, fixes its own errors, and delivers a live preview they can deploy or export to GitHub.
 
-> **Status: frontend complete; backend starting.** Every visual surface is ported from the Stitch exports and merged to `main` — with mock data hardcoded in components. The backend follows `docs/BACKEND_AI_PLAN.md` from P0.4 (contracts) and BE-1 (data layer); each phase rewires a shipped page to real data. The current state is audited in `docs/BACKEND_AI_PLAN.md §0`.
+> **Status: frontend complete; backend starting.** Every visual surface is ported from the Stitch exports and merged to `main` — with mock data hardcoded in components. The backend follows `docs/BACKEND_AI_PLAN.md` as one linear sequence, starting from Phase 0 (contracts) and Phase 1 (data layer); each phase rewires a shipped page to real data. The current state is audited in `docs/BACKEND_AI_PLAN.md §0`.
 
 ---
 
@@ -20,32 +20,44 @@ An AI-powered development platform. A user describes an application — or uploa
 
 ### Implementation plans
 
-| File                          | Purpose                                                                                                                                                                    |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs/IMPLEMENTATION_PLAN.md` | **Start here.** Master sequencing, dependency graph, wave plan, cross-track conventions, risk register                                                                     |
-| `docs/FRONTEND_PLAN.md`       | FE-1 … FE-10 — shell, marketing, auth, dashboard, input, gates, build, workspace, deploy, hardening                                                                        |
-| `docs/BACKEND_AI_PLAN.md`     | **Backend and AI together.** BE-1 … BE-11 and AI-1 … AI-9, organized by wave, with the 12 seams, stub-first strategy, ownership boundaries, and 8 integration gates inline |
+| File                          | Purpose                                                                                                                                                                                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/IMPLEMENTATION_PLAN.md` | **Start here.** Master sequencing, dependency graph, wave plan, cross-track conventions, risk register                                                                                                                                  |
+| `docs/FRONTEND_PLAN.md`       | FE-1 … FE-10 — shell, marketing, auth, dashboard, input, gates, build, workspace, deploy, hardening                                                                                                                                     |
+| `docs/BACKEND_AI_PLAN.md`     | **Backend and AI together.** One linear sequence — Phase 0 … Phase 20 (legacy IDs BE-1 … BE-11, AI-1 … AI-9 kept as durable identifiers) — with the 12 seams, stub-first strategy, ownership boundaries, and 8 integration gates inline |
 
 **Reading order for a new contributor:** `PRDv2.md` → `TECHNICAL_DOCUMENT.md` → `docs/IMPLEMENTATION_PLAN.md` → `DESIGN.md`.
 
 ### Build order
 
-The frontend shipped first, visual-first — every screen built from the Stitch exports with mock data hardcoded in components (the MSW layer was skipped by decision). Integration is per-phase: each backend phase rewires its page to real services, with contracts (P0.4) written first against the shapes the pages already display.
+The frontend shipped first, visual-first — every screen built from the Stitch exports with mock data hardcoded in components (the MSW layer was skipped by decision). Integration is per-phase: each backend phase rewires its page to real services, with contracts (Phase 0) written first against the shapes the pages already display.
 
 ```
-Phase 0  ── shared: toolchain · tokens · tests · contracts · MSW
-             │
-   ┌─────────┼──────────┐
-   ▼         ▼          ▼
- FE-1..5   BE-1..5    AI-1..4     Wave 1
-   ▼         ▼          ▼
- FE-6..8   BE-6..8    AI-5        Wave 2
-   ▼         ▼          ▼
- FE-9..10  BE-9..11   AI-6..8     Wave 3
-             │          │
-             └────┬─────┘
-                  ▼
-                AI-9            Wave 4
+Frontend ── shipped: FE-1 … FE-9, visual-first, mock data in components
+
+Backend + AI ── one linear sequence (docs/BACKEND_AI_PLAN.md):
+
+Phase 0   Contracts (zod)
+Phase 1   Data layer
+Phase 2   Platform seams          ← highest leverage
+Phase 3   Auth + organization     → login real, dashboard guarded
+Phase 4   Project + usage         → dashboard rewired to real data (F2)
+Phase 5   Input
+Phase 6   Spec
+Phase 7   LLM provider (mock-first)
+Phase 8   Prompts                 ── Gate I-1
+Phase 9   Tool registry
+Phase 10  Context builder         ── Gate I-2
+Phase 11  Spec generation         ── Gate I-3
+Phase 12  Credential
+Phase 13  Version                 ── Gate I-4
+Phase 14  Execution
+Phase 15  Build orchestration + SSE
+Phase 16  Code generation         ── Gate I-5
+Phase 17  Recovery                ── Gate I-6
+Phase 18  Test agent (V1.1?)      ── Gate I-7
+Phase 19  Deploy + export + jobs
+Phase 20  Change requests         ── Gate I-8
 ```
 
 ---
