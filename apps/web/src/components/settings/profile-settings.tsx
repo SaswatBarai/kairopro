@@ -23,6 +23,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { GithubMark } from "@/components/workspace/export-modal";
+import { useAuthStore } from "@/stores";
 
 function GitLabMark({ className }: { className?: string }) {
   return (
@@ -124,10 +125,19 @@ function SectionHeader({
 export function ProfileSettings() {
   const { data: session } = useSession();
   const user = session?.user;
+  const authUserName = useAuthStore((s) => s.userName);
+  const authUserEmail = useAuthStore((s) => s.userEmail);
+  const setAuth = useAuthStore((s) => s.setAuth);
 
-  const [fullName, setFullName] = useState(user?.name ?? DEFAULTS.fullName);
+  const [fullName, setFullName] = useState(
+    authUserName ?? user?.name ?? DEFAULTS.fullName,
+  );
   const [username, setUsername] = useState(
-    user?.email ? user.email.split("@")[0]! : DEFAULTS.username,
+    authUserEmail
+      ? authUserEmail.split("@")[0]!
+      : user?.email
+        ? user.email.split("@")[0]!
+        : DEFAULTS.username,
   );
   const [timezone, setTimezone] = useState(DEFAULTS.timezone);
   const [bio, setBio] = useState(DEFAULTS.bio);
@@ -168,6 +178,14 @@ export function ProfileSettings() {
   const save = () => {
     if (phase !== "idle") return;
     setPhase("saving");
+    if (user?.id) {
+      setAuth({
+        userId: user.id,
+        userName: fullName,
+        userEmail: user.email ?? `${username}@kairopro.app`,
+        activeOrgId: (user as any).activeOrgId ?? "org_default",
+      });
+    }
     timers.current.push(setTimeout(() => setPhase("saved"), 600));
     timers.current.push(setTimeout(() => setPhase("idle"), 600 + 1800));
   };

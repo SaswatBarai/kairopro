@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
+import { useProjectStore } from "@/stores";
 
 export type ProjectStatus = "deployed" | "ready" | "building" | "draft";
 
@@ -71,8 +72,18 @@ function MetaRow({ label, children }: { label: string; children: ReactNode }) {
 
 export function ProjectCard({ project }: { project: Project }) {
   const router = useRouter();
+  const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const badge = STATUS_BADGES[project.status];
   const [copied, setCopied] = useState(false);
+
+  const handleSelectProject = (dest: string) => {
+    setActiveProject(
+      project.name,
+      project.name,
+      project.status.toUpperCase() as any,
+    );
+    router.push(dest);
+  };
 
   const copyUrl = () => {
     if (!project.url) return;
@@ -104,6 +115,13 @@ export function ProjectCard({ project }: { project: Project }) {
               {project.href ? (
                 <Link
                   href={project.href}
+                  onClick={() =>
+                    setActiveProject(
+                      project.name,
+                      project.name,
+                      project.status.toUpperCase() as any,
+                    )
+                  }
                   className="transition-colors hover:text-brand-purple-light"
                 >
                   {project.name}
@@ -189,7 +207,7 @@ export function ProjectCard({ project }: { project: Project }) {
             <button
               className="flex h-7 cursor-pointer items-center gap-1 rounded-[3px] border border-brand-cyan/30 bg-brand-surface-muted px-2 text-xs text-brand-cyan transition-colors hover:bg-white/[0.08]"
               type="button"
-              onClick={() => router.push("/projects/new/build")}
+              onClick={() => handleSelectProject("/projects/new/build")}
             >
               <span>View live build</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -203,7 +221,7 @@ export function ProjectCard({ project }: { project: Project }) {
             <button
               className="flex h-7 cursor-pointer items-center gap-1.5 rounded-[3px] border border-white/[0.1] bg-brand-surface-muted px-3 text-xs text-zinc-100 transition-colors hover:bg-white/[0.08]"
               type="button"
-              onClick={() => router.push("/projects/new")}
+              onClick={() => handleSelectProject("/projects/new")}
             >
               <Play className="h-3.5 w-3.5 text-zinc-500" />
               <span>Continue setup</span>

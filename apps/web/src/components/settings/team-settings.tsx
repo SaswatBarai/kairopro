@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores";
 
 const SECTION_BASE = {
   initial: { opacity: 0, y: 12 },
@@ -154,6 +155,7 @@ function Toggle({
 }
 
 export function TeamSettings() {
+  const activeOrgName = useAuthStore((s) => s.activeOrgName);
   const [members] = useState(MEMBERS);
   const [invites, setInvites] = useState(INITIAL_INVITES);
   const [query, setQuery] = useState("");
@@ -241,7 +243,7 @@ export function TeamSettings() {
               Team &amp; Members
             </h1>
             <span className="rounded-[2px] bg-brand-purple/20 px-2 py-0.5 font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-brand-purple-light">
-              Pro Plus Tier
+              {activeOrgName ?? "Personal Org"}
             </span>
           </div>
           <p className="max-w-2xl text-[13px] leading-relaxed text-zinc-300">

@@ -34,6 +34,8 @@ import {
 } from "@/components/projects/demo-projects";
 import type { Project } from "@/components/projects/project-card";
 import { ProjectsListing } from "@/components/projects/projects-listing";
+import { useAuthStore } from "@/stores/use-auth-store";
+import { useProjectStore } from "@/stores/use-project-store";
 
 const sampleSpecs: Record<string, { title: string; body: string }> = {
   "task-manager": {
@@ -57,6 +59,8 @@ const flowNodes = [
 ];
 
 export function ProjectsDashboard() {
+  const { userName, activeOrgName } = useAuthStore();
+  const { setActiveProject } = useProjectStore();
   const [projects, setProjects] = useState<Project[]>([]);
   const [open, setOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
@@ -189,11 +193,17 @@ export function ProjectsDashboard() {
             <div className="flex items-center justify-between px-1 py-1">
               <div className="flex min-w-0 items-center gap-2">
                 <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-white/10 font-mono-tech text-[10px] text-zinc-400">
-                  PW
+                  {userName
+                    ? userName
+                        .split(" ")
+                        .map((w) => w[0]?.toUpperCase())
+                        .join("")
+                        .slice(0, 2)
+                    : "PW"}
                 </div>
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate text-xs text-zinc-200">
-                    Personal Workspace
+                    {activeOrgName || "Personal Workspace"}
                   </span>
                   <span className="font-mono-tech text-[10px] uppercase tracking-widest text-zinc-600">
                     Beta Pro

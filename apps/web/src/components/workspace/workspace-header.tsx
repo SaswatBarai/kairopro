@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useAuthStore, useProjectStore } from "@/stores";
 import { GithubMark } from "./export-modal";
 import { SANDBOX_STATUS, type SandboxState } from "./sandbox-panel";
 
@@ -41,7 +42,18 @@ export function WorkspaceHeader({
   onDeploy,
   onExport,
 }: WorkspaceHeaderProps) {
+  const activeProjectName = useProjectStore((s) => s.activeProjectName);
+  const userName = useAuthStore((s) => s.userName);
   const status = SANDBOX_STATUS[sandboxState];
+
+  const userInitials = userName
+    ? userName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "KP";
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-white/[0.07] bg-brand-surface px-3 sm:px-4">
@@ -54,7 +66,7 @@ export function WorkspaceHeader({
         </span>
         <span className="hidden h-4 w-px bg-white/10 sm:block" />
         <span className="truncate text-sm font-medium text-zinc-200">
-          TaskFlow
+          {activeProjectName || "TaskFlow"}
         </span>
         <span
           className={cn(
@@ -126,7 +138,7 @@ export function WorkspaceHeader({
           <Save className="h-4 w-4" />
         </button>
         <div className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-brand-purple to-brand-cyan text-[9px] font-bold text-white">
-          SB
+          {userInitials}
         </div>
       </div>
     </header>

@@ -7,6 +7,7 @@ import { Braces, Bug, CheckCircle2, Eraser, Terminal } from "lucide-react";
 
 import { FadeIn } from "@/components/landing/fade-in";
 import { cn } from "@/lib/utils";
+import { useBuildStreamStore } from "@/stores";
 
 interface TerminalLine {
   time: string;
@@ -191,6 +192,13 @@ export function BuildConsole() {
   const [activeTab, setActiveTab] = useState<TabId>("terminal");
   const [cleared, setCleared] = useState(false);
   const [activeFile, setActiveFile] = useState(GENERATED_FILES[0]?.name ?? "");
+  const storeLogs = useBuildStreamStore((s) => s.logs);
+  const resetStream = useBuildStreamStore((s) => s.resetStream);
+
+  const handleClear = () => {
+    setCleared(true);
+    resetStream();
+  };
 
   return (
     <FadeIn delay={0.08}>
@@ -226,7 +234,7 @@ export function BuildConsole() {
                         : "border-white/[0.06] bg-brand-surface-muted text-zinc-500",
                     )}
                   >
-                    {tab.badge}
+                    {tab.id === "terminal" && storeLogs.length > 0 ? storeLogs.length : tab.badge}
                   </span>
                 </button>
               );
@@ -241,7 +249,7 @@ export function BuildConsole() {
               className="cursor-pointer p-1 transition-colors hover:text-zinc-100"
               title="Clear terminal"
               type="button"
-              onClick={() => setCleared(true)}
+              onClick={handleClear}
             >
               <Eraser className="h-[15px] w-[15px]" />
             </button>
@@ -263,6 +271,29 @@ export function BuildConsole() {
                     </span>
                     <span className="text-zinc-500">{line.time}</span>
                     <span>{line.content}</span>
+                  </motion.div>
+                ))}
+                {storeLogs.map((log, index) => (
+                  <motion.div
+                    className="flex items-start gap-3"
+                    key={log.id}
+                    variants={lineVariants(TERMINAL_LINES.length + index)}
+                  >
+                    <span className="select-none pt-[2px] font-mono-tech text-[11px] text-zinc-600">
+                      {String(TERMINAL_LINES.length + index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-zinc-500">
+                      [{new Date(log.timestamp).toLocaleTimeString()}]
+                    </span>
+                    <span
+                      className={cn(
+                        log.type === "STDERR" && "text-rose-400",
+                        log.type === "EVENT" && "text-brand-cyan",
+                        log.type === "CHECKPOINT" && "text-brand-green",
+                      )}
+                    >
+                      {log.content}
+                    </span>
                   </motion.div>
                 ))}
                 <motion.div

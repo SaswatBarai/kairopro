@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
+import { useBuildStreamStore, useProjectStore } from "@/stores";
 import {
   ACTIVE_TAB,
   DEFAULT_TABS,
@@ -60,6 +61,10 @@ function ResizeHandle({
 
 export function WorkspaceApp() {
   const router = useRouter();
+  const setSelectedFile = useProjectStore((s) => s.setSelectedFile);
+  const setTerminalOpen = useProjectStore((s) => s.setTerminalOpen);
+  const setBuildStatus = useBuildStreamStore((s) => s.setBuildStatus);
+
   const [explorerOpen, setExplorerOpen] = useState(true);
   const [explorerWidth, setExplorerWidth] = useState(240);
   const [agentOpen, setAgentOpen] = useState(true);
@@ -96,20 +101,27 @@ export function WorkspaceApp() {
     };
   }, []);
 
-  const openFile = useCallback((path: string) => {
-    setTabs((prev) => (prev.includes(path) ? prev : [...prev, path]));
-    setActiveTab(path);
-  }, []);
+  const openFile = useCallback(
+    (path: string) => {
+      setTabs((prev) => (prev.includes(path) ? prev : [...prev, path]));
+      setActiveTab(path);
+      setSelectedFile(path);
+    },
+    [setSelectedFile],
+  );
 
   const closeTab = useCallback(
     (path: string) => {
       const next = tabs.filter((t) => t !== path);
       setTabs(next);
-      setActiveTab((current) =>
-        current === path ? (next[next.length - 1] ?? null) : current,
-      );
+      setActiveTab((current) => {
+        const nextTab =
+          current === path ? (next[next.length - 1] ?? null) : current;
+        setSelectedFile(nextTab);
+        return nextTab;
+      });
     },
-    [tabs],
+    [tabs, setSelectedFile],
   );
 
   const save = useCallback(() => {
@@ -143,11 +155,13 @@ export function WorkspaceApp() {
   const toggleTerminal = useCallback(() => {
     if (sandboxExpanded && sandboxMode === "terminal") {
       setSandboxExpanded(false);
+      setTerminalOpen(false);
     } else {
       setSandboxMode("terminal");
       setSandboxExpanded(true);
+      setTerminalOpen(true);
     }
-  }, [sandboxExpanded, sandboxMode]);
+  }, [sandboxExpanded, sandboxMode, setTerminalOpen]);
 
   const askKairo = useCallback(() => {
     setAgentOpen(true);

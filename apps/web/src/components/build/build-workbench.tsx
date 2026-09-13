@@ -39,13 +39,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useBuildStreamStore, useProjectStore } from "@/stores";
 
 /* ------------------------------------------------------------------ */
 /* Data                                                                */
@@ -302,6 +298,10 @@ const codeLines: { n: string; body: React.ReactNode; hl?: "target" | "mod" }[] =
 /* ------------------------------------------------------------------ */
 
 export function BuildWorkbench() {
+  const activeProjectName = useProjectStore((s) => s.activeProjectName);
+  const streamStatus = useBuildStreamStore((s) => s.status);
+  const currentStep = useBuildStreamStore((s) => s.currentStep);
+
   const [mode, setMode] = useState<"code" | "preview">("code");
   const [checked, setChecked] = useState<Record<string, boolean>>(
     Object.fromEntries(planItems.map((p) => [p.id, true])),
@@ -317,7 +317,7 @@ export function BuildWorkbench() {
         {/* Left: breadcrumb + status */}
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex min-w-0 items-center gap-1.5 font-mono-tech text-[11px] text-zinc-400">
-            <span className="text-sm font-medium text-zinc-100">TaskFlow</span>
+            <span className="text-sm font-medium text-zinc-100">{activeProjectName || "TaskFlow"}</span>
             <span className="text-zinc-600">/</span>
             <span>src</span>
             <span className="text-zinc-600">/</span>
@@ -335,7 +335,7 @@ export function BuildWorkbench() {
           <div className="hidden items-center gap-1.5 rounded-sm bg-brand-surface-muted px-1.5 py-0.5 sm:flex">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-green" />
             <span className="font-mono-tech text-[10px] uppercase tracking-wider text-brand-green">
-              Ready
+              {streamStatus || "Ready"}
             </span>
           </div>
           <div className="hidden items-center gap-1.5 lg:flex">
