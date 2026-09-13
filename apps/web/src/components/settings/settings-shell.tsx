@@ -41,6 +41,7 @@ const NAV_ITEMS = [
     id: "team",
     icon: Users,
     label: "Team & Members",
+    href: "/settings/team",
     badge: { text: "4", tone: "zinc" },
   },
 ] as const;
