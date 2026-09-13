@@ -263,20 +263,39 @@ export function HistoryDrawer({
         <>
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            animate={{
+              opacity: 1,
+              transition: { duration: 0.25, ease: "easeOut" },
+            }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
             onClick={onClose}
             className="fixed inset-0 z-[150] bg-black/70 backdrop-blur-[3px]"
           />
           <motion.aside
             initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            animate={{
+              x: 0,
+              transition: { type: "spring", stiffness: 420, damping: 42 },
+            }}
+            exit={{
+              x: "100%",
+              transition: { duration: 0.32, ease: [0.4, 0, 1, 1] },
+            }}
             className="fixed bottom-0 right-0 top-0 z-[160] flex w-full max-w-[490px] select-none flex-col border-l border-white/[0.08] bg-brand-dark shadow-[0_0_50px_rgba(0,0,0,0.85)]"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] bg-brand-surface px-5 py-4">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                transition: {
+                  duration: 0.35,
+                  ease: "easeOut",
+                  delay: 0.08,
+                },
+              }}
+              className="flex shrink-0 items-center justify-between border-b border-white/[0.08] bg-brand-surface px-5 py-4"
+            >
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px] border border-brand-purple-light/20 bg-brand-purple-light/10">
                   <History className="h-[19px] w-[19px] text-brand-purple-light" />
@@ -318,11 +337,23 @@ export function HistoryDrawer({
                   <X className="h-[18px] w-[18px]" />
                 </button>
               </div>
-            </div>
+            </motion.div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
               <div className="relative pl-6">
-                <div className="absolute bottom-8 left-[8px] top-3 w-[2px] bg-gradient-to-b from-brand-green via-brand-purple/40 to-white/[0.08]" />
+                <motion.div
+                  initial={{ scaleY: 0 }}
+                  animate={{
+                    scaleY: 1,
+                    transition: {
+                      duration: 0.65,
+                      ease: "easeOut",
+                      delay: 0.18,
+                    },
+                  }}
+                  style={{ transformOrigin: "top" }}
+                  className="absolute bottom-8 left-[8px] top-3 w-[2px] bg-gradient-to-b from-brand-green via-brand-purple/40 to-white/[0.08]"
+                />
                 {visible.map((checkpoint) => {
                   const index = CHECKPOINTS.indexOf(checkpoint);
                   const state =
@@ -333,8 +364,18 @@ export function HistoryDrawer({
                         : "normal";
                   const isLast = index === CHECKPOINTS.length - 1;
                   return (
-                    <div
+                    <motion.div
                       key={checkpoint.id}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        transition: {
+                          duration: 0.45,
+                          ease: [0.21, 0.47, 0.32, 1],
+                          delay: 0.12 + index * 0.06,
+                        },
+                      }}
                       className={cn("relative", !isLast && "pb-6")}
                     >
                       <Node state={state} tone={checkpoint.tone} />
@@ -440,13 +481,25 @@ export function HistoryDrawer({
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
             </div>
 
-            <div className="shrink-0 select-none space-y-3.5 border-t border-white/[0.08] bg-brand-surface p-5 shadow-[0_-8px_20px_rgba(0,0,0,0.4)]">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                transition: {
+                  duration: 0.35,
+                  ease: "easeOut",
+                  delay: 0.14,
+                },
+              }}
+              className="shrink-0 select-none space-y-3.5 border-t border-white/[0.08] bg-brand-surface p-5 shadow-[0_-8px_20px_rgba(0,0,0,0.4)]"
+            >
               <button
                 type="button"
                 onClick={onUndoCurrent}
@@ -475,7 +528,7 @@ export function HistoryDrawer({
                   confirmation.
                 </p>
               </div>
-            </div>
+            </motion.div>
           </motion.aside>
         </>
       )}
