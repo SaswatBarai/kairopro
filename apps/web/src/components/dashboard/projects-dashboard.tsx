@@ -15,6 +15,10 @@ import {
   Terminal,
 } from "lucide-react";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+
 import { Footer } from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,8 +63,20 @@ const flowNodes = [
 ];
 
 export function ProjectsDashboard() {
-  const { userName, activeOrgName } = useAuthStore();
+  const { data: session } = useSession();
+  const { userName, userEmail, activeOrgName } = useAuthStore();
   const { setActiveProject } = useProjectStore();
+
+  const displayName = userName || session?.user?.name || "Developer User";
+  const displayEmail = userEmail || session?.user?.email || "user@kairopro.app";
+  const userImage = session?.user?.image || null;
+  const userInitials =
+    displayName
+      .split(" ")
+      .map((w) => w[0]?.toUpperCase() ?? "")
+      .join("")
+      .slice(0, 2) || "DU";
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [open, setOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
@@ -96,17 +112,31 @@ export function ProjectsDashboard() {
     }, 600);
   }
 
+  const pathname = usePathname();
   const isEmpty = projects.length === 0;
 
   const sideNav = [
     {
       icon: Folder,
       label: "Projects",
+      href: "/dashboard",
       count: isEmpty ? null : String(projects.length),
-      active: true,
+      active: pathname === "/dashboard" || pathname === "/projects",
     },
-    { icon: Boxes, label: "Deployments", count: null, active: false },
-    { icon: Settings, label: "Settings", count: null, active: false },
+    {
+      icon: Boxes,
+      label: "Deployments",
+      href: "/projects/new/build",
+      count: null,
+      active: pathname.startsWith("/projects/new/build"),
+    },
+    {
+      icon: Settings,
+      label: "Settings",
+      href: "/settings/profile",
+      count: null,
+      active: pathname.startsWith("/settings"),
+    },
   ];
 
   return (
@@ -127,9 +157,9 @@ export function ProjectsDashboard() {
               className="mt-1 flex flex-col gap-0.5"
             >
               {sideNav.map((item) => (
-                <a
+                <Link
                   key={item.label}
-                  href="#"
+                  href={item.href}
                   className={
                     item.active
                       ? "flex items-center gap-2.5 rounded-sm bg-brand-surface-muted px-2.5 py-1.5 text-sm font-medium text-zinc-100"
@@ -153,7 +183,7 @@ export function ProjectsDashboard() {
                       {item.count}
                     </Badge>
                   ) : null}
-                </a>
+                </Link>
               ))}
             </nav>
 
@@ -188,28 +218,40 @@ export function ProjectsDashboard() {
             </div>
           </div>
 
-          {/* Workspace meta */}
-          <div className="flex flex-col gap-1 border-t border-white/[0.06] p-3">
-            <div className="flex items-center justify-between px-1 py-1">
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-white/10 font-mono-tech text-[10px] text-zinc-400">
-                  {userName
-                    ? userName
-                        .split(" ")
-                        .map((w) => w[0]?.toUpperCase())
-                        .join("")
-                        .slice(0, 2)
-                    : "PW"}
+          {/* Bottom user profile card */}
+          <div className="border-t border-white/[0.08] bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-brand-purple via-brand-purple/70 to-brand-cyan text-xs font-bold text-white shadow-sm ring-1 ring-white/10">
+                  {userImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={userImage}
+                      alt={displayName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    userInitials
+                  )}
+                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-green ring-2 ring-brand-surface" />
                 </div>
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-xs text-zinc-200">
-                    {activeOrgName || "Personal Workspace"}
+                  <span className="truncate text-xs font-semibold tracking-tight text-zinc-100">
+                    {displayName}
                   </span>
-                  <span className="font-mono-tech text-[10px] uppercase tracking-widest text-zinc-600">
-                    Beta Pro
+                  <span className="truncate font-mono-tech text-[10px] text-zinc-400">
+                    {displayEmail}
                   </span>
                 </div>
               </div>
+            </div>
+            <div className="mt-2.5 flex items-center justify-between rounded-sm bg-brand-dark px-2 py-1 font-mono-tech text-[10px]">
+              <span className="truncate text-zinc-500">
+                {activeOrgName || "Personal Org"}
+              </span>
+              <span className="shrink-0 rounded bg-brand-purple/20 px-1.5 py-0.5 font-semibold uppercase tracking-wider text-brand-purple-light">
+                Pro
+              </span>
             </div>
           </div>
         </aside>

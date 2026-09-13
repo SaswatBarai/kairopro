@@ -13,6 +13,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { useSession } from "next-auth/react";
+import { useAuthStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -48,6 +50,8 @@ const NAV_ITEMS = [
 
 export function SettingsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const { userName, userEmail } = useAuthStore();
   const leaf = pathname.split("/").filter(Boolean).pop() ?? "profile";
 
   return (
@@ -186,6 +190,38 @@ export function SettingsShell({ children }: { children: ReactNode }) {
             <div className="flex items-center justify-between border-t border-white/[0.06] pt-2 font-mono-tech text-[10px] text-zinc-500">
               <span>Active Invocations</span>
               <span className="font-medium text-brand-cyan">12 running</span>
+            </div>
+          </div>
+
+          {/* Bottom user profile card */}
+          <div className="mt-auto rounded-[4px] border border-white/[0.06] bg-white/[0.03] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-brand-purple via-brand-purple/70 to-brand-cyan text-xs font-bold text-white shadow-sm ring-1 ring-white/10">
+                  {session?.user?.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={session.user.image}
+                      alt={userName || session.user.name || "User"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    (userName || session?.user?.name || "DU")
+                      .split(" ")
+                      .map((w) => w[0]?.toUpperCase() ?? "")
+                      .join("")
+                      .slice(0, 2)
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-xs font-semibold tracking-tight text-zinc-100">
+                    {userName || session?.user?.name || "Developer User"}
+                  </span>
+                  <span className="truncate font-mono-tech text-[10px] text-zinc-400">
+                    {userEmail || session?.user?.email || "user@kairopro.app"}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
