@@ -5,27 +5,43 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bell,
+  CircleUser,
   CreditCard,
   Key,
   Terminal,
   TriangleAlert,
-  User,
   Users,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { id: "profile", icon: User, label: "Profile", href: "/settings/profile" },
+  {
+    id: "profile",
+    icon: CircleUser,
+    label: "Profile",
+    href: "/settings/profile",
+  },
   {
     id: "credentials",
     icon: Key,
-    label: "Credentials / API Keys",
-    badge: "I2",
+    label: "API Credentials",
+    href: "/settings/credentials",
+    badge: { text: "12", tone: "purple" },
   },
-  { id: "notifications", icon: Bell, label: "Notifications", dot: true },
-  { id: "billing", icon: CreditCard, label: "Billing & Usage" },
-  { id: "team", icon: Users, label: "Team / Members", count: "4" },
+  { id: "notifications", icon: Bell, label: "Notifications" },
+  {
+    id: "billing",
+    icon: CreditCard,
+    label: "Billing & Usage",
+    badge: { text: "Tier 2", tone: "zinc" },
+  },
+  {
+    id: "team",
+    icon: Users,
+    label: "Team & Members",
+    badge: { text: "4", tone: "zinc" },
+  },
 ] as const;
 
 export function SettingsShell({ children }: { children: ReactNode }) {
@@ -77,8 +93,8 @@ export function SettingsShell({ children }: { children: ReactNode }) {
 
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-6 sm:px-6 lg:min-h-0 lg:flex-1 lg:flex-row">
         <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-64">
-          <div>
-            <div className="mb-2 px-2 font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="flex flex-col gap-1 rounded-[4px] border border-white/[0.06] bg-white/[0.03] p-2">
+            <div className="px-2 py-1 font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
               Settings Scope
             </div>
             <nav className="flex flex-col gap-0.5">
@@ -87,48 +103,38 @@ export function SettingsShell({ children }: { children: ReactNode }) {
                 const Icon = item.icon;
                 const inner = (
                   <>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-[12px]">
                       <Icon
                         className={cn(
-                          "h-[18px] w-[18px]",
+                          "h-[17px] w-[17px]",
                           active
                             ? "text-brand-purple-light"
                             : "text-zinc-500 group-hover:text-zinc-100",
                         )}
                       />
-                      <span
-                        className={cn(
-                          active
-                            ? "text-[15px] font-semibold tracking-tight"
-                            : "text-[13px]",
-                        )}
-                      >
+                      <span className={cn(active && "font-medium")}>
                         {item.label}
                       </span>
                     </div>
                     {"badge" in item && item.badge && (
-                      <span className="rounded-[2px] bg-white/[0.08] px-1.5 py-0.5 font-mono-tech text-[10px] font-semibold text-zinc-500">
-                        {item.badge}
+                      <span
+                        className={cn(
+                          "rounded-[2px] px-1.5 py-0.5 font-mono-tech text-[10px] font-semibold",
+                          item.badge.tone === "purple"
+                            ? "bg-brand-purple-light/30 text-brand-purple-light"
+                            : "bg-white/[0.1] text-zinc-300",
+                        )}
+                      >
+                        {item.badge.text}
                       </span>
-                    )}
-                    {"dot" in item && item.dot && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-brand-cyan" />
-                    )}
-                    {"count" in item && item.count && (
-                      <span className="font-mono-tech text-[11px] text-zinc-500">
-                        {item.count}
-                      </span>
-                    )}
-                    {active && (
-                      <div className="h-4 w-1.5 rounded-full bg-brand-purple" />
                     )}
                   </>
                 );
                 const className = cn(
-                  "group relative flex items-center justify-between rounded-[2px] px-3 py-2 transition-colors",
+                  "group flex items-center justify-between rounded-[2px] border-l-2 px-2 py-1.5 transition-all",
                   active
-                    ? "bg-white/[0.05] text-zinc-100 shadow-sm"
-                    : "text-zinc-300 hover:bg-white/[0.03] hover:text-zinc-100",
+                    ? "border-brand-purple-light bg-white/[0.05] font-medium text-zinc-100"
+                    : "border-transparent text-zinc-300 hover:bg-white/[0.05] hover:text-zinc-100",
                 );
                 return "href" in item && item.href ? (
                   <Link key={item.id} href={item.href} className={className}>
@@ -140,40 +146,47 @@ export function SettingsShell({ children }: { children: ReactNode }) {
                   </button>
                 );
               })}
-              <div className="mt-2 pt-3">
-                <div className="mb-2 px-2 font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              <div className="mt-1 border-t border-white/[0.06] px-2 pt-2">
+                <span className="font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-rose-400">
                   Destructive
-                </div>
+                </span>
                 <button
                   type="button"
-                  className="group flex w-full items-center gap-2 rounded-[2px] px-3 py-2 text-[13px] font-medium text-rose-400 transition-colors hover:bg-rose-400/10"
+                  className="mt-1 flex w-full items-center gap-2 rounded-[2px] px-2 py-1.5 text-[12px] font-medium text-rose-400/80 transition-all hover:bg-rose-400/10 hover:text-rose-400"
                 >
-                  <TriangleAlert className="h-[18px] w-[18px]" />
+                  <TriangleAlert className="h-[17px] w-[17px]" />
                   Danger Zone
                 </button>
               </div>
             </nav>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-[2px] bg-white/[0.05] p-3">
+          <div className="flex flex-col gap-2 rounded-[4px] border border-white/[0.06] bg-white/[0.03] p-3">
             <div className="flex items-center justify-between">
               <span className="font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Compute Tier
+                Compute Quota
               </span>
-              <span className="font-mono-tech text-[11px] text-brand-cyan">
+              <span className="rounded-[2px] bg-brand-green/25 px-1.5 py-0.5 font-mono-tech text-[10px] font-semibold text-brand-green">
                 Pro Plus
               </span>
             </div>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.1]">
-              <div className="h-full w-[68%] rounded-full bg-brand-cyan" />
+            <div className="mt-1 flex flex-col gap-1">
+              <div className="flex justify-between font-mono-tech text-[11px]">
+                <span className="text-zinc-300">Agent Threads</span>
+                <span className="font-medium text-zinc-100">
+                  34 <span className="text-zinc-500">/ 50</span>
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.05]">
+                <div className="h-full w-[68%] rounded-full bg-brand-purple" />
+              </div>
             </div>
-            <div className="flex items-center justify-between font-mono-tech text-[11px] text-zinc-300">
-              <span>Agent Threads</span>
-              <span className="font-medium text-zinc-100">34 / 50</span>
+            <div className="flex items-center justify-between border-t border-white/[0.06] pt-2 font-mono-tech text-[10px] text-zinc-500">
+              <span>Active Invocations</span>
+              <span className="font-medium text-brand-cyan">12 running</span>
             </div>
           </div>
         </aside>
-
         <main className="min-w-0 flex-1 [scrollbar-width:none] lg:min-h-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
           {children}
         </main>
