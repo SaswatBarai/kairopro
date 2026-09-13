@@ -63,3 +63,17 @@ export type {
 
 export { scheduler } from "./platform/jobs/scheduler";
 export type { Scheduler } from "./platform/jobs/scheduler";
+
+// Phase 3 Auth & Org exports
+export type { RequestContext } from "./lib/context";
+export { hashPassword, verifyPassword } from "./platform/crypto/password";
+export {
+  createPersonalOrg,
+  getPrimaryOrgForUser,
+} from "./modules/org/org.service";
+export {
+  createMembership,
+  findMembership,
+  listUserMemberships,
+} from "./modules/org/membership.repository";
+export { assertMember, canEdit, ownerOf } from "./modules/org/access";

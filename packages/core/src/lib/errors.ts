@@ -60,6 +60,12 @@ export class ProviderError extends AppError {
   readonly status = 502;
 }
 
+/** The request lacks valid authentication credentials. */
+export class UnauthorizedError extends AppError {
+  readonly code = "UNAUTHORIZED" as const;
+  readonly status = 401;
+}
+
 /** An operation exceeded its deadline — a command timeout, a health probe
  * that never went ready. */
 export class TimeoutError extends AppError {

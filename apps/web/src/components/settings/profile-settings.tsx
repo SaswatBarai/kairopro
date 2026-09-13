@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useSession } from "next-auth/react";
 import { motion } from "motion/react";
 import {
   Check,
@@ -121,13 +122,23 @@ function SectionHeader({
 }
 
 export function ProfileSettings() {
-  const [fullName, setFullName] = useState(DEFAULTS.fullName);
-  const [username, setUsername] = useState(DEFAULTS.username);
+  const { data: session } = useSession();
+  const user = session?.user;
+
+  const [fullName, setFullName] = useState(user?.name ?? DEFAULTS.fullName);
+  const [username, setUsername] = useState(
+    user?.email ? user.email.split("@")[0]! : DEFAULTS.username,
+  );
   const [timezone, setTimezone] = useState(DEFAULTS.timezone);
   const [bio, setBio] = useState(DEFAULTS.bio);
   const [githubConnected, setGithubConnected] = useState(true);
   const [phase, setPhase] = useState<SavePhase>("idle");
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    if (user?.name) setFullName(user.name);
+    if (user?.email) setUsername(user.email.split("@")[0]!);
+  }, [user]);
 
   const clearTimers = () => {
     timers.current.forEach(clearTimeout);

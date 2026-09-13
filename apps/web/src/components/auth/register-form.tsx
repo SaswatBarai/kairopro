@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { RegisterInputSchema } from "@kairopro/contracts";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -11,6 +13,7 @@ import {
   CircleAlert,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
 
 import { GoogleIcon } from "@/components/common/google-icon";
@@ -63,6 +66,8 @@ export function RegisterForm() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { requirements, score } = evaluatePassword(password);
   const level = strengthLevels[score] ?? {
@@ -73,15 +78,67 @@ export function RegisterForm() {
   const nameValid = fullName.trim().length >= 2;
   const emailValid = EMAIL_PATTERN.test(email.trim());
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleGoogleSignIn = () => {
+    signIn("google", { callbackUrl: "/dashboard" });
+  };
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setNameError(nameValid ? null : "Enter your full name.");
-    setEmailError(emailValid ? null : "Enter a valid email address.");
-    setPasswordError(
-      password.length >= 8 ? null : "Password must be at least 8 characters.",
-    );
-    if (nameValid && emailValid && password.length >= 8) {
-      router.push("/dashboard");
+    setServerError(null);
+
+    const validation = RegisterInputSchema.safeParse({
+      name: fullName,
+      email,
+      password,
+    });
+
+    if (!validation.success) {
+      const fieldErrors = validation.error.flatten().fieldErrors;
+      setNameError(fieldErrors.name?.[0] ?? null);
+      setEmailError(fieldErrors.email?.[0] ?? null);
+      setPasswordError(fieldErrors.password?.[0] ?? null);
+      return;
+    }
+
+    setNameError(null);
+    setEmailError(null);
+    setPasswordError(null);
+
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setServerError(
+          data.error?.message || "Registration failed. Please try again.",
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // Auto sign-in after successful registration
+      const signInRes = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (signInRes?.error) {
+        router.push("/login");
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch {
+      setServerError("An unexpected network error occurred.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -112,10 +169,18 @@ export function RegisterForm() {
         </p>
       </div>
 
+      {serverError && (
+        <div className="mb-4 flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+          <CircleAlert className="h-4 w-4 shrink-0 text-rose-400" />
+          <span>{serverError}</span>
+        </div>
+      )}
+
       <Button
         variant="outline"
         className="h-10 w-full gap-3 bg-brand-surface-muted"
         type="button"
+        onClick={handleGoogleSignIn}
       >
         <GoogleIcon />
         Continue with Google
@@ -307,11 +372,24 @@ export function RegisterForm() {
           </p>
         </div>
 
-        <Button className="group h-10 w-full gap-2" type="submit">
-          <span className="tracking-tight">
-            Create account &amp; start building
-          </span>
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        <Button
+          className="group h-10 w-full gap-2"
+          type="submit"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Creating account...
+            </span>
+          ) : (
+            <>
+              <span className="tracking-tight">
+                Create account &amp; start building
+              </span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </>
+          )}
         </Button>
       </form>
 

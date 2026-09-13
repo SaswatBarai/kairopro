@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { CircleAlert, Eye, EyeOff } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { LoginInputSchema } from "@kairopro/contracts";
+import { CircleAlert, Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { GoogleIcon } from "@/components/common/google-icon";
 import { Logo } from "@/components/common/logo";
@@ -13,25 +15,66 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 function validateEmail(value: string): string | null {
-  if (!value.trim()) return "Email is required.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
-    return "Enter a valid email address.";
+  const res = LoginInputSchema.pick({ email: true }).safeParse({
+    email: value,
+  });
+  if (!res.success) {
+    return (
+      res.error.flatten().fieldErrors.email?.[0] ??
+      "Enter a valid email address."
+    );
   }
   return null;
 }
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleGoogleSignIn = () => {
+    signIn("google", { callbackUrl });
+  };
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const error = validateEmail(email);
-    setEmailError(error);
-    if (!error) router.push("/dashboard");
+    setAuthError(null);
+
+    const validation = LoginInputSchema.safeParse({ email, password });
+    if (!validation.success) {
+      const fieldErrors = validation.error.flatten().fieldErrors;
+      if (fieldErrors.email?.[0]) setEmailError(fieldErrors.email[0]);
+      if (fieldErrors.password?.[0]) setAuthError(fieldErrors.password[0]);
+      return;
+    }
+    setEmailError(null);
+
+    setIsLoading(true);
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setAuthError("Invalid email or password.");
+      } else {
+        router.push(callbackUrl);
+        router.refresh();
+      }
+    } catch {
+      setAuthError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -51,10 +94,18 @@ export function LoginForm() {
       </h1>
       <p className="mb-8 mt-1 text-sm text-zinc-400">Welcome back.</p>
 
+      {authError && (
+        <div className="mb-4 flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+          <CircleAlert className="h-4 w-4 shrink-0 text-rose-400" />
+          <span>{authError}</span>
+        </div>
+      )}
+
       <Button
         variant="outline"
         className="h-10 w-full gap-3 bg-brand-surface-muted"
         type="button"
+        onClick={handleGoogleSignIn}
       >
         <GoogleIcon />
         Continue with Google
@@ -133,8 +184,15 @@ export function LoginForm() {
           </a>
         </div>
 
-        <Button className="mt-6 h-10 w-full" type="submit">
-          Sign in
+        <Button className="mt-6 h-10 w-full" type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Signing in...
+            </span>
+          ) : (
+            "Sign in"
+          )}
         </Button>
       </form>
 

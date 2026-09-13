@@ -3,6 +3,8 @@
 import { AnimatePresence, motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
+import { LayoutDashboard, LogOut, User } from "lucide-react";
 
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
@@ -93,6 +95,7 @@ function NavLink({
 
 export function Navbar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -136,7 +139,7 @@ export function Navbar() {
           </nav>
 
           {/* Right actions */}
-          <div className="hidden items-center gap-7 border-l border-white/[0.08] px-5 lg:flex">
+          <div className="hidden items-center gap-4 border-l border-white/[0.08] px-5 lg:flex">
             <a
               aria-label="GitHub"
               className="flex items-center text-zinc-500 transition-colors duration-200 hover:text-zinc-200"
@@ -146,17 +149,39 @@ export function Navbar() {
             >
               <GitHubIcon className="h-5 w-5" />
             </a>
-            <Button
-              asChild
-              className="group h-[42px] -ml-1 rounded-[4px] px-5 text-[13px] shadow-[0_4px_20px_rgba(109,94,245,0.15)] transition-all duration-200 hover:-translate-y-px hover:bg-[#7B6EF6] hover:shadow-[0_6px_24px_rgba(109,94,245,0.22)]"
-            >
-              <a href="/login">
-                <span>Log in</span>
-                <span className="text-xs transition-transform duration-200 group-hover:translate-x-0.5">
-                  →
-                </span>
-              </a>
-            </Button>
+
+            {session?.user ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  asChild
+                  className="group h-[38px] rounded-[4px] bg-[#6d5ef5] px-4 text-[13px] font-medium text-white shadow-[0_4px_20px_rgba(109,94,245,0.25)] transition-all hover:bg-[#5b4be3]"
+                >
+                  <a href="/dashboard">
+                    <LayoutDashboard className="mr-1.5 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </a>
+                </Button>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  title="Sign out"
+                  className="flex h-9 w-9 items-center justify-center rounded border border-white/10 bg-brand-surface-muted text-zinc-400 hover:text-rose-400 hover:border-rose-400/40"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                asChild
+                className="group h-[42px] -ml-1 rounded-[4px] px-5 text-[13px] shadow-[0_4px_20px_rgba(109,94,245,0.15)] transition-all duration-200 hover:-translate-y-px hover:bg-[#7B6EF6] hover:shadow-[0_6px_24px_rgba(109,94,245,0.22)]"
+              >
+                <a href="/login">
+                  <span>Log in</span>
+                  <span className="text-xs transition-transform duration-200 group-hover:translate-x-0.5">
+                    →
+                  </span>
+                </a>
+              </Button>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -213,17 +238,29 @@ export function Navbar() {
                   >
                     <GitHubIcon className="h-5 w-5" />
                   </a>
-                  <Button
-                    asChild
-                    className="group mt-1 rounded-[4px] px-5 text-[13px] shadow-[0_4px_20px_rgba(109,94,245,0.15)]"
-                  >
-                    <a href="/login" onClick={() => setMenuOpen(false)}>
-                      <span>Log in</span>
-                      <span className="transition-transform duration-200 group-hover:translate-x-0.5">
-                        →
-                      </span>
-                    </a>
-                  </Button>
+                  {session?.user ? (
+                    <Button
+                      asChild
+                      className="group mt-1 rounded-[4px] bg-[#6d5ef5] px-5 text-[13px] text-white shadow-[0_4px_20px_rgba(109,94,245,0.25)]"
+                    >
+                      <a href="/dashboard" onClick={() => setMenuOpen(false)}>
+                        <LayoutDashboard className="mr-1.5 h-4 w-4" />
+                        <span>Dashboard</span>
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      className="group mt-1 rounded-[4px] px-5 text-[13px] shadow-[0_4px_20px_rgba(109,94,245,0.15)]"
+                    >
+                      <a href="/login" onClick={() => setMenuOpen(false)}>
+                        <span>Log in</span>
+                        <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+                          →
+                        </span>
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
             </motion.div>

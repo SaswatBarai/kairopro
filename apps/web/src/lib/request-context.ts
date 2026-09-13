@@ -1,12 +1,23 @@
+import { getServerSession } from "next-auth";
+import { type RequestContext, UnauthorizedError } from "@kairopro/core";
+import { authOptions } from "@/lib/auth";
+
+export type { RequestContext } from "@kairopro/core";
+
 /**
- * RequestContext — the ambient identity every service call receives.
- *
- * Placeholder type in Phase 1 (BE-1). Phase 3 (BE-3) implements the real
- * builder: it reads the NextAuth session and resolves the active org,
- * throwing when either is missing. Services never read `next/headers`
- * themselves — the web app constructs this object at the route boundary.
+ * Builds RequestContext from the active NextAuth session.
+ * Throws UnauthorizedError if no valid session or org is active.
+ * Routes call this at the boundary before passing context into domain services.
  */
-export interface RequestContext {
-  userId: string;
-  orgId: string;
+export async function getRequestContext(): Promise<RequestContext> {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id || !session?.user?.orgId) {
+    throw new UnauthorizedError({ message: "Authentication required" });
+  }
+
+  return {
+    userId: session.user.id,
+    orgId: session.user.orgId,
+  };
 }
