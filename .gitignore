@@ -43,8 +43,10 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# ─── Tooling artifacts ───────────────────────────────────────────────────────
+# ─── Tooling & Design artifacts ─────────────────────────────────────────────
 .commandcode/
+designs/
+
 
 # ─── Test output ─────────────────────────────────────────────────────────────
 coverage/
