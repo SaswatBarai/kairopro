@@ -174,7 +174,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 lg:min-h-0 lg:overflow-y-auto">
+        <main className="min-w-0 flex-1 [scrollbar-width:none] lg:min-h-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden">
           {children}
         </main>
       </div>
