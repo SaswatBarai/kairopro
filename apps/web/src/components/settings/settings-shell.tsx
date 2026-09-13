@@ -75,7 +75,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-6 sm:px-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-start">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-6 sm:px-6 lg:min-h-0 lg:flex-1 lg:flex-row">
         <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-64">
           <div>
             <div className="mb-2 px-2 font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
