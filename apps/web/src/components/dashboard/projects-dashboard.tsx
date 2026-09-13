@@ -16,9 +16,10 @@ import {
 } from "lucide-react";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+import { cn } from "@/lib/utils";
 import { Footer } from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,11 @@ import {
 } from "@/components/projects/demo-projects";
 import type { Project } from "@/components/projects/project-card";
 import { ProjectsListing } from "@/components/projects/projects-listing";
+import { ProfileSettings } from "@/components/settings/profile-settings";
+import { CredentialsSettings } from "@/components/settings/credentials-settings";
+import { BillingSettings } from "@/components/settings/billing-settings";
+import { TeamSettings } from "@/components/settings/team-settings";
+import { SettingsShell } from "@/components/settings/settings-shell";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useProjectStore } from "@/stores/use-project-store";
 
@@ -112,30 +118,52 @@ export function ProjectsDashboard() {
     }, 600);
   }
 
-  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTabParam = searchParams.get("tab") as
+    "projects" | "deployments" | "settings" | null;
+
+  const [activeMainTab, setActiveMainTab] = useState<
+    "projects" | "deployments" | "settings"
+  >(initialTabParam ?? "projects");
+  const [settingsSubTab, setSettingsSubTab] = useState<
+    "profile" | "credentials" | "billing" | "team"
+  >("profile");
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (
+      tabParam === "settings" ||
+      tabParam === "deployments" ||
+      tabParam === "projects"
+    ) {
+      setActiveMainTab(tabParam);
+    }
+  }, [searchParams]);
+
   const isEmpty = projects.length === 0;
 
   const sideNav = [
     {
+      id: "projects",
       icon: Folder,
       label: "Projects",
-      href: "/dashboard",
       count: isEmpty ? null : String(projects.length),
-      active: pathname === "/dashboard" || pathname === "/projects",
+      active: activeMainTab === "projects",
     },
     {
+      id: "deployments",
       icon: Boxes,
       label: "Deployments",
-      href: "/projects/new/build",
       count: null,
-      active: pathname.startsWith("/projects/new/build"),
+      active: activeMainTab === "deployments",
     },
     {
+      id: "settings",
       icon: Settings,
       label: "Settings",
-      href: "/settings/profile",
       count: null,
-      active: pathname.startsWith("/settings"),
+      active: activeMainTab === "settings",
     },
   ];
 
@@ -157,13 +185,20 @@ export function ProjectsDashboard() {
               className="mt-1 flex flex-col gap-0.5"
             >
               {sideNav.map((item) => (
-                <Link
+                <button
                   key={item.label}
-                  href={item.href}
+                  type="button"
+                  onClick={() => {
+                    if (item.id === "deployments") {
+                      router.push("/projects/new/build");
+                    } else {
+                      setActiveMainTab(item.id as any);
+                    }
+                  }}
                   className={
                     item.active
-                      ? "flex items-center gap-2.5 rounded-sm bg-brand-surface-muted px-2.5 py-1.5 text-sm font-medium text-zinc-100"
-                      : "flex items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-sm text-zinc-400 transition-colors hover:bg-brand-surface-muted/60 hover:text-zinc-100"
+                      ? "flex w-full items-center gap-2.5 rounded-sm bg-brand-surface-muted px-2.5 py-1.5 text-sm font-medium text-zinc-100"
+                      : "flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-sm text-zinc-400 transition-colors hover:bg-brand-surface-muted/60 hover:text-zinc-100"
                   }
                 >
                   <item.icon
@@ -183,7 +218,7 @@ export function ProjectsDashboard() {
                       {item.count}
                     </Badge>
                   ) : null}
-                </Link>
+                </button>
               ))}
             </nav>
 
@@ -258,7 +293,17 @@ export function ProjectsDashboard() {
 
         {/* Main canvas */}
         <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-          {isEmpty ? (
+          {activeMainTab === "settings" ? (
+            <SettingsShell
+              activeTab={settingsSubTab}
+              onSelectTab={(tabId) => setSettingsSubTab(tabId as any)}
+            >
+              {settingsSubTab === "profile" && <ProfileSettings />}
+              {settingsSubTab === "credentials" && <CredentialsSettings />}
+              {settingsSubTab === "billing" && <BillingSettings />}
+              {settingsSubTab === "team" && <TeamSettings />}
+            </SettingsShell>
+          ) : isEmpty ? (
             <>
               {/* Sub-header breadcrumb bar */}
               <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-white/[0.06] bg-brand-surface px-6">

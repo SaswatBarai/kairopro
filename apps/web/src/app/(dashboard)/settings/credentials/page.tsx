@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-
-import { CredentialsSettings } from "@/components/settings/credentials-settings";
-
-export const metadata: Metadata = {
-  title: "Service Credentials — KairoPro",
-};
+import { redirect } from "next/navigation";
 
 export default function CredentialsSettingsPage() {
-  return <CredentialsSettings />;
+  redirect("/dashboard?tab=settings");
 }

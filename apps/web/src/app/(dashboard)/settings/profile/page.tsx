@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-
-import { ProfileSettings } from "@/components/settings/profile-settings";
-
-export const metadata: Metadata = {
-  title: "Profile Settings — KairoPro",
-};
+import { redirect } from "next/navigation";
 
 export default function ProfileSettingsPage() {
-  return <ProfileSettings />;
+  redirect("/dashboard?tab=settings");
 }

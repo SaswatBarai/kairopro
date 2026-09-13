@@ -199,7 +199,7 @@ export function WorkspaceApp() {
       else if (id === "history") setHistoryOpen(true);
       else if (id === "deploy") setDeployOpen(true);
       else if (id === "export") setExportOpen(true);
-      else if (id === "settings") router.push("/settings/profile");
+      else if (id === "settings") router.push("/dashboard?tab=settings");
     },
     [run, restart, toggleTerminal, preview, askKairo, router],
   );

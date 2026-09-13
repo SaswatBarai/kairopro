@@ -22,13 +22,11 @@ const NAV_ITEMS = [
     id: "profile",
     icon: CircleUser,
     label: "Profile",
-    href: "/settings/profile",
   },
   {
     id: "credentials",
     icon: Key,
     label: "API Credentials",
-    href: "/settings/credentials",
     badge: { text: "12", tone: "purple" },
   },
   { id: "notifications", icon: Bell, label: "Notifications" },
@@ -36,23 +34,31 @@ const NAV_ITEMS = [
     id: "billing",
     icon: CreditCard,
     label: "Billing & Usage",
-    href: "/settings/billing",
     badge: { text: "Tier 2", tone: "zinc" },
   },
   {
     id: "team",
     icon: Users,
     label: "Team & Members",
-    href: "/settings/team",
     badge: { text: "4", tone: "zinc" },
   },
 ] as const;
 
-export function SettingsShell({ children }: { children: ReactNode }) {
+export interface SettingsShellProps {
+  children?: ReactNode;
+  activeTab?: string;
+  onSelectTab?: (tabId: string) => void;
+}
+
+export function SettingsShell({
+  children,
+  activeTab: propActiveTab = "profile",
+  onSelectTab,
+}: SettingsShellProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { userName, userEmail } = useAuthStore();
-  const leaf = pathname.split("/").filter(Boolean).pop() ?? "profile";
+  const leaf = propActiveTab;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-brand-dark lg:h-screen lg:overflow-hidden">
@@ -67,7 +73,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
               settings
             </span>
             <span className="text-zinc-700">/</span>
-            <span className="font-semibold text-brand-purple-light">
+            <span className="font-semibold text-brand-purple-light uppercase">
               {leaf}
             </span>
           </div>
@@ -105,7 +111,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
             </div>
             <nav className="flex flex-col gap-0.5">
               {NAV_ITEMS.map((item) => {
-                const active = "href" in item ? pathname === item.href : false;
+                const active = propActiveTab === item.id;
                 const Icon = item.icon;
                 const inner = (
                   <>
@@ -137,17 +143,19 @@ export function SettingsShell({ children }: { children: ReactNode }) {
                   </>
                 );
                 const className = cn(
-                  "group flex items-center justify-between rounded-[2px] border-l-2 px-2 py-1.5 transition-all",
+                  "group flex items-center justify-between rounded-[2px] border-l-2 px-2 py-1.5 transition-all text-left w-full cursor-pointer",
                   active
                     ? "border-brand-purple-light bg-white/[0.05] font-medium text-zinc-100"
                     : "border-transparent text-zinc-300 hover:bg-white/[0.05] hover:text-zinc-100",
                 );
-                return "href" in item && item.href ? (
-                  <Link key={item.id} href={item.href} className={className}>
-                    {inner}
-                  </Link>
-                ) : (
-                  <button key={item.id} type="button" className={className}>
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onSelectTab?.(item.id)}
+                    className={className}
+                  >
                     {inner}
                   </button>
                 );
@@ -190,38 +198,6 @@ export function SettingsShell({ children }: { children: ReactNode }) {
             <div className="flex items-center justify-between border-t border-white/[0.06] pt-2 font-mono-tech text-[10px] text-zinc-500">
               <span>Active Invocations</span>
               <span className="font-medium text-brand-cyan">12 running</span>
-            </div>
-          </div>
-
-          {/* Bottom user profile card */}
-          <div className="mt-auto rounded-[4px] border border-white/[0.06] bg-white/[0.03] p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-brand-purple via-brand-purple/70 to-brand-cyan text-xs font-bold text-white shadow-sm ring-1 ring-white/10">
-                  {session?.user?.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={session.user.image}
-                      alt={userName || session.user.name || "User"}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    (userName || session?.user?.name || "DU")
-                      .split(" ")
-                      .map((w) => w[0]?.toUpperCase() ?? "")
-                      .join("")
-                      .slice(0, 2)
-                  )}
-                </div>
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-xs font-semibold tracking-tight text-zinc-100">
-                    {userName || session?.user?.name || "Developer User"}
-                  </span>
-                  <span className="truncate font-mono-tech text-[10px] text-zinc-400">
-                    {userEmail || session?.user?.email || "user@kairopro.app"}
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </aside>
