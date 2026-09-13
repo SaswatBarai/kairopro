@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -33,6 +33,23 @@ describe("git.service (BE-4)", () => {
     const hash = await commitAll(dir, "Initial commit");
     expect(hash).toMatch(/^[0-9a-f]{7}$/);
     expect(await headCommit(dir)).toBe(hash);
+  });
+
+  it("initRepo creates a nested repo even when the dir sits inside a parent repo", async () => {
+    const parent = mkdtempSync(join(tmpdir(), "kairopro-git-parent-"));
+    try {
+      await initRepo(parent);
+      const child = join(parent, "workspace");
+      mkdirSync(child);
+      await initRepo(child);
+      // The child owns its .git, not the parent's.
+      expect(existsSync(join(child, ".git"))).toBe(true);
+      const hash = await commitAll(child, "child commit");
+      expect(await headCommit(child)).toBe(hash);
+      expect(await headCommit(child)).not.toBe(await headCommit(parent));
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
   });
 
   it("headCommit returns null for a dir that lives inside a parent repo but owns no .git", async () => {
