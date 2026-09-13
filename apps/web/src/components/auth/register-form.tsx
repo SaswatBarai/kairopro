@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { RegisterInputSchema } from "@kairopro/contracts";
 import {
   ArrowRight,
@@ -59,6 +59,8 @@ const checklist = [
 
 export function RegisterForm() {
   const router = useRouter();
+  const { status } = useSession();
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,6 +70,12 @@ export function RegisterForm() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
 
   const { requirements, score } = evaluatePassword(password);
   const level = strengthLevels[score] ?? {
