@@ -10,6 +10,8 @@
  *
  * The web app reads the session and passes a RequestContext in.
  *
- * Populated across BE-1 … BE-11 and AI-1 … AI-9.
+ * Populated across Phase 1 … Phase 20 (legacy BE-1 … BE-11, AI-1 … AI-9).
  */
-export {};
+
+export { db } from "./platform/db/client";
+export type { PrismaClient } from "@kairopro/db";

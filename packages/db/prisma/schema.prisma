@@ -1,0 +1,331 @@
+// KairoPro data model. Field names and enum values mirror the contract set
+// in @kairopro/contracts (Phase 0) so the wire shapes and the storage shapes
+// cannot drift.
+//
+// Tenancy: access is resolved via Membership, never via per-user ownership.
+// Project.userId is creator attribution only — it is not an access boundary.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum ProjectStatus {
+  DRAFT
+  SPECIFYING
+  BUILDING
+  READY
+  DEPLOYED
+}
+
+enum SpecType {
+  PRD
+  DESIGN
+  DATA_MODEL
+  APP_STRUCTURE
+}
+
+enum SpecStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  STALE
+}
+
+enum InputKind {
+  TEXT
+  FILE
+}
+
+enum CredentialService {
+  google_oauth
+  stripe
+  sendgrid
+  aws_s3
+}
+
+enum BuildStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum BuildLogType {
+  STEP
+  STDOUT
+  STDERR
+  EVENT
+  CHECKPOINT
+}
+
+enum UsageKind {
+  LLM_TOKENS
+  BUILD
+  CONTAINER_MINUTE
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  // Argon2 hash — credentials provider (BE-3). Null for OAuth-only users.
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  memberships Membership[]
+  // Attribution for created projects; never the access boundary.
+  projects    Project[]
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Tenancy ─────────────────────────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  projects    Project[]
+  usageEvents UsageEvent[]
+}
+
+model Membership {
+  id        String         @id @default(cuid())
+  orgId     String
+  userId    String
+  role      MembershipRole @default(MEMBER)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+  @@index([userId])
+}
+
+// ─── Core ────────────────────────────────────────────────────────────────────
+
+model Project {
+  id          String        @id @default(cuid())
+  orgId       String
+  // Creator attribution only — access is via Membership. Survives user
+  // deletion (SetNull) because the org, not the user, owns the project.
+  userId      String?
+  name        String
+  description String?
+  status      ProjectStatus @default(DRAFT)
+  templateId  String        @default("nextjs-shadcn")
+  previewUrl  String?
+  deployedUrl String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  inputs      Input[]
+  specs       Spec[]
+  versions    Version[]
+  credentials Credential[]
+  builds      Build[]
+  usageEvents UsageEvent[]
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Input {
+  id           String    @id @default(cuid())
+  projectId    String
+  kind         InputKind
+  originalName String?
+  mimeType     String?
+  // Object key in the workspace store — server-internal, never returned
+  // by a route (the contract set deliberately omits it).
+  storedName   String
+  sizeBytes    Int
+  extraction   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Spec {
+  id        String     @id @default(cuid())
+  projectId String
+  type      SpecType
+  version   Int
+  status    SpecStatus @default(DRAFT)
+  // Opaque at this layer; per-type content schemas live in agent/validators.
+  content   Json
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, type, version])
+  @@index([projectId, type])
+}
+
+model Version {
+  id           String   @id @default(cuid())
+  projectId    String
+  hash         String
+  message      String
+  filesChanged Int      @default(0)
+  revertible   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Credential {
+  id        String            @id @default(cuid())
+  projectId String
+  service   CredentialService
+  // { [fieldKey]: { iv, tag, data } } — AES-256-GCM per field (BE-7).
+  // The database never contains plaintext secrets.
+  secrets   Json
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, service])
+  @@index([projectId])
+}
+
+model Build {
+  id         String      @id @default(cuid())
+  projectId  String
+  status     BuildStatus @default(QUEUED)
+  startedAt  DateTime?
+  finishedAt DateTime?
+  commitHash String?
+  previewUrl String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  logs           BuildLog[]
+  usageEvents    UsageEvent[]
+  internalErrors InternalError[]
+
+  @@index([projectId])
+}
+
+model BuildLog {
+  id        String       @id @default(cuid())
+  buildId   String
+  // Monotonic per build; SSE Last-Event-ID replays from it.
+  seq       Int
+  type      BuildLogType
+  content   String
+  createdAt DateTime     @default(now())
+
+  build Build @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@unique([buildId, seq])
+}
+
+// ─── Ops ─────────────────────────────────────────────────────────────────────
+
+model UsageEvent {
+  id        String    @id @default(cuid())
+  orgId     String
+  // Nullable: org-level usage (auth, billing) has no project.
+  projectId String?
+  buildId   String?
+  kind      UsageKind
+  quantity  Int
+  createdAt DateTime  @default(now())
+
+  // Billing records outlive their subject rows: SetNull, never Cascade.
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  build   Build?       @relation(fields: [buildId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt])
+  @@index([projectId, createdAt])
+}
+
+model InternalError {
+  id         String   @id @default(cuid())
+  buildId    String?
+  step       String
+  errorType  String
+  message    String
+  // Full failure context — stack, container output. Never user-visible.
+  detail     Json?
+  resolved   Boolean  @default(false)
+  resolution String?
+  createdAt  DateTime @default(now())
+
+  build Build? @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+}

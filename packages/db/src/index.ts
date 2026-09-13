@@ -2,9 +2,11 @@
  * @kairopro/db
  *
  * Owns the Prisma schema, migrations, seed, and the generated client.
- * Exports the client singleton — the only way any other package reaches the
- * database.
+ * Re-exports the generated client; the runtime singleton lives in
+ * @kairopro/core (platform/db/client.ts) — the only place a PrismaClient
+ * is ever constructed.
  *
- * Populated in BE-1.
+ * The generated client is gitignored and recreated by `pnpm db:generate`
+ * (turbo runs it as this package's build task before downstream typecheck).
  */
-export {};
+export * from "./generated/prisma/client";

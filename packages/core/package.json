@@ -8,11 +8,12 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@kairopro/contracts": "workspace:*",
     "@kairopro/db": "workspace:*",
+    "@prisma/adapter-pg": "^7.10.0",
     "dockerode": "^5.0.1",
     "dotenv": "^17.4.2",
     "mammoth": "^1.12.2",
