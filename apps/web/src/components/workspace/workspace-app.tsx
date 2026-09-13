@@ -14,6 +14,7 @@ import { AgentPanel } from "./agent-panel";
 import { CodeEditor } from "./code-editor";
 import { CommandPalette } from "./command-palette";
 import { FileExplorer } from "./file-explorer";
+import { CHECKPOINTS, HistoryDrawer } from "./history-drawer";
 import {
   SandboxPanel,
   type SandboxMode,
@@ -67,6 +68,8 @@ export function WorkspaceApp() {
   const [activeTab, setActiveTab] = useState<string | null>(ACTIVE_TAB);
   const [diffMode, setDiffMode] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [checkpointId, setCheckpointId] = useState(CHECKPOINTS[0]?.id ?? "");
   const [savedFile, setSavedFile] = useState<string | null>(null);
   const [resizing, setResizing] = useState<ResizeTarget | null>(null);
 
@@ -143,6 +146,27 @@ export function WorkspaceApp() {
     setTimeout(() => agentInputRef.current?.focus(), 80);
   }, []);
 
+  const undoCurrentCheckpoint = useCallback(() => {
+    setCheckpointId((id) => {
+      const next = CHECKPOINTS[CHECKPOINTS.findIndex((c) => c.id === id) + 1];
+      return next ? next.id : id;
+    });
+  }, []);
+
+  const revertToCheckpoint = useCallback(
+    (id: string) => setCheckpointId(id),
+    [],
+  );
+
+  const viewCheckpoint = useCallback(
+    (path: string, diff: boolean) => {
+      openFile(path);
+      setDiffMode(diff);
+      setHistoryOpen(false);
+    },
+    [openFile],
+  );
+
   const runCommand = useCallback(
     (id: string) => {
       if (id === "run") run();
@@ -150,6 +174,7 @@ export function WorkspaceApp() {
       else if (id === "toggle-terminal") toggleTerminal();
       else if (id === "preview") preview();
       else if (id === "ask") askKairo();
+      else if (id === "history") setHistoryOpen(true);
     },
     [run, restart, toggleTerminal, preview, askKairo],
   );
@@ -178,11 +203,14 @@ export function WorkspaceApp() {
       } else if (key === "j") {
         e.preventDefault();
         toggleTerminal();
+      } else if (key === "z") {
+        e.preventDefault();
+        undoCurrentCheckpoint();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [save, toggleTerminal]);
+  }, [save, toggleTerminal, undoCurrentCheckpoint]);
 
   useEffect(() => {
     if (!resizing) return;
@@ -214,6 +242,7 @@ export function WorkspaceApp() {
         sandboxState={sandboxState}
         onPreview={preview}
         onSave={save}
+        onOpenHistory={() => setHistoryOpen(true)}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -302,6 +331,15 @@ export function WorkspaceApp() {
         onClose={() => setPaletteOpen(false)}
         onOpenFile={openFile}
         onCommand={runCommand}
+      />
+
+      <HistoryDrawer
+        open={historyOpen}
+        currentId={checkpointId}
+        onClose={() => setHistoryOpen(false)}
+        onView={viewCheckpoint}
+        onUndoCurrent={undoCurrentCheckpoint}
+        onRevertTo={revertToCheckpoint}
       />
     </div>
   );

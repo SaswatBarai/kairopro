@@ -6,6 +6,7 @@ import {
   Bot,
   Eye,
   GitFork,
+  History,
   Rocket,
   RotateCcw,
   Search,
@@ -35,6 +36,7 @@ const COMMANDS: CommandItem[] = [
   { id: "toggle-terminal", icon: Terminal, label: "Toggle terminal" },
   { id: "preview", icon: Eye, label: "Open preview" },
   { id: "ask", icon: Bot, label: "Ask Kairo" },
+  { id: "history", icon: History, label: "History & checkpoints" },
   { id: "branch", icon: GitFork, label: "Git branch" },
   { id: "settings", icon: Ellipsis, label: "Settings" },
 ];

@@ -1,6 +1,14 @@
 "use client";
 
-import { ChevronDown, Eye, GitFork, Save, Share, Terminal } from "lucide-react";
+import {
+  ChevronDown,
+  Eye,
+  GitFork,
+  History,
+  Save,
+  Share,
+  Terminal,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { SANDBOX_STATUS, type SandboxState } from "./sandbox-panel";
@@ -9,6 +17,7 @@ interface WorkspaceHeaderProps {
   sandboxState: SandboxState;
   onPreview: () => void;
   onSave: () => void;
+  onOpenHistory: () => void;
 }
 
 const HEADER_LABEL: Record<SandboxState, string> = {
@@ -24,6 +33,7 @@ export function WorkspaceHeader({
   sandboxState,
   onPreview,
   onSave,
+  onOpenHistory,
 }: WorkspaceHeaderProps) {
   const status = SANDBOX_STATUS[sandboxState];
 
@@ -62,6 +72,14 @@ export function WorkspaceHeader({
           <ChevronDown className="h-3 w-3 text-zinc-500" />
         </button>
         <span className="hidden h-4 w-px bg-white/10 sm:block" />
+        <button
+          type="button"
+          title="History & checkpoints"
+          onClick={onOpenHistory}
+          className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+        >
+          <History className="h-4 w-4" />
+        </button>
         <button
           type="button"
           title="Open preview"
