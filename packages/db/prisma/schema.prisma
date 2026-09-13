@@ -176,6 +176,9 @@ model Project {
   templateId  String        @default("nextjs-shadcn")
   previewUrl  String?
   deployedUrl String?
+  // Absolute workspace path, allocated once at creation. Derived from the
+  // project id — never from user input (BE-4 exit criterion).
+  workspacePath String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 

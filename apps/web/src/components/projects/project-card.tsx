@@ -10,6 +10,7 @@ import {
   Ellipsis,
   ExternalLink,
   Play,
+  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -20,6 +21,7 @@ import { useProjectStore } from "@/stores";
 export type ProjectStatus = "deployed" | "ready" | "building" | "draft";
 
 export interface Project {
+  id: string;
   name: string;
   icon: LucideIcon;
   iconClass: string;
@@ -70,7 +72,13 @@ function MetaRow({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-export function ProjectCard({ project }: { project: Project }) {
+export function ProjectCard({
+  project,
+  onDelete,
+}: {
+  project: Project;
+  onDelete?: (id: string) => void;
+}) {
   const router = useRouter();
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const badge = STATUS_BADGES[project.status];
@@ -218,14 +226,26 @@ export function ProjectCard({ project }: { project: Project }) {
             <span className="px-1 font-mono-tech text-[10px] text-zinc-500">
               {project.footerRef}
             </span>
-            <button
-              className="flex h-7 cursor-pointer items-center gap-1.5 rounded-[3px] border border-white/[0.1] bg-brand-surface-muted px-3 text-xs text-zinc-100 transition-colors hover:bg-white/[0.08]"
-              type="button"
-              onClick={() => handleSelectProject("/projects/new")}
-            >
-              <Play className="h-3.5 w-3.5 text-zinc-500" />
-              <span>Continue setup</span>
-            </button>
+            <div className="flex items-center gap-1">
+              {onDelete && (
+                <button
+                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-red-400"
+                  title="Delete project"
+                  type="button"
+                  onClick={() => onDelete(project.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded-[3px] border border-white/[0.1] bg-brand-surface-muted px-3 text-xs text-zinc-100 transition-colors hover:bg-white/[0.08]"
+                type="button"
+                onClick={() => handleSelectProject("/projects/new")}
+              >
+                <Play className="h-3.5 w-3.5 text-zinc-500" />
+                <span>Continue setup</span>
+              </button>
+            </div>
           </>
         ) : (
           <>
@@ -252,6 +272,16 @@ export function ProjectCard({ project }: { project: Project }) {
                   <Copy className="h-4 w-4" />
                 )}
               </button>
+              {onDelete && (
+                <button
+                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-red-400"
+                  title="Delete project"
+                  type="button"
+                  onClick={() => onDelete(project.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
               <button
                 className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-zinc-100"
                 title="More options"

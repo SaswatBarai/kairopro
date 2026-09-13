@@ -25,6 +25,7 @@
     "design:export": "npx -p @google/design.md designmd export --format css-tailwind DESIGN.md > apps/web/src/app/theme.css"
   },
   "devDependencies": {
+    "@kairopro/core": "workspace:*",
     "@kairopro/db": "workspace:*",
     "@prisma/adapter-pg": "^7.10.0",
     "@types/node": "^22.20.2",

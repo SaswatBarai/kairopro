@@ -188,3 +188,27 @@ export function DraftPreview() {
     </div>
   );
 }
+
+/** Generic live-app preview for projects without a bespoke mock screen. */
+export function LivePreview({ url }: { url?: string | null }) {
+  return (
+    <PreviewShell>
+      <WindowChrome
+        trailing={<ShieldCheck className="h-3 w-3 text-zinc-500" />}
+        url={url ?? "preview pending"}
+      />
+      <div className="grid flex-1 grid-cols-2 gap-1.5 bg-brand-dark p-2">
+        <div className="flex flex-col gap-1 rounded-[2px] border border-white/[0.04] bg-brand-surface p-1.5">
+          <div className="h-1 w-1/2 rounded-[2px] bg-white/[0.12]" />
+          <div className="h-1 w-3/4 rounded-[2px] bg-white/[0.08]" />
+          <div className="h-1 w-2/3 rounded-[2px] bg-white/[0.08]" />
+        </div>
+        <div className="flex flex-col gap-1 rounded-[2px] border border-white/[0.04] bg-brand-surface p-1.5">
+          <div className="h-1 w-2/3 rounded-[2px] bg-brand-purple/40" />
+          <div className="h-1 w-1/2 rounded-[2px] bg-white/[0.08]" />
+          <div className="h-1 w-3/5 rounded-[2px] bg-white/[0.08]" />
+        </div>
+      </div>
+    </PreviewShell>
+  );
+}

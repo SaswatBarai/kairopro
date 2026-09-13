@@ -57,3 +57,5 @@ test-results/
 # Do NOT add rules for packages/templates/**. The template's skeleton is a
 # real source artifact and must be committed. It is excluded from type-check
 # and lint by virtue of not being referenced by any tsconfig — not by gitignore.
+
+.workspaces/

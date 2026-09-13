@@ -24,11 +24,15 @@ type FilterId = (typeof FILTERS)[number]["id"];
 interface ProjectsListingProps {
   projects: Project[];
   onNewProject: () => void;
+  onDeleteProject?: (id: string) => void;
+  workspaceLabel: string;
 }
 
 export function ProjectsListing({
   projects,
   onNewProject,
+  onDeleteProject,
+  workspaceLabel,
 }: ProjectsListingProps) {
   const [filter, setFilter] = useState<FilterId>("all");
   const [query, setQuery] = useState("");
@@ -71,7 +75,7 @@ export function ProjectsListing({
               Projects
             </h1>
             <span className="font-mono-tech text-[11px] font-medium text-zinc-400">
-              Workspace: kairo-core
+              Workspace: {workspaceLabel}
             </span>
           </div>
           <div className="hidden items-center gap-1 border-l border-white/[0.08] pl-4 lg:flex">
@@ -123,7 +127,7 @@ export function ProjectsListing({
 
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-6 py-6">
         <FadeIn>
-          <WorkspaceStats />
+          <WorkspaceStats projects={projects} />
         </FadeIn>
 
         <FadeIn delay={0.05}>
@@ -148,8 +152,8 @@ export function ProjectsListing({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {visibleProjects.map((project, index) => (
-            <FadeIn delay={0.08 + index * 0.05} key={project.name}>
-              <ProjectCard project={project} />
+            <FadeIn delay={0.08 + index * 0.05} key={project.id}>
+              <ProjectCard onDelete={onDeleteProject} project={project} />
             </FadeIn>
           ))}
         </div>

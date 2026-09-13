@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@kairopro/core':
+        specifier: workspace:*
+        version: link:packages/core
       '@kairopro/db':
         specifier: workspace:*
         version: link:packages/db

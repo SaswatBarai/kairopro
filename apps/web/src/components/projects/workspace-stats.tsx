@@ -1,6 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import { CloudCheck, Folders, GitBranch } from "lucide-react";
 
+import type { Project } from "./project-card";
+
 interface StatCard {
   icon: LucideIcon;
   iconClass: string;
@@ -10,40 +12,55 @@ interface StatCard {
   noteClass?: string;
 }
 
-const STATS: StatCard[] = [
-  {
-    icon: Folders,
-    iconClass: "text-zinc-400",
-    value: "3 active",
-    label: "Total Projects",
-    note: "4 total",
-  },
-  {
-    icon: CloudCheck,
-    iconClass: "text-brand-green",
-    value: "1 deployed",
-    label: "Production Status",
-    note: (
-      <span className="flex items-center gap-1">
-        <span className="h-1.5 w-1.5 rounded-full bg-brand-green" />
-        100% healthy
-      </span>
-    ),
-    noteClass: "text-brand-green",
-  },
-  {
-    icon: GitBranch,
-    iconClass: "text-zinc-400",
-    value: "2 previews",
-    label: "Ephemeral Envs",
-    note: "auto-routed",
-  },
-];
+function buildStats(projects: Project[]): StatCard[] {
+  const active = projects.filter(
+    (project) => project.bucket !== "draft",
+  ).length;
+  const deployed = projects.filter(
+    (project) => project.status === "deployed",
+  ).length;
+  const building = projects.filter(
+    (project) => project.status === "building",
+  ).length;
+  const previews = projects.filter(
+    (project) => project.url !== undefined,
+  ).length;
 
-export function WorkspaceStats() {
+  return [
+    {
+      icon: Folders,
+      iconClass: "text-zinc-400",
+      value: `${active} active`,
+      label: "Total Projects",
+      note: `${projects.length} total`,
+    },
+    {
+      icon: CloudCheck,
+      iconClass: "text-brand-green",
+      value: `${deployed} deployed`,
+      label: "Production Status",
+      note: (
+        <span className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-brand-green" />
+          {building > 0 ? `${building} building` : "all stable"}
+        </span>
+      ),
+      noteClass: "text-brand-green",
+    },
+    {
+      icon: GitBranch,
+      iconClass: "text-zinc-400",
+      value: `${previews} previews`,
+      label: "Ephemeral Envs",
+      note: "auto-routed",
+    },
+  ];
+}
+
+export function WorkspaceStats({ projects }: { projects: Project[] }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {STATS.map((stat) => (
+      {buildStats(projects).map((stat) => (
         <div
           className="flex items-center justify-between rounded-[3px] border border-white/[0.06] bg-brand-surface p-3"
           key={stat.label}

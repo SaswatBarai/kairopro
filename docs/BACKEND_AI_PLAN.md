@@ -525,16 +525,16 @@ export interface ContainerRuntime {
 **Deliverables**
 
 - `packages/core/src/modules/input/input.service.ts`, `input.repository.ts`
-- `packages/core/src/modules/input/storage.ts` — write uploads under the uploads root
+- `packages/core/src/modules/input/storage.ts` — S3-compatible storage provider (uses MinIO container for local dev, AWS S3 for production)
 - `packages/core/src/modules/input/extract/` — `pdf.ts`, `docx.ts`, `text.ts`, `image.ts`
 - `packages/contracts/src/upload.ts` — type allowlist, size and count limits (shared with frontend)
-- `apps/web/src/app/api/projects/[id]/inputs/route.ts` — list, create (multipart)
+- `apps/web/src/app/api/projects/[id]/inputs/route.ts` — list, create (multipart parsed via `multer`)
 - `apps/web/src/app/api/projects/[id]/inputs/[inputId]/route.ts` — delete
 
 **Exit criteria**
 
 - Only allowlisted types accepted: PDF, DOCX, TXT, MD, PNG, JPG, SVG
-- Files over 10MB rejected **before** being written to disk
+- Files over 10MB rejected **before** being written to storage (enforced via `multer` `limits.fileSize`)
 - A sixth file for one project rejected
 - Stored filenames are generated, **never taken from the upload**
 - Extraction returns text for PDF, DOCX, TXT, MD
@@ -548,10 +548,12 @@ export interface ContainerRuntime {
 - `storage` — a hostile filename (`../../etc/passwd`) is replaced, not honored
 - `extract/pdf`, `extract/docx` — extract expected text from small fixtures
 - `extract` — a corrupt file returns null rather than throwing
-- Route — multipart accepted; oversize rejected with the contract's error shape
+- Route — multipart accepted via `multer`; oversize rejected with the contract's error shape
 
 **Notes**
 
+- **Local Dev Object Storage**: In Phase 5 (BE-5), local development uses MinIO as an S3-compatible object storage container (configured in `docker/docker-compose.yml`), maintaining 1:1 API parity with production AWS S3.
+- **Multipart Processing**: Uses `multer` middleware to safely parse incoming multipart request payloads, stream file buffers, enforce `10MB` hard upload limits, and filter allowed MIME types before streaming objects to MinIO/S3 storage.
 - **Never trust the uploaded filename or the client-declared MIME type.** Sniff the content and generate the stored name.
 - Extraction is best-effort. A scanned PDF with no text layer should produce a documented null, not a failed request.
 

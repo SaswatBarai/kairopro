@@ -51,6 +51,7 @@ describe("Access control & tenant isolation (BE-3)", () => {
       templateId: "nextjs-shadcn",
       previewUrl: null,
       deployedUrl: null,
+      workspacePath: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

@@ -77,3 +77,26 @@ export {
   listUserMemberships,
 } from "./modules/org/membership.repository";
 export { assertMember, canEdit, ownerOf } from "./modules/org/access";
+
+// Phase 4 Project & Usage exports
+export { commitAll, headCommit, initRepo } from "./modules/version/git.service";
+export { createWorkspace, destroyWorkspace } from "./modules/project/workspace";
+export {
+  createProject as createProjectRecord,
+  deleteProject as deleteProjectRecord,
+  findProjectById,
+  findProjectWithActivity,
+  listProjectsByOrg,
+  updateProject as updateProjectRecord,
+} from "./modules/project/project.repository";
+export {
+  LEGAL_TRANSITIONS,
+  createProject,
+  deleteProject,
+  getProject,
+  listProjects,
+  transitionStatus,
+  updateProject,
+} from "./modules/project/project.service";
+export { emit } from "./modules/usage/usage.service";
+export { listUsageByOrg, recordUsage } from "./modules/usage/usage.repository";

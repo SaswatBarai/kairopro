@@ -34,10 +34,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  createProjectFromSpec,
-  SEED_PROJECTS,
-} from "@/components/projects/demo-projects";
-import type { Project } from "@/components/projects/project-card";
+  CreateProjectInputSchema,
+  type ProjectListItem,
+} from "@kairopro/contracts";
+import {
+  useCreateProjectMutation,
+  useDeleteProjectMutation,
+  useProjectsQuery,
+} from "@/lib/queries/projects";
+import { toUiProject } from "@/components/projects/project-adapter";
 import { ProjectsListing } from "@/components/projects/projects-listing";
 import { ProfileSettings } from "@/components/settings/profile-settings";
 import { CredentialsSettings } from "@/components/settings/credentials-settings";
@@ -68,7 +73,11 @@ const flowNodes = [
   { icon: Monitor, step: "03. PREVIEW", label: "Inspect & run" },
 ];
 
-export function ProjectsDashboard() {
+export function ProjectsDashboard({
+  initialProjects,
+}: {
+  initialProjects: ProjectListItem[];
+}) {
   const { data: session } = useSession();
   const { userName, userEmail, activeOrgName } = useAuthStore();
   const { setActiveProject } = useProjectStore();
@@ -83,11 +92,15 @@ export function ProjectsDashboard() {
       .join("")
       .slice(0, 2) || "DU";
 
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { data: projectItems } = useProjectsQuery(initialProjects);
+  const projects = (projectItems ?? []).map(toUiProject);
+  const createMutation = useCreateProjectMutation();
+  const deleteMutation = useDeleteProjectMutation();
+
   const [open, setOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [spec, setSpec] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const submitting = createMutation.isPending;
 
   const openModal = useCallback((name = "", specBody = "") => {
     setProjectName(name);
@@ -110,12 +123,18 @@ export function ProjectsDashboard() {
   }, [openModal, projects.length]);
 
   function handleCreate() {
-    setSubmitting(true);
-    setTimeout(() => {
-      setProjects((prev) => [...prev, createProjectFromSpec(projectName)]);
-      setSubmitting(false);
-      setOpen(false);
-    }, 600);
+    const parseResult = CreateProjectInputSchema.safeParse({
+      name: projectName.trim(),
+      description: spec.trim() || undefined,
+    });
+    if (!parseResult.success) return;
+    createMutation.mutate(parseResult.data, {
+      onSuccess: () => {
+        setOpen(false);
+        setProjectName("");
+        setSpec("");
+      },
+    });
   }
 
   const router = useRouter();
@@ -221,36 +240,6 @@ export function ProjectsDashboard() {
                 </button>
               ))}
             </nav>
-
-            <div className="mt-2 flex flex-col gap-1 rounded-sm border border-dashed border-white/[0.06] p-2">
-              <span className="px-1 font-mono-tech text-[9px] uppercase tracking-widest text-zinc-600">
-                Demo state
-              </span>
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setProjects([])}
-                  className={
-                    isEmpty
-                      ? "flex-1 cursor-pointer rounded-sm bg-brand-surface-muted px-2 py-1 font-mono-tech text-[10px] text-zinc-200"
-                      : "flex-1 cursor-pointer rounded-sm px-2 py-1 font-mono-tech text-[10px] text-zinc-500 transition-colors hover:text-zinc-200"
-                  }
-                >
-                  Empty
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setProjects(SEED_PROJECTS)}
-                  className={
-                    !isEmpty
-                      ? "flex-1 cursor-pointer rounded-sm bg-brand-surface-muted px-2 py-1 font-mono-tech text-[10px] text-zinc-200"
-                      : "flex-1 cursor-pointer rounded-sm px-2 py-1 font-mono-tech text-[10px] text-zinc-500 transition-colors hover:text-zinc-200"
-                  }
-                >
-                  Seeded ×4
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Bottom user profile card */}
@@ -431,8 +420,18 @@ export function ProjectsDashboard() {
             </>
           ) : (
             <ProjectsListing
+              onDeleteProject={(id) => {
+                if (
+                  window.confirm(
+                    "Delete this project? Its workspace is removed permanently.",
+                  )
+                ) {
+                  deleteMutation.mutate(id);
+                }
+              }}
               onNewProject={() => openModal()}
               projects={projects}
+              workspaceLabel={activeOrgName || "Personal Org"}
             />
           )}
         </div>
