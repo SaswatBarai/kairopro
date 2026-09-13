@@ -14,6 +14,7 @@ import { AgentPanel } from "./agent-panel";
 import { CodeEditor } from "./code-editor";
 import { CommandPalette } from "./command-palette";
 import { DeployModal } from "./deploy-modal";
+import { DeploySuccessModal } from "./deploy-success-modal";
 import { ExportModal } from "./export-modal";
 import { FileExplorer } from "./file-explorer";
 import { CHECKPOINTS, HistoryDrawer } from "./history-drawer";
@@ -72,6 +73,7 @@ export function WorkspaceApp() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [deployOpen, setDeployOpen] = useState(false);
+  const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [checkpointId, setCheckpointId] = useState(CHECKPOINTS[0]?.id ?? "");
   const [savedFile, setSavedFile] = useState<string | null>(null);
@@ -353,7 +355,18 @@ export function WorkspaceApp() {
       <DeployModal
         open={deployOpen}
         onClose={() => setDeployOpen(false)}
-        onDeployed={flashSaved}
+        onDeployed={setDeployedUrl}
+      />
+
+      <DeploySuccessModal
+        open={deployedUrl !== null}
+        url={deployedUrl ?? ""}
+        onClose={() => setDeployedUrl(null)}
+        onOpenLogs={() => {
+          setDeployedUrl(null);
+          setSandboxMode("terminal");
+          setSandboxExpanded(true);
+        }}
       />
 
       <ExportModal

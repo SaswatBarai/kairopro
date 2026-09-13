@@ -36,7 +36,7 @@ const PREFLIGHT = [
 interface DeployModalProps {
   open: boolean;
   onClose: () => void;
-  onDeployed: (message: string) => void;
+  onDeployed: (url: string) => void;
 }
 
 export function DeployModal({ open, onClose, onDeployed }: DeployModalProps) {
@@ -88,7 +88,7 @@ export function DeployModal({ open, onClose, onDeployed }: DeployModalProps) {
     timers.current.push(
       setTimeout(
         () => {
-          onDeployed(`Deployed to https://${subdomain}.kairopro.app`);
+          onDeployed(`https://${subdomain}.kairopro.app`);
           onClose();
         },
         300 + (DEPLOY_STEPS.length - 1) * 1400 + 1500,
