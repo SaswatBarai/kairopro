@@ -44,7 +44,7 @@ describe("project lifecycle (BE-4, real DB + real workspace)", () => {
     const project = await core.createProject({ name: "TaskFlow" }, ctx);
 
     expect(project.status).toBe("DRAFT");
-    expect(project.workspacePath).toBeUndefined(); // contract shape; stored on the row
+    expect(project).not.toHaveProperty("workspacePath"); // contract shape; stored on the row
 
     const row = await prisma.project.findUniqueOrThrow({
       where: { id: project.id },
