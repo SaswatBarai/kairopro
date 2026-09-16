@@ -1,20 +1,20 @@
 # KairoPro local dev stack.
 #
-# All configuration comes from the repo-root .env (POSTGRES_USER,
-# POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT); every variable has the
-# original default so the file also works without a .env. Values must stay in
-# sync with DATABASE_URL, and the postgres image only applies them on first
-# volume init — an existing pgdata volume keeps its original user/database.
+# All configuration comes from the repo-root .env; every variable has the
+# original default so the file also works without a .env. Values that must
+# stay in sync with DATABASE_URL / S3_* are noted below, and the postgres and
+# minio images only apply their credentials on FIRST volume init — existing
+# volumes keep whatever they were created with.
 #
 # Run from the repo root (db:up / db:down do exactly this):
 #   docker compose --env-file .env -f docker/docker-compose.yml up -d
 #
 # Integration tests use a throwaway database (kairopro_test) on the same
-# engine — never the dev one. POSTGRES_USER is the container superuser, so
-# Prisma can create the shadow database during `prisma migrate dev`.
+# engine — never the dev one.
 name: kairopro
 
 services:
+  # ── Postgres — the app database (Prisma, DATABASE_URL) ─────────────────
   postgres:
     image: postgres:18-alpine
     container_name: kairopro-postgres
@@ -39,5 +39,49 @@ services:
       timeout: 3s
       retries: 10
 
+  # ── MinIO — S3-compatible object storage (Phase 5 BE-5: project uploads).
+  # Keep MINIO_ROOT_USER/PASSWORD in sync with S3_ACCESS_KEY/SECRET_KEY; the
+  # app talks to http://localhost:9000 (S3_ENDPOINT), the console is 9001. ─
+  minio:
+    image: minio/minio:latest
+    container_name: kairopro-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── One-shot bucket bootstrap: creates S3_BUCKET if missing, then exits. ─
+  minio-init:
+    # minio/mc is no longer published on Docker Hub — quay.io is upstream.
+    image: quay.io/minio/mc:latest
+    container_name: kairopro-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-kairopro-uploads}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set kairopro http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" &&
+        mc mb --ignore-existing "kairopro/$$S3_BUCKET" &&
+        echo "bucket $$S3_BUCKET ready"
+
 volumes:
   pgdata:
+  minio_data:
