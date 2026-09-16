@@ -1,5 +1,13 @@
-# KairoPro local dev stack. The root .env DATABASE_URL points at this
-# instance: postgresql://kairopro:kairopro@localhost:5432/kairopro_dev
+# KairoPro local dev stack.
+#
+# All configuration comes from the repo-root .env (POSTGRES_USER,
+# POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT); every variable has the
+# original default so the file also works without a .env. Values must stay in
+# sync with DATABASE_URL, and the postgres image only applies them on first
+# volume init — an existing pgdata volume keeps its original user/database.
+#
+# Run from the repo root (db:up / db:down do exactly this):
+#   docker compose --env-file .env -f docker/docker-compose.yml up -d
 #
 # Integration tests use a throwaway database (kairopro_test) on the same
 # engine — never the dev one. POSTGRES_USER is the container superuser, so
@@ -12,17 +20,21 @@ services:
     container_name: kairopro-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: kairopro
-      POSTGRES_PASSWORD: kairopro
-      POSTGRES_DB: kairopro_dev
+      POSTGRES_USER: ${POSTGRES_USER:-kairopro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kairopro}
+      POSTGRES_DB: ${POSTGRES_DB:-kairopro_dev}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       # Postgres 18+ requires the mount at /var/lib/postgresql — data lands
       # in a major-version subdirectory, enabling in-place pg_upgrade later.
       - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kairopro -d kairopro_dev"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-kairopro} -d ${POSTGRES_DB:-kairopro_dev}",
+        ]
       interval: 5s
       timeout: 3s
       retries: 10
