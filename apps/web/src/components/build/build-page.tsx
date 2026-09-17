@@ -1,16 +1,16 @@
-import { Footer } from "@/components/landing/footer";
-import { Navbar } from "@/components/landing/navbar";
-
+import { DashboardAppShell } from "@/components/dashboard/dashboard-app-shell";
 import { BuildWorkspace } from "./build-workspace";
 
 export function BuildPage() {
   return (
-    <>
-      <Navbar />
-      <main className="relative w-full pt-[92px]">
-        <BuildWorkspace />
-      </main>
-      <Footer />
-    </>
+    <DashboardAppShell
+      activeTab="deployments"
+      backHref="/dashboard"
+      backLabel="Back to Projects"
+      showBackButton={true}
+      title="Build Progress & Agent Execution"
+    >
+      <BuildWorkspace />
+    </DashboardAppShell>
   );
 }
