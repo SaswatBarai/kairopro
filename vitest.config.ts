@@ -8,6 +8,7 @@ import { TEST_DATABASE_URL } from "./tests/integration/env";
 // setup — `pnpm test` at the root never touches kairopro_dev.
 export default defineConfig({
   test: {
+    fileParallelism: false,
     include: ["tests/integration/**/*.test.ts"],
     globalSetup: ["./tests/integration/global-setup.ts"],
     env: {

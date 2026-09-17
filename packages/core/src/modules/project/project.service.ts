@@ -24,6 +24,7 @@ import {
   updateProject as updateProjectRow,
   type ProjectWithActivity,
 } from "./project.repository";
+import { purgeProjectUploads } from "../input/input.service";
 import { createWorkspace, destroyWorkspace } from "./workspace";
 
 /**
@@ -161,6 +162,7 @@ export async function deleteProject(
     throw new NotFoundError({ message: "Project not found" });
   }
   await destroyWorkspace(projectId);
+  await purgeProjectUploads(projectId);
   await deleteProjectRow(projectId);
 }
 

@@ -13,6 +13,7 @@ export * from "./project";
 export * from "./spec";
 export * from "./build";
 export * from "./input";
+export * from "./upload";
 export * from "./credential";
 export * from "./version";
 export * from "./usage";

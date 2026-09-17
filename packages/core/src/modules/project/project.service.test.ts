@@ -29,6 +29,10 @@ vi.mock("./workspace", () => ({
   destroyWorkspace: vi.fn(),
 }));
 
+vi.mock("../input/input.service", () => ({
+  purgeProjectUploads: vi.fn().mockResolvedValue(undefined),
+}));
+
 import {
   createProject as createProjectRepo,
   deleteProject as deleteProjectRepo,
@@ -36,6 +40,7 @@ import {
   listProjectsByOrg,
   updateProject as updateProjectRepo,
 } from "./project.repository";
+import { purgeProjectUploads } from "../input/input.service";
 import { createWorkspace, destroyWorkspace } from "./workspace";
 import { ownerOf } from "../org/access";
 import {
@@ -180,6 +185,7 @@ describe("project.service create/list/get/update (BE-4)", () => {
     await deleteProject("prj-1", ctx);
 
     expect(destroyWorkspace).toHaveBeenCalledWith("prj-1");
+    expect(purgeProjectUploads).toHaveBeenCalledWith("prj-1");
     expect(deleteProjectRepo).toHaveBeenCalledWith("prj-1");
   });
 

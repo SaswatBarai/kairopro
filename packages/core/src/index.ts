@@ -100,3 +100,33 @@ export {
 } from "./modules/project/project.service";
 export { emit } from "./modules/usage/usage.service";
 export { listUsageByOrg, recordUsage } from "./modules/usage/usage.repository";
+
+// Phase 5 Input exports
+export {
+  createFileInputs,
+  deleteInput,
+  listInputs,
+  purgeProjectUploads,
+  saveTextInput,
+  toInput,
+  type IncomingUpload,
+} from "./modules/input/input.service";
+export {
+  countFileInputs,
+  createInput as createInputRecord,
+  deleteInputRow,
+  deleteInputsByStoredNames,
+  findInputById,
+  findTextInput,
+  listInputsByProject,
+  updateInput as updateInputRecord,
+} from "./modules/input/input.repository";
+export {
+  createObjectStorage,
+  generateStoredName,
+  getObjectStorage,
+  sanitizeOriginalName,
+  type ObjectStorage,
+} from "./modules/input/storage";
+export { sniffMime } from "./modules/input/sniff";
+export { extractByMime } from "./modules/input/extract";
