@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { BuildPage } from "@/components/build/build-page";
 
@@ -9,5 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectBuildRoute() {
-  return <BuildPage />;
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-zinc-400">Loading...</div>}>
+      <BuildPage />
+    </Suspense>
+  );
 }

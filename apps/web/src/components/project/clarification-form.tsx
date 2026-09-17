@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -12,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { FadeIn } from "@/components/landing/fade-in";
+import { NoProjectEmptyState } from "@/components/project/no-project-empty-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -101,8 +104,17 @@ const INITIAL_ANSWERS: Record<string, string> = {
 };
 
 export function ClarificationForm() {
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get("projectId");
+
   const [answers, setAnswers] =
     useState<Record<string, string>>(INITIAL_ANSWERS);
+
+  if (!projectId) {
+    return <NoProjectEmptyState stepName="project clarification questions" />;
+  }
+
+  const specUrl = `/projects/new/spec?projectId=${projectId}`;
 
   const onSelect = (questionId: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -112,9 +124,12 @@ export function ClarificationForm() {
     <FadeIn className="flex w-full max-w-[720px] flex-col gap-6">
       <div className="flex w-full items-center justify-between border-b border-white/[0.08] pb-3">
         <div className="flex items-center gap-2 font-mono-tech text-[11px] text-zinc-400">
-          <span className="cursor-pointer transition-colors hover:text-zinc-100">
+          <Link
+            className="cursor-pointer transition-colors hover:text-zinc-100"
+            href="/projects"
+          >
             Projects
-          </span>
+          </Link>
           <span className="text-zinc-500">/</span>
           <span className="font-mono-tech text-xs text-zinc-100">
             New project
@@ -238,18 +253,18 @@ export function ClarificationForm() {
           </p>
           <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild className="h-10 w-full gap-2 px-6 sm:w-auto">
-              <a href="/projects/new/spec">
+              <Link href={specUrl}>
                 <span>Continue to spec</span>
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
             </Button>
           </div>
-          <a
+          <Link
             className="pt-1 text-xs text-zinc-400 underline-offset-4 transition-colors hover:text-zinc-100 hover:underline"
-            href="/projects/new/spec"
+            href={specUrl}
           >
             Skip and let me review the assumptions
-          </a>
+          </Link>
         </div>
       </form>
     </FadeIn>

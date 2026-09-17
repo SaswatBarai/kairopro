@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
   ArrowRight,
@@ -17,6 +17,8 @@ type ApproveState = "idle" | "saving" | "approved";
 
 export function DataModelGateBar() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get("projectId");
   const [approveState, setApproveState] = useState<ApproveState>("idle");
 
   const onApprove = () => {
@@ -24,7 +26,10 @@ export function DataModelGateBar() {
     setApproveState("saving");
     window.setTimeout(() => {
       setApproveState("approved");
-      window.setTimeout(() => router.push("/projects/new/app-structure"), 900);
+      const nextUrl = projectId
+        ? `/projects/new/app-structure?projectId=${projectId}`
+        : "/projects/new/app-structure";
+      window.setTimeout(() => router.push(nextUrl), 900);
     }, 1200);
   };
 

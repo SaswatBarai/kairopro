@@ -1,13 +1,16 @@
 "use client";
 
+import { useSearchParams, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import {
+  AlertCircle,
   ArrowRight,
   CheckCircle2,
   Circle,
   FileText,
   FileUp,
   Info,
+  Loader2,
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
@@ -18,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { validateFile } from "@/lib/validation/file";
 import { cn } from "@/lib/utils";
 
 const TEMPLATES = [
@@ -46,40 +50,157 @@ const TEMPLATES = [
 const DEFAULT_REQUIREMENTS = TEMPLATES[0]?.text ?? "";
 
 interface AttachedFile {
+  id: string;
   name: string;
   sizeKb: number;
+  rawFile?: File;
+  isMock?: boolean;
 }
 
-const INITIAL_FILE: AttachedFile = {
-  name: "product-requirements.pdf",
-  sizeKb: 482,
-};
+const INITIAL_FILES: AttachedFile[] = [
+  {
+    id: "initial-mock-file",
+    name: "product-requirements.pdf",
+    sizeKb: 482,
+    isMock: true,
+  },
+];
 
 function formatSizeKb(bytes: number): number {
   return Math.max(1, Math.round(bytes / 1024));
 }
 
 export function NewProjectWorkspace() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const existingProjectId = searchParams.get("projectId");
+
   const [requirements, setRequirements] = useState(DEFAULT_REQUIREMENTS);
-  const [file, setFile] = useState<AttachedFile | null>(INITIAL_FILE);
+  const [files, setFiles] = useState<AttachedFile[]>(INITIAL_FILES);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragging, setDragging] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const charCount = requirements.trim().length;
-  const readyCount = (charCount > 0 ? 1 : 0) + (file ? 1 : 0);
+  const isValidText = charCount >= 10 && charCount <= 10000;
+  const readyCount = (isValidText ? 1 : 0) + (files.length > 0 ? 1 : 0);
 
   const onTemplateClick = (text: string) => {
     setRequirements(text);
     textareaRef.current?.focus();
   };
 
-  const onFileSelected = (selected: File | undefined) => {
-    if (!selected) return;
-    setFile({ name: selected.name, sizeKb: formatSizeKb(selected.size) });
+  const onFilesSelected = (
+    selectedList: FileList | File[] | null | undefined,
+  ) => {
+    if (!selectedList || selectedList.length === 0) return;
+    setFileError(null);
+
+    const incoming = Array.from(selectedList);
+    const existing = files.length === 1 && files[0]?.isMock ? [] : [...files];
+
+    const toAdd: AttachedFile[] = [];
+    for (const f of incoming) {
+      const result = validateFile(f, existing.length + toAdd.length);
+      if (!result.valid) {
+        setFileError(result.error ?? "Invalid file");
+        return;
+      }
+      toAdd.push({
+        id: `${f.name}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        name: f.name,
+        sizeKb: formatSizeKb(f.size),
+        rawFile: f,
+      });
+    }
+
+    setFiles([...existing, ...toAdd]);
   };
 
-  const onRemoveFile = () => setFile(null);
+  const onRemoveFile = (id: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+    setFileError(null);
+  };
+
+  const onGeneratePrd = async () => {
+    if (!isValidText || isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      let projectId = existingProjectId;
+
+      if (!projectId) {
+        // 1. Create a project draft if none exists yet
+        const createRes = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: requirements.slice(0, 30).trim() || "New Project",
+            description: requirements.slice(0, 500).trim(),
+          }),
+        });
+
+        if (!createRes.ok) {
+          if (createRes.status === 401) {
+            router.push("/login?callbackUrl=/projects/new");
+            return;
+          }
+          const errJson = await createRes.json().catch(() => ({}));
+          throw new Error(
+            errJson?.error?.message ?? "Failed to create project",
+          );
+        }
+
+        const project = await createRes.json();
+        projectId = project.id;
+      }
+
+      // 2. Save requirements text to backend
+      const textRes = await fetch(`/api/projects/${projectId}/inputs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: requirements }),
+      });
+      if (!textRes.ok) {
+        const errJson = await textRes.json().catch(() => ({}));
+        throw new Error(
+          errJson?.error?.message ?? "Failed to save requirements",
+        );
+      }
+
+      // 3. Upload real attached files if any
+      const rawFiles = files
+        .filter((f) => f.rawFile)
+        .map((f) => f.rawFile as File);
+      if (rawFiles.length > 0) {
+        const formData = new FormData();
+        for (const f of rawFiles) {
+          formData.append("files", f);
+        }
+        const uploadRes = await fetch(`/api/projects/${projectId}/inputs`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!uploadRes.ok) {
+          const errJson = await uploadRes.json().catch(() => ({}));
+          throw new Error(
+            errJson?.error?.message ?? "Failed to upload attachments",
+          );
+        }
+      }
+
+      router.push(`/projects/new/questions?projectId=${projectId}`);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "An unexpected error occurred";
+      setSubmitError(msg);
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <FadeIn className="grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-12">
@@ -146,9 +267,19 @@ export function NewProjectWorkspace() {
               Attachments
             </span>
             <span className="font-mono-tech text-[10px] uppercase tracking-wider text-zinc-500">
-              {file ? 1 : 0} / 5 uploaded
+              {files.length} / 5 uploaded
             </span>
           </div>
+
+          {fileError && (
+            <div
+              className="flex items-center gap-2 rounded-[3px] border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300"
+              role="alert"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+              <span>{fileError}</span>
+            </div>
+          )}
 
           <div
             className={cn(
@@ -167,7 +298,7 @@ export function NewProjectWorkspace() {
             onDrop={(e) => {
               e.preventDefault();
               setDragging(false);
-              onFileSelected(e.dataTransfer.files?.[0]);
+              onFilesSelected(e.dataTransfer.files);
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
@@ -197,63 +328,87 @@ export function NewProjectWorkspace() {
               ref={fileInputRef}
               type="file"
               onChange={(e) => {
-                onFileSelected(e.target.files?.[0]);
+                onFilesSelected(e.target.files);
                 e.target.value = "";
               }}
             />
           </div>
 
-          {file && (
-            <div
-              className="flex items-center justify-between rounded-[3px] bg-brand-surface-muted px-3 py-2 transition-colors"
-              id="attachment-item"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] bg-rose-400/10 text-rose-400">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate font-mono-tech text-xs font-medium text-zinc-100">
-                    {file.name}
-                  </span>
-                  <div className="flex items-center gap-2 font-mono-tech text-[10px] uppercase tracking-wider text-zinc-500">
-                    <span>{file.sizeKb} KB</span>
-                    <span className="h-1 w-1 rounded-full bg-white/20" />
-                    <span className="flex items-center gap-1 text-brand-green">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Verified
-                    </span>
+          {files.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {files.map((item) => (
+                <div
+                  className="flex items-center justify-between rounded-[3px] bg-brand-surface-muted px-3 py-2 transition-colors"
+                  id="attachment-item"
+                  key={item.id}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] bg-rose-400/10 text-rose-400">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate font-mono-tech text-xs font-medium text-zinc-100">
+                        {item.name}
+                      </span>
+                      <div className="flex items-center gap-2 font-mono-tech text-[10px] uppercase tracking-wider text-zinc-500">
+                        <span>{item.sizeKb} KB</span>
+                        <span className="h-1 w-1 rounded-full bg-white/20" />
+                        <span className="flex items-center gap-1 text-brand-green">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Verified
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                  <button
+                    className="cursor-pointer rounded-[3px] p-1.5 text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-rose-400"
+                    id="remove-file-btn"
+                    title="Remove attachment"
+                    type="button"
+                    onClick={() => onRemoveFile(item.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-              </div>
-              <button
-                className="cursor-pointer rounded-[3px] p-1.5 text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-rose-400"
-                id="remove-file-btn"
-                title="Remove attachment"
-                type="button"
-                onClick={onRemoveFile}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              ))}
             </div>
           )}
         </div>
 
+        {submitError && (
+          <div
+            className="flex items-center gap-2 rounded-[3px] border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300"
+            role="alert"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+            <span>{submitError}</span>
+          </div>
+        )}
+
         <div className="flex flex-col-reverse items-center justify-between gap-3 pt-3 sm:flex-row">
           <div className="flex items-center gap-1.5 font-mono-tech text-[11px] text-zinc-500">
             <span className="h-2 w-2 rounded-full bg-brand-green" />
-            <span>Saved as draft 1m ago</span>
+            <span>Saved as draft</span>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <Button
-              asChild
               className="h-10 w-full gap-2 px-6 sm:w-auto"
+              disabled={!isValidText || isSubmitting}
               id="generate-prd-btn"
+              type="button"
+              onClick={onGeneratePrd}
             >
-              <a href="/projects/new/questions">
-                <span>Generate PRD</span>
-                <ArrowRight className="h-4 w-4" />
-              </a>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <span>Generate PRD</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -280,7 +435,7 @@ export function NewProjectWorkspace() {
 
           <div className="flex flex-col gap-1">
             <div className="flex items-start gap-2 rounded-[3px] bg-brand-dark p-2">
-              {charCount > 0 ? (
+              {isValidText ? (
                 <CheckCircle2 className="mt-px h-[18px] w-[18px] shrink-0 text-brand-green" />
               ) : (
                 <Circle className="mt-px h-[18px] w-[18px] shrink-0 text-zinc-500" />
@@ -293,15 +448,17 @@ export function NewProjectWorkspace() {
                   className="font-mono-tech text-[11px] text-zinc-500"
                   id="summary-req-meta"
                 >
-                  {charCount > 0
+                  {isValidText
                     ? `Defined (${charCount} characters)`
-                    : "Empty (required)"}
+                    : charCount === 0
+                      ? "Empty (required)"
+                      : "Too short (min 10 chars)"}
                 </span>
               </div>
             </div>
 
             <div className="flex items-start gap-2 rounded-[3px] bg-brand-dark p-2">
-              {file ? (
+              {files.length > 0 ? (
                 <CheckCircle2 className="mt-px h-[18px] w-[18px] shrink-0 text-brand-green" />
               ) : (
                 <Circle className="mt-px h-[18px] w-[18px] shrink-0 text-zinc-500" />
@@ -314,7 +471,11 @@ export function NewProjectWorkspace() {
                   className="truncate font-mono-tech text-[11px] text-zinc-500"
                   id="summary-attachment-meta"
                 >
-                  {file ? `1 file (${file.name})` : "None attached"}
+                  {files.length === 0
+                    ? "None attached"
+                    : files.length === 1
+                      ? `1 file (${files[0]?.name})`
+                      : `${files.length} files attached`}
                 </span>
               </div>
             </div>

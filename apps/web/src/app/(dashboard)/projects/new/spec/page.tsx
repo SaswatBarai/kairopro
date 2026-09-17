@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { SpecPage } from "@/components/project/spec-page";
 
@@ -9,5 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectSpecRoute() {
-  return <SpecPage />;
+  return (
+    <Suspense
+      fallback={<div className="p-8 text-center text-zinc-400">Loading...</div>}
+    >
+      <SpecPage />
+    </Suspense>
+  );
 }

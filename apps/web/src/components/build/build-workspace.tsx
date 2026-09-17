@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 
+import { NoProjectEmptyState } from "@/components/project/no-project-empty-state";
 import { cn } from "@/lib/utils";
 
 import { BuildConsole } from "./build-console";
@@ -11,7 +13,13 @@ import { CancelBuildModal } from "./cancel-build-modal";
 import { ExecutionPipeline } from "./execution-pipeline";
 
 export function BuildWorkspace() {
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get("projectId");
   const [modalOpen, setModalOpen] = useState(false);
+
+  if (!projectId) {
+    return <NoProjectEmptyState stepName="build progress" />;
+  }
 
   return (
     <div className="relative w-full">

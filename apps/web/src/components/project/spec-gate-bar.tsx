@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { ArrowRight, CheckCheck, RefreshCw } from "lucide-react";
 
@@ -11,6 +11,8 @@ type ApproveState = "idle" | "saving" | "approved";
 
 export function SpecGateBar() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get("projectId");
   const [approveState, setApproveState] = useState<ApproveState>("idle");
 
   const onApprove = () => {
@@ -18,7 +20,10 @@ export function SpecGateBar() {
     setApproveState("saving");
     window.setTimeout(() => {
       setApproveState("approved");
-      window.setTimeout(() => router.push("/projects/new/data-model"), 900);
+      const nextUrl = projectId
+        ? `/projects/new/data-model?projectId=${projectId}`
+        : "/projects/new/data-model";
+      window.setTimeout(() => router.push(nextUrl), 900);
     }, 1200);
   };
 

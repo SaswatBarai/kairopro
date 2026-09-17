@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { AppStructurePage } from "@/components/project/app-structure-page";
 
@@ -9,5 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectAppStructureRoute() {
-  return <AppStructurePage />;
+  return (
+    <Suspense
+      fallback={<div className="p-8 text-center text-zinc-400">Loading...</div>}
+    >
+      <AppStructurePage />
+    </Suspense>
+  );
 }

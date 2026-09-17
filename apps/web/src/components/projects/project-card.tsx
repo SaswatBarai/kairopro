@@ -240,7 +240,9 @@ export function ProjectCard({
               <button
                 className="flex h-7 cursor-pointer items-center gap-1.5 rounded-[3px] border border-white/[0.1] bg-brand-surface-muted px-3 text-xs text-zinc-100 transition-colors hover:bg-white/[0.08]"
                 type="button"
-                onClick={() => handleSelectProject("/projects/new")}
+                onClick={() =>
+                  handleSelectProject(`/projects/new?projectId=${project.id}`)
+                }
               >
                 <Play className="h-3.5 w-3.5 text-zinc-500" />
                 <span>Continue setup</span>

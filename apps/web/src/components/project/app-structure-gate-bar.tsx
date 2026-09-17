@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
   ArrowRight,
@@ -17,6 +17,8 @@ type BuildState = "idle" | "provisioning" | "started";
 
 export function AppStructureGateBar() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get("projectId");
   const [buildState, setBuildState] = useState<BuildState>("idle");
 
   const onStartBuild = () => {
@@ -24,7 +26,10 @@ export function AppStructureGateBar() {
     setBuildState("provisioning");
     window.setTimeout(() => {
       setBuildState("started");
-      window.setTimeout(() => router.push("/projects/new/build"), 900);
+      const nextUrl = projectId
+        ? `/projects/new/build?projectId=${projectId}`
+        : "/projects/new/build";
+      window.setTimeout(() => router.push(nextUrl), 900);
     }, 1200);
   };
 

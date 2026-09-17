@@ -129,10 +129,13 @@ export function ProjectsDashboard({
     });
     if (!parseResult.success) return;
     createMutation.mutate(parseResult.data, {
-      onSuccess: () => {
+      onSuccess: (newProject) => {
         setOpen(false);
         setProjectName("");
         setSpec("");
+        if (newProject?.id) {
+          router.push(`/projects/new?projectId=${newProject.id}`);
+        }
       },
     });
   }

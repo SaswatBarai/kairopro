@@ -75,4 +75,50 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
     expect(screen.getByText("architecture.pdf")).toBeInTheDocument();
     expect(screen.getByText("1 / 5 uploaded")).toBeInTheDocument();
   });
+
+  it("rejects unsupported file type with error message", () => {
+    render(<NewProjectWorkspace />);
+
+    const fileInput = document.getElementById("file-input") as HTMLInputElement;
+    const invalidFile = new File(["malware payload"], "exploit.exe", {
+      type: "application/x-msdownload",
+    });
+
+    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
+
+    expect(screen.getByText(/Unsupported file type/i)).toBeInTheDocument();
+    expect(screen.queryByText("exploit.exe")).not.toBeInTheDocument();
+  });
+
+  it("rejects files larger than 10MB", () => {
+    render(<NewProjectWorkspace />);
+
+    const fileInput = document.getElementById("file-input") as HTMLInputElement;
+    const hugeBlob = new Uint8Array(11 * 1024 * 1024);
+    const hugeFile = new File([hugeBlob], "large-spec.pdf", {
+      type: "application/pdf",
+    });
+
+    fireEvent.change(fileInput, { target: { files: [hugeFile] } });
+
+    expect(
+      screen.getByText(/Files must be 10MB or smaller/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("large-spec.pdf")).not.toBeInTheDocument();
+  });
+
+  it("disables Generate PRD button when text length is under 10 chars", async () => {
+    const user = userEvent.setup();
+    render(<NewProjectWorkspace />);
+
+    const textarea = screen.getByLabelText(/Application requirements/i);
+    await user.clear(textarea);
+    await user.type(textarea, "Short");
+
+    const generateBtn = document.getElementById("generate-prd-btn");
+    expect(generateBtn).toBeDisabled();
+
+    await user.type(textarea, " long enough now");
+    expect(generateBtn).not.toBeDisabled();
+  });
 });
