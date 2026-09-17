@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  AlertTriangle,
   ArrowRight,
   Boxes,
   Code2,
@@ -13,6 +14,7 @@ import {
   Plus,
   Settings,
   Terminal,
+  Trash2,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -101,6 +103,10 @@ export function ProjectsDashboard({
   const [projectName, setProjectName] = useState("");
   const [spec, setSpec] = useState("");
   const submitting = createMutation.isPending;
+
+  // Delete confirmation dialog state
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const projectToDelete = projects.find((p) => p.id === deleteConfirmId);
 
   const openModal = useCallback((name = "", specBody = "") => {
     setProjectName(name);
@@ -423,15 +429,7 @@ export function ProjectsDashboard({
             </>
           ) : (
             <ProjectsListing
-              onDeleteProject={(id) => {
-                if (
-                  window.confirm(
-                    "Delete this project? Its workspace is removed permanently.",
-                  )
-                ) {
-                  deleteMutation.mutate(id);
-                }
-              }}
+              onDeleteProject={(id) => setDeleteConfirmId(id)}
               onNewProject={() => openModal()}
               projects={projects}
               workspaceLabel={activeOrgName || "Personal Org"}
@@ -492,6 +490,57 @@ export function ProjectsDashboard({
                 {submitting ? "Allocating node..." : "Create & Plan"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setDeleteConfirmId(null);
+        }}
+      >
+        <DialogContent className="rounded-lg border-rose-500/20 bg-brand-surface-muted p-5 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm font-semibold text-zinc-100">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/10">
+                <AlertTriangle className="h-4 w-4 text-rose-400" />
+              </div>
+              Delete project?
+            </DialogTitle>
+            <DialogDescription className="pl-10 text-xs leading-relaxed text-zinc-400">
+              <span className="font-semibold text-zinc-200">
+                {projectToDelete?.name ?? "This project"}
+              </span>{" "}
+              will be permanently deleted along with all its workspace data.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteConfirmId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5 bg-rose-600 text-white hover:bg-rose-700"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (deleteConfirmId) {
+                  deleteMutation.mutate(deleteConfirmId, {
+                    onSuccess: () => setDeleteConfirmId(null),
+                    onError: () => setDeleteConfirmId(null),
+                  });
+                }
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {deleteMutation.isPending ? "Deleting..." : "Delete project"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
