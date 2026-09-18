@@ -130,3 +130,43 @@ export {
 } from "./modules/input/storage";
 export { sniffMime } from "./modules/input/sniff";
 export { extractByMime } from "./modules/input/extract";
+
+// Phase 6 Spec exports
+export {
+  approveSpec,
+  createSpec,
+  getSpec,
+  listSpecs,
+  rejectSpec,
+  reviseSpec,
+} from "./modules/spec/spec.service";
+export {
+  createSpecVersion,
+  findApprovedSpecsByTypes,
+  findLatestSpecByType,
+  findLatestSpecsByProject,
+  findSpecById,
+  findSpecWithProject,
+  updateSpecStatus,
+} from "./modules/spec/spec.repository";
+export { createNextVersion } from "./modules/spec/versioning";
+export {
+  SPEC_ORDER,
+  downstreamTypes,
+  staleDownstream,
+} from "./modules/spec/staleness";
+export {
+  StubSpecGenerator,
+  getSpecGenerator,
+  type SpecGenerator,
+} from "./modules/spec/generator";
+export {
+  exportDesignDocument,
+  lintDesignDocument,
+  parseDesignDocument,
+  serializeDesignDocument,
+  type DesignDocument,
+  type ExportFormat,
+  type LintFinding,
+  type LintResult,
+} from "./modules/design/design.service";

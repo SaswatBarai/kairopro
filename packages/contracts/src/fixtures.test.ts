@@ -15,6 +15,7 @@ import {
   LoginInputSchema,
   PmQuestionSchema,
   PmQuestionsSchema,
+  ReviseSpecInputSchema,
   ProjectListItemSchema,
   ProjectSchema,
   PutCredentialInputSchema,
@@ -200,6 +201,9 @@ describe("fixtures parse", () => {
     expect(
       AnswerPmQuestionsInputSchema.parse({ answers: { q1: "Teams" } }),
     ).toEqual({ answers: { q1: "Teams" } });
+    expect(
+      ReviseSpecInputSchema.parse({ content: taskflowSpec.content }),
+    ).toEqual({ content: taskflowSpec.content });
   });
 
   it("parses the demo build, log, and stream event", () => {

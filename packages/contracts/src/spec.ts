@@ -45,6 +45,10 @@ export const AnswerPmQuestionsInputSchema = z.object({
   answers: z.record(z.string(), z.string()),
 });
 
+export const ReviseSpecInputSchema = z.object({
+  content: z.record(z.string(), z.json()),
+});
+
 export type SpecType = z.infer<typeof SpecTypeSchema>;
 export type SpecStatus = z.infer<typeof SpecStatusSchema>;
 export type Spec = z.infer<typeof SpecSchema>;
@@ -54,3 +58,4 @@ export type PmQuestions = z.infer<typeof PmQuestionsSchema>;
 export type AnswerPmQuestionsInput = z.infer<
   typeof AnswerPmQuestionsInputSchema
 >;
+export type ReviseSpecInput = z.infer<typeof ReviseSpecInputSchema>;
