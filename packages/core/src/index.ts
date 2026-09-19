@@ -200,3 +200,11 @@ export {
   LLMStructuredOutputError,
   LLMTimeoutError,
 } from "./modules/agent/llm/errors";
+
+// Phase 8 Prompt infrastructure exports (AI-3)
+export {
+  clearPromptCache,
+  loadPrompt,
+  renderPrompt,
+  type PromptName,
+} from "./modules/agent/prompts/loader";

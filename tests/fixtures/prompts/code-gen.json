@@ -1,0 +1,8 @@
+{
+  "variables": {
+    "conventions": "- Import alias: none, use relative imports.\n- Styling: plain CSS modules.",
+    "specs": "PRD: single-user todo list. Data model: Task { id, title, status }.",
+    "task": "Implement the endpoint that marks a task done."
+  },
+  "expected": "# Task\n\nImplement the task below, against the approved specs and the project's\nconventions. Match the conventions exactly — they are the only source of\ntruth for how code in this project looks; do not fall back on habits from\nother stacks.\n\n# Project conventions\n\n- Import alias: none, use relative imports.\n- Styling: plain CSS modules.\n\n# Approved specs\n\nPRD: single-user todo list. Data model: Task { id, title, status }.\n\n# Task\n\nImplement the endpoint that marks a task done.\n\n# Rules\n\n- Use only the libraries, import aliases, and file-layout conventions\n  given above. Never introduce one that is not present in them, even a\n  common or \"obviously correct\" one.\n- Every business rule from the specs above that this task touches —\n  permission checks, validation, money handling, side effects — is\n  implemented exactly as written, not approximated.\n- Do not add functionality the task and specs do not call for. A task that\n  asks for one endpoint does not also get a refactor of the file it lives\n  in.\n- If the specs are ambiguous about something this task needs, implement\n  the most conservative reading (the one that rejects more, assumes less)\n  and leave a one-line comment saying why — never guess silently on a rule\n  that touches authorization, money, or data integrity.\n"
+}
