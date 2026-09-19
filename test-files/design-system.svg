@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 350" width="600" height="350">
+  <rect width="600" height="350" fill="#09090b" rx="12"/>
+  <text x="30" y="45" fill="#f4f4f5" font-family="sans-serif" font-size="20" font-weight="bold">KairoPro Design Tokens</text>
+  <rect x="30" y="80" width="120" height="80" fill="#6366f1" rx="8"/>
+  <text x="40" y="180" fill="#a1a1aa" font-family="sans-serif" font-size="12">Primary Purple (#6366f1)</text>
+  <rect x="180" y="80" width="120" height="80" fill="#10b981" rx="8"/>
+  <text x="190" y="180" fill="#a1a1aa" font-family="sans-serif" font-size="12">Success Green (#10b981)</text>
+  <rect x="330" y="80" width="120" height="80" fill="#0284c7" rx="8"/>
+  <text x="340" y="180" fill="#a1a1aa" font-family="sans-serif" font-size="12">Accent Blue (#0284c7)</text>
+</svg>

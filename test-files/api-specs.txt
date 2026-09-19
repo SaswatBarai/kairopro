@@ -1,0 +1,11 @@
+========================================
+KairoPro API & Requirements Specification
+========================================
+
+Specification 1: Multi-tenant Workspaces
+- Supports Organization-level isolation with role permissions (Admin, Member, Viewer).
+
+Specification 2: Attachment Ingestion
+- Upload limit: 5 files maximum per project.
+- Maximum size: 10MB per file.
+- Supported file extensions: .pdf, .docx, .txt, .md, .png, .jpg, .svg
