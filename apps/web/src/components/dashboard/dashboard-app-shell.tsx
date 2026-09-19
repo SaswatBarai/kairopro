@@ -208,7 +208,7 @@ export function DashboardAppShell({
         </aside>
 
         {/* Main canvas area inside sidebar shell */}
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Top navigation & breadcrumb bar with Back button */}
           <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-white/[0.08] bg-brand-surface px-6">
             <div className="flex items-center gap-3">

@@ -36,7 +36,7 @@ export function SpecPage() {
                 <DesignDirectionPanel />
               </FadeIn>
             </div>
-            <aside className="w-full lg:sticky lg:top-[148px] lg:w-[360px] lg:shrink-0">
+            <aside className="w-full lg:sticky lg:top-[68px] lg:w-[360px] lg:shrink-0">
               <FadeIn delay={0.15}>
                 <AgentChatPanel />
               </FadeIn>

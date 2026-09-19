@@ -28,7 +28,7 @@ export function SpecGateBar() {
   };
 
   return (
-    <div className="sticky top-[69px] z-40 w-full border-b border-white/[0.08] bg-brand-surface px-4 py-3 sm:top-[81px] md:px-6">
+    <div className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-brand-surface px-4 py-3 md:px-6">
       <div className="mx-auto flex max-w-[1240px] flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center gap-2 font-mono-tech text-[11px] text-zinc-400">
           <span className="cursor-pointer transition-colors hover:text-zinc-100">
