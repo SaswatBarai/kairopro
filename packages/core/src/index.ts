@@ -296,3 +296,18 @@ export {
   generateAppStructure,
   type GenerateAppStructureInput,
 } from "./modules/agent/workflow/steps/generate-app-structure";
+
+// Phase 12 Credential exports (BE-7)
+export {
+  listCredentials,
+  putCredential,
+  deleteCredential,
+} from "./modules/credential/credential.service";
+export {
+  findCredential,
+  listCredentialsByProject,
+  upsertCredentialSecrets,
+  deleteCredentialRow,
+  type CredentialRow,
+} from "./modules/credential/credential.repository";
+export { injectCredentialsEnv } from "./modules/credential/inject";
