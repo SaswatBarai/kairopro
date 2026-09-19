@@ -25,6 +25,7 @@ import {
   type ProjectWithActivity,
 } from "./project.repository";
 import { purgeProjectUploads } from "../input/input.service";
+import { createVersionRow } from "../version/version.repository";
 import { createWorkspace, destroyWorkspace } from "./workspace";
 
 /**
@@ -107,8 +108,20 @@ export async function createProject(
   });
 
   try {
-    const workspacePath = await createWorkspace(row.id);
+    const { workspacePath, initialCommitHash } = await createWorkspace(row.id);
     const updated = await updateProjectRow(row.id, { workspacePath });
+    if (initialCommitHash) {
+      // Access is already established (we're inside the flow that just
+      // created this project) — write the Version row directly rather
+      // than round-tripping through version.service's own access check.
+      await createVersionRow({
+        projectId: row.id,
+        hash: initialCommitHash,
+        message: "Initial project",
+        filesChanged: 0,
+        revertible: false,
+      });
+    }
     return toProject(updated);
   } catch (cause) {
     // Roll back the row so a failed workspace never leaves a ghost project.

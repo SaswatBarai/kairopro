@@ -1,8 +1,23 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { commitAll, headCommit, initRepo } from "./git.service";
+import {
+  commitAll,
+  diffRaw,
+  diffStat,
+  headCommit,
+  initRepo,
+  isWorkingTreeClean,
+  log,
+  revertToCommit,
+} from "./git.service";
 
 describe("git.service (BE-4)", () => {
   let dir: string;
@@ -65,5 +80,65 @@ describe("git.service (BE-4)", () => {
     } finally {
       rmSync(parent, { recursive: true, force: true });
     }
+  });
+
+  it("log returns commits newest-first", async () => {
+    await initRepo(dir);
+    const first = await commitAll(dir, "first");
+    const second = await commitAll(dir, "second");
+
+    const entries = await log(dir);
+
+    expect(entries.map((e) => e.hash)).toEqual([second, first]);
+    expect(entries[0]!.message).toBe("second");
+    expect(entries[1]!.message).toBe("first");
+  });
+
+  it("diffStat and diffRaw report the change between two commits", async () => {
+    await initRepo(dir);
+    writeFileSync(join(dir, "a.txt"), "line1\n");
+    const first = await commitAll(dir, "add a.txt");
+    writeFileSync(join(dir, "a.txt"), "line1\nline2\n");
+    writeFileSync(join(dir, "b.txt"), "new file\n");
+    const second = await commitAll(dir, "edit a.txt, add b.txt");
+
+    const stat = await diffStat(dir, first, second);
+    expect(stat.files.map((f) => f.file).sort()).toEqual(["a.txt", "b.txt"]);
+    expect(stat.insertions).toBeGreaterThan(0);
+
+    const raw = await diffRaw(dir, first, second);
+    expect(raw).toContain("a.txt");
+    expect(raw).toContain("b.txt");
+    expect(raw).toContain("+line2");
+  });
+
+  it("isWorkingTreeClean reflects staged and unstaged changes", async () => {
+    await initRepo(dir);
+    await commitAll(dir, "first");
+    expect(await isWorkingTreeClean(dir)).toBe(true);
+
+    writeFileSync(join(dir, "dirty.txt"), "uncommitted\n");
+    expect(await isWorkingTreeClean(dir)).toBe(false);
+  });
+
+  it("revertToCommit restores the tree at that commit and commits forward, never rewriting history", async () => {
+    await initRepo(dir);
+    writeFileSync(join(dir, "a.txt"), "v1\n");
+    const first = await commitAll(dir, "v1");
+    writeFileSync(join(dir, "a.txt"), "v2\n");
+    writeFileSync(join(dir, "b.txt"), "added later\n");
+    const second = await commitAll(dir, "v2");
+
+    const revertHash = await revertToCommit(dir, first, "Revert: v2");
+
+    expect(await headCommit(dir)).toBe(revertHash);
+    // History is linear and forward-only: both prior commits still exist.
+    const entries = await log(dir);
+    expect(entries.map((e) => e.hash)).toEqual([revertHash, second, first]);
+
+    // The working tree now matches `first`'s state exactly.
+    const { readFileSync, existsSync: exists } = await import("node:fs");
+    expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe("v1\n");
+    expect(exists(join(dir, "b.txt"))).toBe(false);
   });
 });

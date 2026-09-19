@@ -67,3 +67,110 @@ export async function headCommit(dir: string): Promise<string | null> {
     return null;
   }
 }
+
+export interface CommitLogEntry {
+  hash: string;
+  message: string;
+  /** ISO 8601. */
+  date: string;
+}
+
+/** Newest-first commit log. Empty for a repo with no commits. */
+export async function log(
+  dir: string,
+  maxCount?: number,
+): Promise<CommitLogEntry[]> {
+  if (!(await ownsGitRepo(dir))) return [];
+  const git = simpleGit(dir);
+  const result = await git.log({ maxCount });
+  return result.all.map((entry) => ({
+    hash: entry.hash.slice(0, 7),
+    message: entry.message,
+    date: new Date(entry.date).toISOString(),
+  }));
+}
+
+export interface RawDiffStat {
+  files: { file: string; insertions: number; deletions: number }[];
+  insertions: number;
+  deletions: number;
+}
+
+/** Raw file/line diff stats between two commits — shaping into the
+ * contract's `DiffSummary` is `diff.ts`'s job, not this one's. */
+export async function diffStat(
+  dir: string,
+  fromHash: string,
+  toHash: string,
+): Promise<RawDiffStat> {
+  const git = simpleGit(dir);
+  const summary = await git.diffSummary([fromHash, toHash]);
+  return {
+    files: summary.files.map((file) => ({
+      file: file.file,
+      insertions: "insertions" in file ? file.insertions : 0,
+      deletions: "deletions" in file ? file.deletions : 0,
+    })),
+    insertions: summary.insertions,
+    deletions: summary.deletions,
+  };
+}
+
+/** The raw unified diff between two commits. */
+export async function diffRaw(
+  dir: string,
+  fromHash: string,
+  toHash: string,
+): Promise<string> {
+  const git = simpleGit(dir);
+  return git.diff([fromHash, toHash]);
+}
+
+/** True when there is nothing staged or unstaged — safe to revert. */
+export async function isWorkingTreeClean(dir: string): Promise<boolean> {
+  const git = simpleGit(dir);
+  const status = await git.status();
+  return status.isClean();
+}
+
+/**
+ * Restores every path tracked at `hash` into the working tree, exactly as
+ * it existed then — including paths `hash` deleted later commits restore,
+ * via `git checkout <hash> -- .`. Paths that exist now but didn't exist at
+ * `hash` are left behind by that command (it only touches paths present in
+ * the given tree), so they're removed separately. The result is staged but
+ * not committed — `revertToCommit` commits it.
+ */
+async function checkoutTree(dir: string, hash: string): Promise<void> {
+  const git = simpleGit(dir);
+  const addedSinceHash = await git.diff([
+    "--name-only",
+    "--diff-filter=A",
+    hash,
+    "HEAD",
+  ]);
+  const pathsToRemove = addedSinceHash
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  await git.raw(["checkout", hash, "--", "."]);
+  if (pathsToRemove.length > 0) {
+    await git.rm(pathsToRemove);
+  }
+}
+
+/**
+ * Restores the working tree to `hash`'s state and commits the result as a
+ * new, forward commit — never rewrites history (`git reset --hard` and
+ * `git revert`'s conflict-prone single-commit-reversal semantics are both
+ * deliberately avoided; see Phase 13 notes). Returns the new commit's hash.
+ */
+export async function revertToCommit(
+  dir: string,
+  hash: string,
+  message: string,
+): Promise<string> {
+  await checkoutTree(dir, hash);
+  return commitAll(dir, message);
+}

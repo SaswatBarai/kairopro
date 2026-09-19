@@ -20,25 +20,36 @@ This workspace holds the generated application. The template scaffold
 (packages/templates/nextjs-shadcn) is copied here in Phase 16.
 `;
 
+export interface CreatedWorkspace {
+  workspacePath: string;
+  /** The initial commit's hash, or `null` when the workspace already
+   * existed and nothing new was committed (idempotent re-call). */
+  initialCommitHash: string | null;
+}
+
 /**
  * Allocates the workspace for `projectId`, bootstraps the initial files, and
- * makes the initial commit. Idempotent: an existing workspace with a git repo
- * is left as-is.
+ * makes the initial commit ("Initial project" — the documented form, Phase
+ * 13). Idempotent: an existing workspace with a git repo is left as-is.
  */
-export async function createWorkspace(projectId: string): Promise<string> {
+export async function createWorkspace(
+  projectId: string,
+): Promise<CreatedWorkspace> {
   const store = getWorkspaceStore();
   const workspacePath = await store.allocate(projectId);
 
   // Already initialized (has commits) — leave the workspace untouched.
-  if (await headCommit(workspacePath)) return workspacePath;
+  if (await headCommit(workspacePath)) {
+    return { workspacePath, initialCommitHash: null };
+  }
 
   await bootstrapFile(store, projectId, ".gitignore", GITIGNORE);
   await bootstrapFile(store, projectId, "README.md", README);
 
   await initRepo(workspacePath);
-  await commitAll(workspacePath, "Initial commit");
+  const initialCommitHash = await commitAll(workspacePath, "Initial project");
 
-  return workspacePath;
+  return { workspacePath, initialCommitHash };
 }
 
 /** Deletes the workspace directory. No-ops when the directory is absent. */

@@ -19,21 +19,25 @@ describe("project workspace (BE-4)", () => {
   });
 
   it("allocates a workspace, git-inits it, and makes the initial commit", async () => {
-    const path = await createWorkspace("prj_ws_test_1");
-    expect(path.startsWith(root)).toBe(true);
-    expect(await headCommit(path)).toMatch(/^[0-9a-f]{7}$/);
+    const { workspacePath, initialCommitHash } =
+      await createWorkspace("prj_ws_test_1");
+    expect(workspacePath.startsWith(root)).toBe(true);
+    expect(initialCommitHash).toMatch(/^[0-9a-f]{7}$/);
+    expect(await headCommit(workspacePath)).toBe(initialCommitHash);
   });
 
-  it("is idempotent — a second createWorkspace does not reset the repo", async () => {
-    const path = await createWorkspace("prj_ws_test_2");
-    const hash = await headCommit(path);
-    await createWorkspace("prj_ws_test_2");
-    expect(await headCommit(path)).toBe(hash);
+  it("is idempotent — a second createWorkspace does not reset the repo, and reports no new commit", async () => {
+    const first = await createWorkspace("prj_ws_test_2");
+    const second = await createWorkspace("prj_ws_test_2");
+    expect(second.initialCommitHash).toBeNull();
+    expect(await headCommit(second.workspacePath)).toBe(
+      first.initialCommitHash,
+    );
   });
 
   it("destroyWorkspace removes the directory", async () => {
-    const path = await createWorkspace("prj_ws_test_3");
+    const { workspacePath } = await createWorkspace("prj_ws_test_3");
     await destroyWorkspace("prj_ws_test_3");
-    await expect(initRepo(path)).rejects.toThrow();
+    await expect(initRepo(workspacePath)).rejects.toThrow();
   });
 });

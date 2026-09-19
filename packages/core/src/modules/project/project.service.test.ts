@@ -33,6 +33,10 @@ vi.mock("../input/input.service", () => ({
   purgeProjectUploads: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("../version/version.repository", () => ({
+  createVersionRow: vi.fn(),
+}));
+
 import {
   createProject as createProjectRepo,
   deleteProject as deleteProjectRepo,
@@ -41,6 +45,7 @@ import {
   updateProject as updateProjectRepo,
 } from "./project.repository";
 import { purgeProjectUploads } from "../input/input.service";
+import { createVersionRow } from "../version/version.repository";
 import { createWorkspace, destroyWorkspace } from "./workspace";
 import { ownerOf } from "../org/access";
 import {
@@ -90,7 +95,10 @@ beforeEach(() => {
 describe("project.service create/list/get/update (BE-4)", () => {
   it("create produces a row, a workspace with a git repo, and stores the path", async () => {
     vi.mocked(createProjectRepo).mockResolvedValueOnce(projectRow());
-    vi.mocked(createWorkspace).mockResolvedValueOnce("/tmp/ws/prj-1");
+    vi.mocked(createWorkspace).mockResolvedValueOnce({
+      workspacePath: "/tmp/ws/prj-1",
+      initialCommitHash: "abc1234",
+    });
     vi.mocked(updateProjectRepo).mockResolvedValueOnce(
       projectRow({ workspacePath: "/tmp/ws/prj-1" }),
     );
@@ -106,6 +114,13 @@ describe("project.service create/list/get/update (BE-4)", () => {
     expect(createWorkspace).toHaveBeenCalledWith("prj-1");
     expect(updateProjectRepo).toHaveBeenCalledWith("prj-1", {
       workspacePath: "/tmp/ws/prj-1",
+    });
+    expect(createVersionRow).toHaveBeenCalledWith({
+      projectId: "prj-1",
+      hash: "abc1234",
+      message: "Initial project",
+      filesChanged: 0,
+      revertible: false,
     });
     expect(project.name).toBe("TaskFlow");
     // The contract shape omits workspacePath; it is stored on the row only.

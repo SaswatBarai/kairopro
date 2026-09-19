@@ -79,7 +79,18 @@ export {
 export { assertMember, canEdit, ownerOf } from "./modules/org/access";
 
 // Phase 4 Project & Usage exports
-export { commitAll, headCommit, initRepo } from "./modules/version/git.service";
+export {
+  commitAll,
+  headCommit,
+  initRepo,
+  log as gitLog,
+  diffStat as gitDiffStat,
+  diffRaw as gitDiffRaw,
+  isWorkingTreeClean,
+  revertToCommit,
+  type CommitLogEntry,
+  type RawDiffStat,
+} from "./modules/version/git.service";
 export { createWorkspace, destroyWorkspace } from "./modules/project/workspace";
 export {
   createProject as createProjectRecord,
@@ -311,3 +322,20 @@ export {
   type CredentialRow,
 } from "./modules/credential/credential.repository";
 export { injectCredentialsEnv } from "./modules/credential/inject";
+
+// Phase 13 Version exports (BE-8)
+export {
+  recordVersion,
+  listVersions,
+  getVersionDiff,
+  revertVersion,
+  type VersionDiff,
+} from "./modules/version/version.service";
+export {
+  listVersionsByProject,
+  findVersionWithProject,
+  createVersionRow,
+  type VersionRow,
+  type VersionWithProject,
+} from "./modules/version/version.repository";
+export { summarizeDiff } from "./modules/version/diff";

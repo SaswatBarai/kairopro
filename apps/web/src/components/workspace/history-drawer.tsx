@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useRevertMutation, useVersionsQuery } from "@/lib/queries/versions";
 
 const code = (text: string, tone: "cyan" | "purple" | "green") => (
   <code
@@ -44,6 +45,7 @@ export interface Checkpoint {
   viewDiff: boolean;
   tone: "green" | "purple" | "zinc" | "base";
   baseBadge?: "verified" | "committed" | "synthesis";
+  revertible?: boolean;
 }
 
 export const CHECKPOINTS: Checkpoint[] = [
@@ -136,6 +138,7 @@ export const CHECKPOINTS: Checkpoint[] = [
 interface HistoryDrawerProps {
   open: boolean;
   currentId: string;
+  projectId?: string;
   onClose: () => void;
   onView: (path: string, diff: boolean) => void;
   onUndoCurrent: () => void;
@@ -235,12 +238,15 @@ function Badge({
 export function HistoryDrawer({
   open,
   currentId,
+  projectId,
   onClose,
   onView,
   onUndoCurrent,
   onRevertTo,
 }: HistoryDrawerProps) {
   const [hideReverted, setHideReverted] = useState(false);
+  const { data: realVersions } = useVersionsQuery(projectId);
+  const revertMutation = useRevertMutation(projectId ?? "");
 
   useEffect(() => {
     if (!open) return;
@@ -251,10 +257,31 @@ export function HistoryDrawer({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const currentIndex = CHECKPOINTS.findIndex((c) => c.id === currentId);
-  const canUndo = currentIndex < CHECKPOINTS.length - 1;
-  const visible = CHECKPOINTS.filter(
-    (_, i) => !(hideReverted && i < currentIndex),
+  const checkpoints: Checkpoint[] =
+    realVersions && realVersions.length > 0
+      ? realVersions.map((v, i) => ({
+          id: v.id,
+          title: v.message,
+          time: new Date(v.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          hash: v.hash.slice(0, 7),
+          filesLabel: `${v.filesChanged} file${v.filesChanged === 1 ? "" : "s"} modified`,
+          summary: v.message,
+          viewPath: "",
+          viewDiff: true,
+          tone: i === 0 ? "green" : "purple",
+          baseBadge: !v.revertible ? "synthesis" : "committed",
+          revertible: v.revertible,
+        }))
+      : CHECKPOINTS;
+
+  const currentIndex = checkpoints.findIndex((c) => c.id === currentId);
+  const activeIndex = currentIndex !== -1 ? currentIndex : 0;
+  const canUndo = activeIndex < checkpoints.length - 1;
+  const visible = checkpoints.filter(
+    (_, i) => !(hideReverted && i < activeIndex),
   );
 
   return (
