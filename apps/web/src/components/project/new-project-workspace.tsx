@@ -163,7 +163,7 @@ export function NewProjectWorkspace() {
       const textRes = await fetch(`/api/projects/${projectId}/inputs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: requirements }),
+        body: JSON.stringify({ text: requirements, content: requirements }),
       });
       if (!textRes.ok) {
         const errJson = await textRes.json().catch(() => ({}));

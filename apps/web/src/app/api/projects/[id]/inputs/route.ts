@@ -93,7 +93,14 @@ export async function POST(req: Request, { params }: RouteContext) {
 
     if (contentType.includes("application/json")) {
       const body = await req.json();
-      const text = typeof body?.text === "string" ? body.text : body;
+      const text =
+        typeof body?.text === "string"
+          ? body.text
+          : typeof body?.content === "string"
+            ? body.content
+            : typeof body === "string"
+              ? body
+              : body;
       const input = await saveTextInput(id, text, ctx);
       revalidatePath(`/projects/${id}`);
       return NextResponse.json(input, { status: 201 });
