@@ -170,3 +170,33 @@ export {
   type LintFinding,
   type LintResult,
 } from "./modules/design/design.service";
+
+// Phase 7 LLM provider exports (AI-1)
+export { getLLMProvider } from "./modules/agent/llm";
+export type {
+  LLMCompleteInput,
+  LLMCompleteResult,
+  LLMMessage,
+  LLMProvider,
+  LLMRole,
+  LLMStopReason,
+  LLMStreamEvent,
+  LLMUsage,
+} from "./modules/agent/llm/provider";
+export { MockProvider } from "./modules/agent/llm/providers/mock";
+export {
+  WORKFLOW_PHASES,
+  modelFor,
+  type WorkflowPhase,
+} from "./modules/agent/llm/router";
+export {
+  completeStructured,
+  type CompleteStructuredInput,
+} from "./modules/agent/llm/structured";
+export { recordCallUsage } from "./modules/agent/llm/tokens";
+export { estimateTokens } from "./modules/agent/llm/token-estimate";
+export {
+  LLMProviderError,
+  LLMStructuredOutputError,
+  LLMTimeoutError,
+} from "./modules/agent/llm/errors";
