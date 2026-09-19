@@ -12,7 +12,7 @@ import type { WorkflowPhase } from "../llm/router";
 
 export type PromptName = WorkflowPhase | "system";
 
-const PROMPTS_DIR = fileURLToPath(new URL(".", import.meta.url));
+const PROMPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 const cache = new Map<PromptName, string>();
 

@@ -46,6 +46,12 @@ Thumbs.db
 # ─── Tooling & Design artifacts ─────────────────────────────────────────────
 .commandcode/
 designs/
+CLAUDE.md
+claude.md
+AGENT.md
+agent.md
+AGENTS.md
+agents.md
 
 
 # ─── Test output ─────────────────────────────────────────────────────────────
@@ -59,3 +65,4 @@ test-results/
 # and lint by virtue of not being referenced by any tsconfig — not by gitignore.
 
 .workspaces/
+

@@ -160,12 +160,21 @@ export function ProjectsDashboard({
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");
+    const subParam = searchParams.get("sub");
     if (
       tabParam === "settings" ||
       tabParam === "deployments" ||
       tabParam === "projects"
     ) {
       setActiveMainTab(tabParam);
+    }
+    if (
+      subParam === "credentials" ||
+      subParam === "profile" ||
+      subParam === "billing" ||
+      subParam === "team"
+    ) {
+      setSettingsSubTab(subParam);
     }
   }, [searchParams]);
 
