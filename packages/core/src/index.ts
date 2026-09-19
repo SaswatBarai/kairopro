@@ -238,3 +238,34 @@ export {
   DEFAULT_COMMAND_TIMEOUT_MS,
   MAX_COMMAND_TIMEOUT_MS,
 } from "./modules/agent/tools/safety";
+
+// Phase 10 Context builder exports (AI-4)
+export {
+  retrieve,
+  type RetrieveRequest,
+  type RetrieveProject,
+  type RetrieveOptions,
+  type RetrieveResult,
+  type RetrievedFile,
+  type RetrievalReason,
+} from "./modules/agent/context/retrieve";
+export {
+  buildFileIndex,
+  type FileIndex,
+  type FileIndexEntry,
+} from "./modules/agent/context/file-index";
+export {
+  buildDependencyGraph,
+  type DependencyGraph,
+} from "./modules/agent/context/dependency-graph";
+export {
+  summarize,
+  renderSummary,
+  type ProjectSummary,
+} from "./modules/agent/context/summary";
+export {
+  applyBudget,
+  type BudgetCandidate,
+  type BudgetResult,
+} from "./modules/agent/context/budget";
+export { hydrate, type HydratedFile } from "./modules/agent/context/hydrate";
