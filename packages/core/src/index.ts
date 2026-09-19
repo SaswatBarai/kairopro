@@ -208,3 +208,33 @@ export {
   renderPrompt,
   type PromptName,
 } from "./modules/agent/prompts/loader";
+
+// Phase 9 Tool registry exports (AI-2)
+export {
+  createDefaultToolRegistry,
+  defaultToolRegistry,
+  ToolRegistry,
+  type Tool,
+  type ToolResult,
+  type ToolCallEvent,
+  type ToolContext,
+} from "./modules/agent/tools";
+export {
+  deleteFileTool,
+  editFileTool,
+  listFilesTool,
+  readFileTool,
+  writeFileTool,
+} from "./modules/agent/tools/file.tools";
+export {
+  findSymbolTool,
+  searchCodeTool,
+} from "./modules/agent/tools/search.tools";
+export { runCommandTool } from "./modules/agent/tools/exec.tools";
+export {
+  assertCommandAllowed,
+  confinePath,
+  truncateOutput,
+  DEFAULT_COMMAND_TIMEOUT_MS,
+  MAX_COMMAND_TIMEOUT_MS,
+} from "./modules/agent/tools/safety";
