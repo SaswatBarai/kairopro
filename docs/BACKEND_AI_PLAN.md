@@ -40,12 +40,12 @@ _Audited 2026-09-13 — after the frontend build, before BE-1._
 
 **Decisions locked since this document was written**
 
-| Decision             | Choice                                                                                                                                                                                 | Consequence                                                                                                                                |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Dev/test database    | PostgreSQL 18 via a compose file in `docker/` (created in BE-1)                                                                                                                        | Migrations target it; integration tests use a throwaway database on the same engine                                                        |
-| MSW layer (P0.5)     | **Skipped**                                                                                                                                                                            | The frontend shipped without it; pages rewire directly to real endpoints as phases land. MSW may return later for frontend unit tests only |
-| Primary LLM provider | **Mock-first** — the `LLMProvider` interface and deterministic mock provider are built now; the concrete provider (Anthropic vs OpenAI) is chosen when real generation is first needed | Everything downstream proceeds offline; only `router.ts` model names and `providers/*.ts` wait                                             |
-| F2 dashboard design  | Folded into the BE-4 rewire                                                                                                                                                            | The live dashboard is the F1 dual-state design; when BE-4 lands, rewire it to the F2 populated design with real data                       |
+| Decision             | Choice                                                                                                                                                                                                                                 | Consequence                                                                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Dev/test database    | PostgreSQL 18 via a compose file in `docker/` (created in BE-1)                                                                                                                                                                        | Migrations target it; integration tests use a throwaway database on the same engine                                                        |
+| MSW layer (P0.5)     | **Skipped**                                                                                                                                                                                                                            | The frontend shipped without it; pages rewire directly to real endpoints as phases land. MSW may return later for frontend unit tests only |
+| Primary LLM provider | **Together AI — `zai-org/GLM-5.3-Flash`** (decided and implemented 2026-09-19). The `LLMProvider` interface and mock provider were built mock-first; the concrete `providers/together.ts` is now implemented and wired in `router.ts`. | `TOGETHER_API_KEY` is required in `.env`; all existing tests continue to run offline against the mock.                                     |
+| F2 dashboard design  | Folded into the BE-4 rewire                                                                                                                                                                                                            | The live dashboard is the F1 dual-state design; when BE-4 lands, rewire it to the F2 populated design with real data                       |
 
 **Phase → shipped-page unlock map**
 
@@ -638,7 +638,7 @@ export interface ContainerRuntime {
 **Notes**
 
 - **The mock provider is not a convenience — it is what makes this track testable.** Without it the AI suite is flaky and slow. Build it first inside this phase.
-- The primary provider is still undecided (Open Items). Implement the interface and the mock fully; the concrete provider can land second without blocking anything downstream.
+- The primary provider is **Together AI (`zai-org/GLM-5.3-Flash`)** — decided and implemented 2026-09-19. The concrete `providers/together.ts` is implemented and wired in `router.ts` with `TOGETHER_API_KEY` read from the environment.
 - Bounded retry is the pattern repeated throughout the AI track: three attempts, error fed back, then throw.
 
 ---
@@ -1420,7 +1420,7 @@ Decisions recorded in §0: dev database (PostgreSQL via Docker), MSW skipped, mo
 
 Two items still bear directly on this document:
 
-- **Concrete LLM provider undecided** (Anthropic vs OpenAI) — the mock-first decision unblocks the AI-1 interface, the mock provider, and every downstream phase; only `router.ts` model names and the concrete `providers/*.ts` wait for an API key.
+- **Concrete LLM provider: Together AI, model `zai-org/GLM-5.3-Flash`** — decided and implemented 2026-09-19. `providers/together.ts` is the concrete implementation; `router.ts` maps all phases to this model. Set `TOGETHER_API_KEY` in `.env` to enable live generation.
 - **AI-8 (Test Agent) may ship in V1.1** — confirm before starting Phase 18.
 
 ---

@@ -3,9 +3,10 @@
  * place a model name appears anywhere in the codebase; every call site
  * asks for a model by workflow phase, never by name.
  *
- * The primary provider is still undecided (plan §0, "Primary LLM
- * provider: Mock-first") — these defaults are placeholders for the mock
- * provider and get tuned once a concrete provider lands (Open Items).
+ * Provider decision (Open Items, resolved): Together AI, model
+ * `zai-org/GLM-5.3-Flash` — cheap, vision-capable, 1M-token context,
+ * confirmed live against the real API. Every phase uses it today; split
+ * phases onto different models here if cost/quality data later calls for it.
  */
 
 export const WORKFLOW_PHASES = [
@@ -20,14 +21,16 @@ export const WORKFLOW_PHASES = [
 
 export type WorkflowPhase = (typeof WORKFLOW_PHASES)[number];
 
+const DEFAULT_MODEL = "zai-org/GLM-5.3-Flash";
+
 const MODEL_BY_PHASE: Record<WorkflowPhase, string> = {
-  "pm-questions": "claude-sonnet-5",
-  prd: "claude-sonnet-5",
-  design: "claude-sonnet-5",
-  "data-model": "claude-sonnet-5",
-  "app-structure": "claude-sonnet-5",
-  "code-gen": "claude-sonnet-5",
-  fix: "claude-sonnet-5",
+  "pm-questions": DEFAULT_MODEL,
+  prd: DEFAULT_MODEL,
+  design: DEFAULT_MODEL,
+  "data-model": DEFAULT_MODEL,
+  "app-structure": DEFAULT_MODEL,
+  "code-gen": DEFAULT_MODEL,
+  fix: DEFAULT_MODEL,
 };
 
 /** Throws for any phase name not in `WORKFLOW_PHASES` — including a value

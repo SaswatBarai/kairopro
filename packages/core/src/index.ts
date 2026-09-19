@@ -184,6 +184,7 @@ export type {
   LLMUsage,
 } from "./modules/agent/llm/provider";
 export { MockProvider } from "./modules/agent/llm/providers/mock";
+export { createTogetherProvider } from "./modules/agent/llm/providers/together";
 export {
   WORKFLOW_PHASES,
   modelFor,

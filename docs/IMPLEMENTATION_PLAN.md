@@ -287,21 +287,21 @@ These are repeated from `README.md` because they are the rules most likely to er
 
 ## 8. Risk register
 
-| Risk                                       | Impact                    | Mitigation                                                            |
-| ------------------------------------------ | ------------------------- | --------------------------------------------------------------------- |
-| Mock drift from real API                   | Integration rework        | Contracts in P0.4; MSW validates against them                         |
-| RSC/TanStack ownership confusion           | Two sources of truth      | Ownership table in §2, applied per phase                              |
-| `modules/` importing framework code        | Blocks worker extraction  | ESLint boundary rule from P0.1                                        |
-| Silent degradation hiding correctness bugs | Security holes            | `recovery/rules.ts` policy in AI-7; explicit test assertions          |
-| Dense UI screens (gates, workspace)        | Visual drift from design  | Screenshot diff in FE-10 against Stitch exports                       |
-| LLM provider not chosen                    | Blocks AI-1 provider impl | Interface work is provider-agnostic; only routing map waits           |
-| Test agent scope (AI-8)                    | Delays first ship         | Slot exists in the tree; deferring to V1.1 needs no structural change |
+| Risk                                       | Impact                                                | Mitigation                                                                   |
+| ------------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Mock drift from real API                   | Integration rework                                    | Contracts in P0.4; MSW validates against them                                |
+| RSC/TanStack ownership confusion           | Two sources of truth                                  | Ownership table in §2, applied per phase                                     |
+| `modules/` importing framework code        | Blocks worker extraction                              | ESLint boundary rule from P0.1                                               |
+| Silent degradation hiding correctness bugs | Security holes                                        | `recovery/rules.ts` policy in AI-7; explicit test assertions                 |
+| Dense UI screens (gates, workspace)        | Visual drift from design                              | Screenshot diff in FE-10 against Stitch exports                              |
+| LLM provider not chosen                    | ~~Blocks AI-1 provider impl~~ **Resolved 2026-09-19** | Together AI, `zai-org/GLM-5.3-Flash`; `providers/together.ts` is implemented |
+| Test agent scope (AI-8)                    | Delays first ship                                     | Slot exists in the tree; deferring to V1.1 needs no structural change        |
 
 ---
 
 ## 9. Open items
 
-1. **Primary LLM provider not chosen** — Anthropic vs OpenAI. Partially resolved (2026-09-13): **mock-first is locked** — the interface, mock provider, and every downstream phase proceed offline; only the concrete provider and `router.ts` model names wait for an API key.
+1. ~~**Primary LLM provider not chosen**~~ **Resolved 2026-09-19** — Provider is **Together AI**, model `zai-org/GLM-5.3-Flash`. The concrete `providers/together.ts` is implemented and wired in `router.ts`. Set `TOGETHER_API_KEY` in `.env` to enable live generation. All tests continue to run offline via the mock provider.
 2. **"AI services agent" undefined** — carried from `PRDv2.md §12`. Three possible readings (generated apps using AI, KairoPro's own agent infrastructure, or a design-time decision about where generated apps call an LLM). Not in any phase until disambiguated.
 3. **AI-8 (Test Agent) may be deferred to V1.1** — the most expensive purely-quality phase. Deferring removes no structural work. Confirm before Wave 3.
 4. **Auth provider for the platform** — Google OAuth requires credentials before BE-3 can be tested against a real provider. Credentials-only dev works without them.
