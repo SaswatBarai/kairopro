@@ -14,5 +14,7 @@ export type {
   BuildEvent,
   BusChannels,
   EventHandler,
+  SpecGenerationChannel,
+  SpecGenerationEvent,
   Unsubscribe,
 } from "./bus";

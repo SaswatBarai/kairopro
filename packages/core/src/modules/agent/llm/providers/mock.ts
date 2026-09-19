@@ -71,6 +71,7 @@ interface JsonSchema {
   properties?: Record<string, JsonSchema>;
   required?: string[];
   items?: JsonSchema;
+  minItems?: number;
   anyOf?: JsonSchema[];
   $ref?: string;
   $defs?: Record<string, JsonSchema>;
@@ -103,8 +104,16 @@ function fabricate(schema: JsonSchema, root: JsonSchema): unknown {
       }
       return out;
     }
-    case "array":
-      return schema.items ? [fabricate(schema.items, root)] : [];
+    case "array": {
+      if (!schema.items) return [];
+      // Respect `minItems` (e.g. "exactly 3-5 questions") — a naive
+      // single-element array would fail that bound on every attempt,
+      // exhausting retries against a schema the mock can never satisfy.
+      const count = Math.max(schema.minItems ?? 1, 1);
+      return Array.from({ length: count }, () =>
+        fabricate(schema.items as JsonSchema, root),
+      );
+    }
     case "string":
       return "mock-string";
     case "number":

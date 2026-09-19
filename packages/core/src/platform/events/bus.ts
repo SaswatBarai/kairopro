@@ -25,9 +25,27 @@ export interface BuildEvent {
 /** Channel id for a build's event stream. */
 export type BuildChannel = `build:${string}`;
 
+/** Progress through the spec-generation pipeline (Phase 11 / AI-5) — not
+ * persisted like `BuildEvent`, since there is no `BuildLog` row for spec
+ * generation; SSE delivery for this channel is a later phase's concern. */
+export interface SpecGenerationEvent {
+  projectId: string;
+  /** A workflow phase name (e.g. "prd", "data-model") — kept as a plain
+   * string here rather than importing `WorkflowPhase`, so this
+   * lower-level platform module never depends on `modules/agent`. */
+  step: string;
+  status: "started" | "completed" | "failed";
+  message?: string;
+  createdAt: string;
+}
+
+/** Channel id for a project's spec-generation progress stream. */
+export type SpecGenerationChannel = `spec-generation:${string}`;
+
 /** The typed channel map. Later phases add channels here — one line each. */
 export interface BusChannels {
   [channel: BuildChannel]: BuildEvent;
+  [channel: SpecGenerationChannel]: SpecGenerationEvent;
 }
 
 export interface EventBus<Channels extends object = BusChannels> {

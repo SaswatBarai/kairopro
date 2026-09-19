@@ -58,6 +58,28 @@ describe("MockProvider (AI-1)", () => {
     expect(() => schema.parse(JSON.parse(result.content))).not.toThrow();
   });
 
+  it('respects an array schema\'s minItems (e.g. "exactly 3-5 questions")', async () => {
+    const schema = z
+      .array(z.object({ id: z.string() }))
+      .min(3)
+      .max(5);
+    const jsonSchema = z.toJSONSchema(schema);
+
+    const result = await MockProvider.complete({
+      model: "any-model",
+      messages: [
+        {
+          role: "system",
+          content: `<json-schema>${JSON.stringify(jsonSchema)}</json-schema>`,
+        },
+      ],
+    });
+
+    const parsed = JSON.parse(result.content);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(() => schema.parse(parsed)).not.toThrow();
+  });
+
   it("streams the same content complete() would return, in chunks", async () => {
     const chunks: string[] = [];
     const result = await MockProvider.stream(

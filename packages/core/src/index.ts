@@ -156,7 +156,7 @@ export {
   staleDownstream,
 } from "./modules/spec/staleness";
 export {
-  StubSpecGenerator,
+  RealSpecGenerator,
   getSpecGenerator,
   type SpecGenerator,
 } from "./modules/spec/generator";
@@ -193,6 +193,8 @@ export {
 export {
   completeStructured,
   type CompleteStructuredInput,
+  completeWithValidator,
+  type CompleteWithValidatorInput,
 } from "./modules/agent/llm/structured";
 export { recordCallUsage } from "./modules/agent/llm/tokens";
 export { estimateTokens } from "./modules/agent/llm/token-estimate";
@@ -270,3 +272,27 @@ export {
   type BudgetResult,
 } from "./modules/agent/context/budget";
 export { hydrate, type HydratedFile } from "./modules/agent/context/hydrate";
+
+// Phase 11 Spec generation exports (AI-5)
+export * from "./modules/agent/validators";
+export {
+  generatePmQuestions,
+  type GeneratePmQuestionsInput,
+} from "./modules/agent/workflow/steps/pm-questions";
+export {
+  generatePrd,
+  formatPrdForPrompt,
+  type GeneratePrdInput,
+} from "./modules/agent/workflow/steps/generate-prd";
+export {
+  generateDesign,
+  type GenerateDesignInput,
+} from "./modules/agent/workflow/steps/generate-design";
+export {
+  generateDataModel,
+  type GenerateDataModelInput,
+} from "./modules/agent/workflow/steps/generate-data-model";
+export {
+  generateAppStructure,
+  type GenerateAppStructureInput,
+} from "./modules/agent/workflow/steps/generate-app-structure";

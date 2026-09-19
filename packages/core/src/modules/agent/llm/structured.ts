@@ -103,3 +103,74 @@ function parseJson(
     };
   }
 }
+
+export interface CompleteWithValidatorInput<T> {
+  provider: LLMProvider;
+  model: string;
+  messages: LLMMessage[];
+  ctx: RequestContext;
+  maxTokens?: number;
+  temperature?: number;
+  refs?: { projectId?: string | null; buildId?: string | null };
+  /** Validates and transforms the raw completion text. Throw (sync or
+   * async) to reject the attempt and trigger a retry — the thrown
+   * message is fed back to the model as a corrective turn. */
+  validate: (content: string) => T | Promise<T>;
+}
+
+/**
+ * Same bounded-retry shape as `completeStructured`, for outputs that
+ * aren't JSON — a `DESIGN.md` document, a Prisma schema — where the real
+ * validation is domain-specific (parses as the target format) rather than
+ * "matches a JSON Schema". `completeStructured` can't express that, so
+ * this takes an arbitrary validator instead of a Zod schema.
+ */
+export async function completeWithValidator<T>(
+  input: CompleteWithValidatorInput<T>,
+): Promise<T> {
+  const log = withCorrelation(logger, {
+    projectId: input.refs?.projectId ?? undefined,
+    buildId: input.refs?.buildId ?? undefined,
+  });
+
+  let correction: string | undefined;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const messages = correction
+      ? [
+          ...input.messages,
+          {
+            role: "user" as const,
+            content: `The previous response was invalid:\n${correction}\nReturn a corrected response.`,
+          },
+        ]
+      : input.messages;
+
+    const completeInput: LLMCompleteInput = {
+      model: input.model,
+      messages,
+      maxTokens: input.maxTokens,
+      temperature: input.temperature,
+    };
+
+    const result = await input.provider.complete(completeInput);
+    await recordCallUsage(result.usage, input.ctx, input.refs);
+
+    try {
+      return await input.validate(result.content);
+    } catch (cause) {
+      correction = cause instanceof Error ? cause.message : String(cause);
+    }
+
+    log.warn(
+      { attempt, maxAttempts: MAX_ATTEMPTS, error: correction },
+      "text completion failed validation",
+    );
+  }
+
+  throw new LLMStructuredOutputError({
+    attempts: MAX_ATTEMPTS,
+    message: "Text completion failed validation after retries",
+    details: { lastError: correction },
+  });
+}
