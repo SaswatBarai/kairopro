@@ -339,3 +339,47 @@ export {
   type VersionWithProject,
 } from "./modules/version/version.repository";
 export { summarizeDiff } from "./modules/version/diff";
+
+// Phase 15 Build orchestration exports (BE-10)
+export {
+  startBuild,
+  cancelBuild,
+  getBuild,
+  listBuilds,
+} from "./modules/build/build.service";
+export {
+  createBuildRow,
+  findActiveBuild,
+  findBuildById,
+  findBuildWithProject,
+  listBuildsByProject,
+  updateBuildRow,
+  createInternalErrorRow,
+  type BuildRow,
+  type BuildWithProject,
+} from "./modules/build/build.repository";
+export {
+  appendLog,
+  emitLog,
+  listLogsSince,
+  type BuildLogRow,
+} from "./modules/build/logs";
+export {
+  runWorkflow,
+  type BuildStep,
+  type BuildStepContext,
+  type RunWorkflowInput,
+  type WorkflowOutcome,
+} from "./modules/build/workflow";
+export {
+  encodeEventContent,
+  encodeKeepalive,
+  encodeSseFrame,
+  toStreamEvent,
+  KEEPALIVE_INTERVAL_MS,
+  type BuildLogLike,
+} from "./modules/build/sse/encode";
+export {
+  streamBuildEvents,
+  type StreamBuildEventsOptions,
+} from "./modules/build/sse/stream";
