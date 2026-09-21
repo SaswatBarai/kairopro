@@ -1,0 +1,21 @@
+{
+  "id": "nextjs-shadcn",
+  "stack": "Next.js + shadcn/ui",
+  "description": "Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Prisma, Zod, NextAuth.",
+  "conventions": {
+    "importAlias": "@/",
+    "srcDir": "src",
+    "apiRoutesDir": "src/app/api",
+    "pagesDir": "src/app",
+    "componentsDir": "src/components",
+    "libDir": "src/lib",
+    "contractsPath": "src/lib/contracts.ts",
+    "authConfigPath": "src/lib/auth.ts",
+    "prismaSchemaPath": "prisma/schema.prisma",
+    "styling": "tailwindcss",
+    "validation": "zod",
+    "orm": "prisma",
+    "auth": "next-auth",
+    "testFramework": "vitest"
+  }
+}

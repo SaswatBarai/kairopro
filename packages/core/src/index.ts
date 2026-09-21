@@ -383,3 +383,81 @@ export {
   streamBuildEvents,
   type StreamBuildEventsOptions,
 } from "./modules/build/sse/stream";
+
+// Phase 16 Code generation exports (AI-6)
+export {
+  loadTemplate,
+  renderConventions,
+  resolveSkeletonDir,
+  type TemplateConventions,
+  type TemplateManifest,
+} from "./modules/agent/template";
+export {
+  scaffoldProject,
+  type ScaffoldInput,
+  type ScaffoldResult,
+} from "./modules/agent/workflow/steps/scaffold";
+export {
+  parseTscOutput,
+  runTypecheck,
+  type TypecheckError,
+  type RunTypecheckInput,
+} from "./modules/agent/validators/typecheck";
+export {
+  loadApprovedSpecs,
+  renderSpecsForPrompt,
+  type ApprovedSpecs,
+} from "./modules/agent/workflow/steps/generation-context";
+export {
+  generateFile,
+  CodeGenerationError,
+  type GenerateFileInput,
+  type GenerateFileResult,
+} from "./modules/agent/workflow/steps/generate-code";
+export {
+  freezeContracts,
+  type FreezeContractsInput,
+} from "./modules/agent/workflow/steps/freeze-contracts";
+export {
+  runBackendPhase,
+  type RunBackendPhaseInput,
+  type BackendPhaseResult,
+} from "./modules/agent/phases/backend";
+export {
+  runFrontendPhase,
+  type RunFrontendPhaseInput,
+  type FrontendPhaseResult,
+} from "./modules/agent/phases/frontend";
+
+// Phase 17 Recovery exports (AI-7)
+export {
+  classifyFailure,
+  type FailureCategory,
+  type FailureSignal,
+} from "./modules/agent/recovery/classify";
+export {
+  isDegradable,
+  NEVER_DEGRADABLE,
+  CONCERN_CATEGORIES,
+  type ConcernCategory,
+} from "./modules/agent/recovery/rules";
+export {
+  buildDegradationLadder,
+  describeDegradation,
+  DEGRADATION_LADDER,
+  type DegradationLevel,
+  type DegradationStep,
+} from "./modules/agent/recovery/degradation";
+export {
+  logRecoveryFailure,
+  type RecoveryLogEntry,
+} from "./modules/agent/recovery/logger";
+export {
+  runFixLoop,
+  type RunFixLoopInput,
+  type FixLoopResult,
+  type AttemptInput,
+  type AttemptOutcome,
+  type AttemptFailure,
+} from "./modules/agent/recovery/fix-loop";
+export { type InternalErrorRow } from "./modules/build/build.repository";

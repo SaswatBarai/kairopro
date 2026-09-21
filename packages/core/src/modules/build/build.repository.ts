@@ -6,6 +6,7 @@ export type BuildRow = Prisma.BuildGetPayload<{}>;
 export type BuildWithProject = Prisma.BuildGetPayload<{
   include: { project: true };
 }>;
+export type InternalErrorRow = Prisma.InternalErrorGetPayload<{}>;
 
 const ACTIVE_STATUSES = ["QUEUED", "RUNNING"] as const;
 
@@ -54,6 +55,8 @@ export function createInternalErrorRow(data: {
   errorType: string;
   message: string;
   detail?: Prisma.InputJsonValue;
-}): Promise<unknown> {
+  resolved?: boolean;
+  resolution?: string | null;
+}): Promise<InternalErrorRow> {
   return db.internalError.create({ data });
 }

@@ -193,6 +193,9 @@ importers:
       '@kairopro/db':
         specifier: workspace:*
         version: link:../db
+      '@kairopro/templates':
+        specifier: workspace:*
+        version: link:../templates
       '@prisma/adapter-pg':
         specifier: ^7.10.0
         version: 7.10.0

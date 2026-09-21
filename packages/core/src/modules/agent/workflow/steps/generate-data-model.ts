@@ -56,7 +56,11 @@ function resolvePrismaBin(): string {
   return join(dirname(pkgPath), bin);
 }
 
-async function validatePrismaSchema(content: string): Promise<string> {
+/** Validates raw Prisma DSL (`model`/`enum` blocks, no datasource/generator)
+ * against the real Prisma CLI. Exported for reuse by Phase 16's `schema`
+ * step, which re-validates the already-approved data model spec before
+ * writing it into a real project — the same check, a different caller. */
+export async function validatePrismaSchema(content: string): Promise<string> {
   const trimmed = content.trim();
   if (!trimmed) {
     throw new Error("Data model must not be empty");
