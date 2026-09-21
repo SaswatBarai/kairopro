@@ -1,0 +1,32 @@
+# KairoPro preview reverse proxy (Phase 14 / BE-9).
+#
+# Per-project routes are added and removed at runtime through Caddy's admin
+# API (see `modules/execution/preview/provider.ts`) — this file only turns
+# the admin API on. The HTTP server itself ("srv0") is bootstrapped by the
+# first `registerPreviewRoute()` call, not by this file — Caddy's admin API
+# can append to an existing array at a JSON path, but it cannot create the
+# missing intermediate objects for a path that doesn't exist yet ("invalid
+# traversal path" — verified against a running instance), so something has
+# to create `apps.http.servers.srv0` before routes can be appended to it.
+#
+# `admin 0.0.0.0:2019`, not the default `localhost:2019`: inside a
+# container, "localhost" can resolve to `::1` before `127.0.0.1` depending
+# on the base image's resolver order, and Caddy's admin listener only binds
+# IPv4 by default — the result is a connection that resets instead of
+# connecting at all, including from a published Docker port on the host.
+# Binding `0.0.0.0` sidesteps the ambiguity entirely (verified: `localhost`
+# alone reproduces the failure against `caddy:2-alpine`).
+#
+# No `origins` allowlist needed: `preview/provider.ts` talks to this admin
+# API with `node:http`, not `fetch` — `fetch` auto-sends `Sec-Fetch-Mode`/
+# `Origin` headers that Caddy's admin API treats as a browser-context signal
+# and enforces an origin allowlist against (verified: every call failed with
+# 403 until the client was switched away from `fetch`); `node:http` sends
+# neither, so the admin API's default behavior (only reachable via its own
+# listener, no browser involved) is enough.
+#
+# Run: caddy run --config docker/Caddyfile --adapter caddyfile
+
+{
+	admin 0.0.0.0:2019
+}

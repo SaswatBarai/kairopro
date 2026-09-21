@@ -16,5 +16,7 @@ export type {
   EventHandler,
   SpecGenerationChannel,
   SpecGenerationEvent,
+  TerminalChannel,
+  TerminalEvent,
   Unsubscribe,
 } from "./bus";

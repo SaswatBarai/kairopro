@@ -42,10 +42,24 @@ export interface SpecGenerationEvent {
 /** Channel id for a project's spec-generation progress stream. */
 export type SpecGenerationChannel = `spec-generation:${string}`;
 
+/** One line of output from a container exec session (Phase 14 / BE-9) — not
+ * persisted; a build's own lines go through `BuildEvent` instead, which is
+ * (buildId, seq)-addressable for SSE replay. This channel is for exec
+ * sessions with no build behind them (e.g. an ad hoc workspace terminal). */
+export interface TerminalEvent {
+  containerId: string;
+  line: string;
+  createdAt: string;
+}
+
+/** Channel id for a container's live terminal output. */
+export type TerminalChannel = `terminal:${string}`;
+
 /** The typed channel map. Later phases add channels here — one line each. */
 export interface BusChannels {
   [channel: BuildChannel]: BuildEvent;
   [channel: SpecGenerationChannel]: SpecGenerationEvent;
+  [channel: TerminalChannel]: TerminalEvent;
 }
 
 export interface EventBus<Channels extends object = BusChannels> {

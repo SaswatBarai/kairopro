@@ -20,12 +20,18 @@ importers:
       '@prisma/adapter-pg':
         specifier: ^7.10.0
         version: 7.10.0
+      '@types/dockerode':
+        specifier: ^4.0.1
+        version: 4.0.1
       '@types/node':
         specifier: ^22.20.2
         version: 22.20.2
       '@types/pg':
         specifier: ^8.16.0
         version: 8.23.1
+      dockerode:
+        specifier: ^5.0.1
+        version: 5.0.1
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -41,6 +47,9 @@ importers:
       prettier:
         specifier: ^3.4.2
         version: 3.9.6
+      tsx:
+        specifier: ^4.23.13
+        version: 4.23.13
       turbo:
         specifier: ^2.10.12
         version: 2.10.12
@@ -205,6 +214,9 @@ importers:
       simple-git:
         specifier: ^3.36.0
         version: 3.36.0
+      tar-fs:
+        specifier: ^2.1.5
+        version: 2.1.5
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
@@ -218,6 +230,9 @@ importers:
       '@types/node':
         specifier: ^22.20.2
         version: 22.20.2
+      '@types/tar-fs':
+        specifier: ^2.0.4
+        version: 2.0.4
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
@@ -2247,6 +2262,12 @@ packages:
 
   '@types/statuses@2.0.6':
     resolution: {integrity: sha512-xMAgYwceFhRA2zY+XbEA7mxYbA093wdiW8Vu6gZPGWy9cmOyU9XesH1tNcEWsKFd5Vzrqx5T3D38PWx1FIIXkA==}
+
+  '@types/tar-fs@2.0.4':
+    resolution: {integrity: sha512-ipPec0CjTmVDWE+QKr9cTmIIoTl7dFG/yARCM5MqK8i6CNLIG1P8x4kwDsOQY1ChZOZjH0wO9nvfgBvWl4R3kA==}
+
+  '@types/tar-stream@3.1.4':
+    resolution: {integrity: sha512-921gW0+g29mCJX0fRvqeHzBlE/XclDaAG0Ousy1LCghsOhvaKacDeRGEVzQP9IPfKn8Vysy7FEXAIxycpc/CMg==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -5961,6 +5982,15 @@ snapshots:
       '@types/node': 18.19.130
 
   '@types/statuses@2.0.6': {}
+
+  '@types/tar-fs@2.0.4':
+    dependencies:
+      '@types/node': 22.20.2
+      '@types/tar-stream': 3.1.4
+
+  '@types/tar-stream@3.1.4':
+    dependencies:
+      '@types/node': 22.20.2
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true

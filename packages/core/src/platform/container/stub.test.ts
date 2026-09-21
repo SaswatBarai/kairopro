@@ -72,13 +72,26 @@ describe("StubContainerRuntime", () => {
 describe("StubContainerRuntime — production guard", () => {
   const previous = process.env.NODE_ENV;
 
-  it("refuses to be constructed in production", () => {
+  it("refuses to be constructed directly in production", () => {
     process.env.NODE_ENV = "production";
     try {
       expect(() => createStubContainerRuntime()).toThrow(/production/);
-      expect(() => getContainerRuntime()).toThrow(/production/);
     } finally {
       process.env.NODE_ENV = previous;
+    }
+  });
+
+  it("the selector never hands back the stub in production (BE-9: real DockerRuntime instead)", () => {
+    process.env.NODE_ENV = "production";
+    const previousRoot = process.env.KAIROPRO_WORKSPACE_ROOT;
+    process.env.KAIROPRO_WORKSPACE_ROOT = "/tmp/kairopro-workspaces-test";
+    try {
+      expect(() => getContainerRuntime()).not.toThrow();
+    } finally {
+      process.env.NODE_ENV = previous;
+      if (previousRoot === undefined)
+        delete process.env.KAIROPRO_WORKSPACE_ROOT;
+      else process.env.KAIROPRO_WORKSPACE_ROOT = previousRoot;
     }
   });
 
