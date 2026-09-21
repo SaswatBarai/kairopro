@@ -2,45 +2,53 @@ import type { RequestContext } from "../../../../lib/context";
 import { ProviderError } from "../../../../lib/errors";
 import type { ContainerRuntime } from "../../../../platform/container/runtime";
 import type { WorkspaceStore } from "../../../../platform/workspace/store";
+import { retrieve } from "../../context/retrieve";
 import { getLLMProvider } from "../../llm";
 import type { LLMProvider } from "../../llm/provider";
 import { modelFor } from "../../llm/router";
 import { completeWithValidator } from "../../llm/structured";
 import { renderPrompt } from "../../prompts/loader";
-import { retrieve } from "../../context/retrieve";
+import type { DegradationLevel } from "../../recovery/degradation";
+import { runFixLoop, type AttemptOutcome } from "../../recovery/fix-loop";
+import type { ConcernCategory } from "../../recovery/rules";
 import { runTypecheck, type TypecheckError } from "../../validators/typecheck";
 
 /**
- * generate-code engine (Phase 16 / AI-6): generates one file, type-checks
- * the project, and — if that fails — fixes it, before ever returning.
- * "Each file is generated, type-checked, and fixed before the next file is
- * generated" is enforced by this being the *only* way a caller writes a
- * generated file; `phases/backend.ts` and `phases/frontend.ts` just call
- * this once per file, in order.
+ * generate-code engine (Phase 16 / AI-6, repair driven by Phase 17 / AI-7):
+ * generates one file, type-checks the project, and — if that fails —
+ * repairs it via `recovery/fix-loop.ts` before ever returning. "Each file
+ * is generated, type-checked, and fixed before the next file is generated"
+ * is enforced by this being the *only* way a caller writes a generated
+ * file; `phases/backend.ts` and `phases/frontend.ts` just call this once
+ * per file, in order, each tagged with the concern `rules.ts` needs to
+ * decide whether an unrecoverable failure may be simplified or must halt.
  *
  * File-by-file, not all-at-once: generating thirty files and then fixing
  * compounding errors costs far more in tokens and reliability than
  * localizing each failure to the one file that caused it.
  */
 
-const DEFAULT_MAX_FIX_ATTEMPTS = 2;
-
-/** Exhausted its fix attempts without the project type-checking clean. */
+/** The fix loop could not produce a working file — either it hit an
+ * unrecognized failure shape, a never-degradable concern ran out of
+ * approaches, or the whole attempt budget was exhausted. Every case is
+ * already recorded as an `InternalError` by `fix-loop.ts`'s own logging;
+ * this is just what propagates to the caller so the build fails loudly
+ * instead of silently continuing on missing code. */
 export class CodeGenerationError extends ProviderError {
   readonly path: string;
-  readonly typecheckErrors: TypecheckError[];
+  readonly reason: "unrecognized-failure" | "never-degradable" | "exhausted";
 
   constructor(opts: {
     path: string;
-    typecheckErrors: TypecheckError[];
+    reason: "unrecognized-failure" | "never-degradable" | "exhausted";
     message: string;
   }) {
     super({
       message: opts.message,
-      details: { path: opts.path, typecheckErrors: opts.typecheckErrors },
+      details: { path: opts.path, reason: opts.reason },
     });
     this.path = opts.path;
-    this.typecheckErrors = opts.typecheckErrors;
+    this.reason = opts.reason;
   }
 }
 
@@ -53,8 +61,11 @@ export interface GenerateFileInput {
   conventions: string;
   /** Rendered by `renderSpecsForPrompt`. */
   specs: string;
+  /** What this file is about — `rules.ts` decides degradability from
+   * this and only this; the caller tags it, this never infers it. */
+  concern: ConcernCategory;
   projectId: string;
-  buildId?: string;
+  buildId?: string | null;
   ctx: RequestContext;
   workspace: WorkspaceStore;
   runtime: ContainerRuntime;
@@ -64,12 +75,20 @@ export interface GenerateFileInput {
   cwd?: string;
   provider?: LLMProvider;
   maxFixAttempts?: number;
+  maxDistinctApproaches?: number;
+  /** Fired once per degradation step — the seam a caller wires to an
+   * internal build event. */
+  onDegrade?: (step: { level: DegradationLevel; message: string }) => void;
 }
 
 export interface GenerateFileResult {
   path: string;
-  /** 0 means the first generation already type-checked clean. */
+  /** Total attempts the fix loop made, including the first. */
   fixAttempts: number;
+  /** `"full"` unless the unit was degraded to reach a working state. */
+  level: DegradationLevel;
+  /** True when the unit was skipped entirely — no file was written. */
+  omitted: boolean;
 }
 
 function stripFences(content: string): string {
@@ -94,94 +113,119 @@ function formatTypecheckErrors(errors: TypecheckError[]): string {
 
 /**
  * Generates one file against the frozen specs and template conventions,
- * writes it, and type-checks the whole project. A failure is fixed
- * in place (same file, same path) using real `tsc` output as ground
- * truth — up to `maxFixAttempts` times — before throwing
- * `CodeGenerationError`.
+ * writes it, and type-checks the whole project. A failure is repaired in
+ * place (same path) by `runFixLoop`, using real `tsc` output as ground
+ * truth for each retry — `throw`s `CodeGenerationError` only if the fix
+ * loop itself halts (never-degradable, unrecognized, or exhausted).
  */
 export async function generateFile(
   input: GenerateFileInput,
 ): Promise<GenerateFileResult> {
   const provider = input.provider ?? getLLMProvider();
-  const maxFixAttempts = input.maxFixAttempts ?? DEFAULT_MAX_FIX_ATTEMPTS;
   const refs = { projectId: input.projectId, buildId: input.buildId };
 
-  const raw = await completeWithValidator({
-    provider,
-    model: modelFor("code-gen"),
-    messages: [
-      { role: "system", content: renderPrompt("system") },
-      {
-        role: "user",
-        content: renderPrompt("code-gen", {
-          conventions: input.conventions,
-          specs: input.specs,
-          task: input.task,
-        }),
-      },
-    ],
-    ctx: input.ctx,
-    refs,
-    validate: (content) => validateNonEmpty(content),
-  });
+  async function attempt(step: {
+    task: string;
+    previousFailure?: string;
+  }): Promise<AttemptOutcome<true>> {
+    let raw: string;
+    if (step.previousFailure === undefined) {
+      raw = await completeWithValidator({
+        provider,
+        model: modelFor("code-gen"),
+        messages: [
+          { role: "system", content: renderPrompt("system") },
+          {
+            role: "user",
+            content: renderPrompt("code-gen", {
+              conventions: input.conventions,
+              specs: input.specs,
+              task: step.task,
+            }),
+          },
+        ],
+        ctx: input.ctx,
+        refs,
+        validate: validateNonEmpty,
+      });
+    } else {
+      const retrieved = await retrieve(
+        { query: step.task, seedFiles: [input.path] },
+        { id: input.projectId, workspace: input.workspace },
+        "fix",
+      );
+      const context = [
+        retrieved.summary,
+        ...retrieved.files.map((f) => `--- ${f.path} ---\n${f.contents}`),
+      ].join("\n\n");
 
-  await input.workspace.writeFile(input.projectId, input.path, raw);
+      raw = await completeWithValidator({
+        provider,
+        model: modelFor("fix"),
+        messages: [
+          { role: "system", content: renderPrompt("system") },
+          {
+            role: "user",
+            content: renderPrompt("fix", {
+              conventions: input.conventions,
+              error: step.previousFailure,
+              context,
+            }),
+          },
+        ],
+        ctx: input.ctx,
+        refs,
+        validate: validateNonEmpty,
+      });
+    }
 
-  let errors = await runTypecheck({
-    runtime: input.runtime,
-    containerId: input.containerId,
-    cwd: input.cwd,
-  });
+    await input.workspace.writeFile(input.projectId, input.path, raw);
 
-  let attempts = 0;
-  while (errors.length > 0 && attempts < maxFixAttempts) {
-    attempts += 1;
-
-    const retrieved = await retrieve(
-      { query: input.task, seedFiles: [input.path] },
-      { id: input.projectId, workspace: input.workspace },
-      "fix",
-    );
-    const context = [
-      retrieved.summary,
-      ...retrieved.files.map((f) => `--- ${f.path} ---\n${f.contents}`),
-    ].join("\n\n");
-
-    const fixed = await completeWithValidator({
-      provider,
-      model: modelFor("fix"),
-      messages: [
-        { role: "system", content: renderPrompt("system") },
-        {
-          role: "user",
-          content: renderPrompt("fix", {
-            conventions: input.conventions,
-            error: formatTypecheckErrors(errors),
-            context,
-          }),
-        },
-      ],
-      ctx: input.ctx,
-      refs,
-      validate: (content) => validateNonEmpty(content),
-    });
-
-    await input.workspace.writeFile(input.projectId, input.path, fixed);
-
-    errors = await runTypecheck({
+    const errors = await runTypecheck({
       runtime: input.runtime,
       containerId: input.containerId,
       cwd: input.cwd,
     });
+    if (errors.length === 0) return { ok: true, value: true };
+    return {
+      ok: false,
+      failure: {
+        signal: { source: "typecheck", message: formatTypecheckErrors(errors) },
+      },
+    };
   }
 
-  if (errors.length > 0) {
-    throw new CodeGenerationError({
+  const result = await runFixLoop<true>({
+    unitName: input.path,
+    concern: input.concern,
+    originalTask: input.task,
+    buildId: input.buildId,
+    maxAttemptsPerError: input.maxFixAttempts,
+    maxDistinctApproaches: input.maxDistinctApproaches,
+    attempt,
+    onDegrade: input.onDegrade,
+  });
+
+  if (result.status === "succeeded") {
+    return {
       path: input.path,
-      typecheckErrors: errors,
-      message: `${input.path} still fails to type-check after ${maxFixAttempts} fix attempt(s)`,
-    });
+      fixAttempts: result.attempts,
+      level: result.level,
+      omitted: false,
+    };
+  }
+  if (result.status === "omitted") {
+    return {
+      path: input.path,
+      fixAttempts: result.attempts,
+      level: "omit",
+      omitted: true,
+    };
   }
 
-  return { path: input.path, fixAttempts: attempts };
+  throw new CodeGenerationError({
+    path: input.path,
+    reason: result.reason,
+    message: `${input.path} could not be generated (${result.reason})`,
+  });
 }

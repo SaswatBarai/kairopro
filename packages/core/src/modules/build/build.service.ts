@@ -1,9 +1,16 @@
 import type { Build, BuildList } from "@kairopro/contracts";
 import type { Prisma, Project as ProjectRow } from "@kairopro/db";
 import type { RequestContext } from "../../lib/context";
-import { ConflictError, NotFoundError, ProviderError } from "../../lib/errors";
+import { ConflictError, NotFoundError } from "../../lib/errors";
 import { getContainerRuntime } from "../../platform/container";
 import { logger, withCorrelation } from "../../platform/logger";
+import { getWorkspaceStore } from "../../platform/workspace";
+import { runBackendPhase } from "../agent/phases/backend";
+import { runFrontendPhase } from "../agent/phases/frontend";
+import type { DegradationLevel } from "../agent/recovery/degradation";
+import { loadTemplate } from "../agent/template";
+import { scaffoldProject } from "../agent/workflow/steps/scaffold";
+import { loadApprovedSpecs } from "../agent/workflow/steps/generation-context";
 import { ownerOf } from "../org/access";
 import { recordVersion } from "../version/version.service";
 import { emit as emitUsage } from "../usage/usage.service";
@@ -11,6 +18,7 @@ import {
   createBuildRow,
   createInternalErrorRow,
   findActiveBuild,
+  findBuildById,
   findBuildWithProject,
   listBuildsByProject,
   updateBuildRow,
@@ -128,7 +136,10 @@ export async function listBuilds(
   return rows.map(toBuild);
 }
 
-function buildSteps(
+/** Exported only for tests to exercise a single step's body directly —
+ * every `executeBuild` test drives `runWorkflow` mocked wholesale instead,
+ * which never calls into these closures. Not part of the public API. */
+export function buildSteps(
   runtime: ReturnType<typeof getContainerRuntime>,
   project: ProjectRow,
 ): BuildStep[] {
@@ -153,27 +164,95 @@ function buildSteps(
     },
     {
       name: "generate",
-      // A placeholder that proves the exec → stream → SSE pipeline works
-      // end to end. Phase 16 (AI-6) replaces this step with real
-      // scaffold/freeze-contracts/generate-code steps — the workflow driver
-      // above does not change when that happens.
-      async run({ buildId, state }) {
+      // scaffold → backend phase (schema/migrate/contracts/routes) →
+      // frontend phase (pages/auth) (Phase 16 / AI-6), each file repaired
+      // by the fix loop and gated by the degradation policy (Phase 17 /
+      // AI-7). File-boundary cancellation is checked by re-reading the
+      // Build row directly — finer-grained than `runWorkflow`'s own
+      // between-*step* check, which only sees "generate" as one unit.
+      //
+      // If a phase reports itself cancelled mid-run, this returns without
+      // throwing rather than signaling anything special: the Build row's
+      // status is already CANCELLED at that point, so `runWorkflow`'s own
+      // check before the next step ("checkpoint") sees it and finishes the
+      // build as cancelled — no separate plumbing needed here.
+      async run({ buildId, projectId, ctx: stepCtx, state }) {
         const containerId = state.containerId as string;
-        const result = await runtime.execStream(
-          {
-            containerId,
-            cmd: "echo 'Code generation lands in Phase 16 (AI-6).'",
-          },
-          (line) => {
-            void emitLog(buildId, "STDOUT", line);
-          },
+        const workspaceStore = getWorkspaceStore();
+        const workspacePath = await workspaceStore.resolve(projectId, ".");
+
+        const scaffolded = await scaffoldProject({
+          workspacePath,
+          templateId: project.templateId,
+        });
+        await emitLog(
+          buildId,
+          "STDOUT",
+          `Scaffolded ${scaffolded.templateId} (${scaffolded.filesCopied.length} files)`,
         );
-        if (result.exitCode !== 0) {
-          throw new ProviderError({
-            message: "Build command failed",
-            details: { exitCode: result.exitCode, stderr: result.stderr },
-          });
-        }
+
+        const template = loadTemplate(project.templateId);
+        const specs = await loadApprovedSpecs(projectId, stepCtx);
+
+        const checkCancelled = async () => {
+          const row = await findBuildById(buildId);
+          return row?.status === "CANCELLED";
+        };
+        const onDegrade = (
+          unit: string,
+          degradeStep: { level: DegradationLevel; message: string },
+        ) => {
+          void emitLog(
+            buildId,
+            "EVENT",
+            encodeEventContent({
+              event: "code",
+              data: { unit, level: degradeStep.level, message: degradeStep.message },
+            }),
+          );
+        };
+
+        const backendResult = await runBackendPhase({
+          projectId,
+          buildId,
+          ctx: stepCtx,
+          workspace: workspaceStore,
+          runtime,
+          containerId,
+          cwd: workspacePath,
+          template,
+          specs,
+          checkCancelled,
+          onDegrade,
+        });
+        if (backendResult.status === "cancelled") return;
+
+        const frontendResult = await runFrontendPhase({
+          projectId,
+          buildId,
+          ctx: stepCtx,
+          workspace: workspaceStore,
+          runtime,
+          containerId,
+          cwd: workspacePath,
+          template,
+          specs,
+          checkCancelled,
+          onDegrade,
+        });
+        if (frontendResult.status === "cancelled") return;
+
+        const filesGenerated = [
+          ...backendResult.filesGenerated,
+          ...frontendResult.filesGenerated,
+        ];
+        const omitted = [...backendResult.omitted, ...frontendResult.omitted];
+        await emitLog(
+          buildId,
+          "STDOUT",
+          `Generated ${filesGenerated.length} file(s)` +
+            (omitted.length > 0 ? `, omitted ${omitted.length}: ${omitted.join(", ")}` : ""),
+        );
       },
     },
     {

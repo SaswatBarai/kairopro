@@ -10,9 +10,12 @@ vi.mock("../../spec/spec.repository", () => ({
 }));
 vi.mock("../../usage/usage.service", () => ({ emit: vi.fn() }));
 vi.mock("../workflow/steps/generate-code", () => ({
-  generateFile: vi
-    .fn()
-    .mockResolvedValue({ path: "generated", fixAttempts: 0 }),
+  generateFile: vi.fn().mockResolvedValue({
+    path: "generated",
+    fixAttempts: 1,
+    level: "full",
+    omitted: false,
+  }),
 }));
 
 import { generateFile } from "../workflow/steps/generate-code";
@@ -90,7 +93,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(generateFile).mockResolvedValue({
     path: "generated",
-    fixAttempts: 0,
+    fixAttempts: 1,
+    level: "full",
+    omitted: false,
   });
 });
 
@@ -99,7 +104,12 @@ describe("runFrontendPhase (AI-6) — generation order", () => {
     const calls: string[] = [];
     vi.mocked(generateFile).mockImplementation(async (input) => {
       calls.push(input.path);
-      return { path: input.path, fixAttempts: 0 };
+      return {
+        path: input.path,
+        fixAttempts: 1,
+        level: "full",
+        omitted: false,
+      };
     });
 
     const result = await runFrontendPhase({
@@ -152,6 +162,51 @@ describe("runFrontendPhase (AI-6) — generation order", () => {
     expect(authCall[0].task).toContain("next-auth");
     // Conventions/specs text passed through unchanged, not re-derived.
     expect(authCall[0].specs).toContain("Overview");
+  });
+
+  it("tags pages as layout (degradable) and auth configuration as authorization (never-degradable)", async () => {
+    await runFrontendPhase({
+      projectId: "p1",
+      ctx,
+      workspace: fakeWorkspace(),
+      runtime: {} as never,
+      containerId: "c1",
+      template,
+      specs,
+    });
+
+    const pageCall = vi
+      .mocked(generateFile)
+      .mock.calls.find((c) => c[0].path === "src/app/tasks/page.tsx")!;
+    expect(pageCall[0].concern).toBe("layout");
+
+    const authCall = vi
+      .mocked(generateFile)
+      .mock.calls.find((c) => c[0].path === "src/lib/auth.ts")!;
+    expect(authCall[0].concern).toBe("authorization");
+  });
+
+  it("tracks an omitted unit separately from files actually generated", async () => {
+    vi.mocked(generateFile).mockResolvedValueOnce({
+      path: "src/app/tasks/page.tsx",
+      fixAttempts: 5,
+      level: "omit",
+      omitted: true,
+    });
+
+    const result = await runFrontendPhase({
+      projectId: "p1",
+      ctx,
+      workspace: fakeWorkspace(),
+      runtime: {} as never,
+      containerId: "c1",
+      template,
+      specs,
+    });
+
+    expect(result.status).toBe("completed");
+    expect(result.filesGenerated).not.toContain("src/app/tasks/page.tsx");
+    expect(result.omitted).toContain("src/app/tasks/page.tsx");
   });
 });
 

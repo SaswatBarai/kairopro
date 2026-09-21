@@ -30,6 +30,15 @@ export interface FreezeContractsInput {
   provider?: LLMProvider;
 }
 
+/**
+ * Tagged `"data-invariants"`, never `"other"`: every generated route and
+ * page imports its request/response shape from this one file. A wrong
+ * shape here doesn't fail loudly at the point of the mistake — it silently
+ * corrupts whatever depends on it, which is exactly what `rules.ts` exists
+ * to keep the fix loop from simplifying its way around.
+ */
+const CONCERN = "data-invariants" as const;
+
 const TASK = [
   "Write a single shared TypeScript module that exports:",
   "",
@@ -55,6 +64,7 @@ export async function freezeContracts(
     task: TASK,
     conventions: input.conventions,
     specs: input.specs,
+    concern: CONCERN,
     projectId: input.projectId,
     buildId: input.buildId,
     ctx: input.ctx,

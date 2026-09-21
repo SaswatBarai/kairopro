@@ -1,9 +1,10 @@
 import type { RequestContext } from "../../../lib/context";
 import type { ContainerRuntime } from "../../../platform/container/runtime";
 import type { WorkspaceStore } from "../../../platform/workspace/store";
-import type { AppStructurePage } from "../validators/app-structure";
 import type { LLMProvider } from "../llm/provider";
+import type { DegradationLevel } from "../recovery/degradation";
 import { renderConventions, type TemplateManifest } from "../template";
+import type { AppStructurePage } from "../validators/app-structure";
 import { generateFile } from "../workflow/steps/generate-code";
 import {
   renderSpecsForPrompt,
@@ -11,10 +12,15 @@ import {
 } from "../workflow/steps/generation-context";
 
 /**
- * Frontend phase (Phase 16 / AI-6): pages → auth configuration — the
- * second half of "Generation order enforced: schema → migrate → API
- * routes → pages → auth configuration". Runs after `runBackendPhase`, so
- * the frozen contracts it consumes already exist.
+ * Frontend phase (Phase 16 / AI-6, repair via Phase 17 / AI-7): pages →
+ * auth configuration — the second half of "Generation order enforced:
+ * schema → migrate → API routes → pages → auth configuration". Runs after
+ * `runBackendPhase`, so the frozen contracts it consumes already exist.
+ *
+ * Pages are tagged `"layout"` — presentational, degradable. Auth
+ * configuration is tagged `"authorization"` — never degradable; a fix
+ * loop that can't get it right halts rather than shipping a simplified
+ * permission model.
  */
 
 export interface RunFrontendPhaseInput {
@@ -30,11 +36,15 @@ export interface RunFrontendPhaseInput {
   provider?: LLMProvider;
   /** Checked before every file boundary (each page, then auth config). */
   checkCancelled?: () => Promise<boolean>;
+  onDegrade?: (
+    unit: string,
+    step: { level: DegradationLevel; message: string },
+  ) => void;
 }
 
 export type FrontendPhaseResult =
-  | { status: "completed"; filesGenerated: string[] }
-  | { status: "cancelled"; filesGenerated: string[] };
+  | { status: "completed"; filesGenerated: string[]; omitted: string[] }
+  | { status: "cancelled"; filesGenerated: string[]; omitted: string[] };
 
 function pageFilePath(template: TemplateManifest, route: string): string {
   const segments = route
@@ -72,6 +82,7 @@ export async function runFrontendPhase(
   const conventions = renderConventions(input.template);
   const specs = renderSpecsForPrompt(input.specs);
   const filesGenerated: string[] = [];
+  const omitted: string[] = [];
 
   const cancelled = async () => {
     if (!input.checkCancelled) return false;
@@ -79,14 +90,16 @@ export async function runFrontendPhase(
   };
 
   for (const page of input.specs.appStructure.pages) {
-    if (await cancelled()) return { status: "cancelled", filesGenerated };
+    if (await cancelled())
+      return { status: "cancelled", filesGenerated, omitted };
 
     const pagePath = pageFilePath(input.template, page.route);
-    await generateFile({
+    const result = await generateFile({
       path: pagePath,
       task: pageTask(page, pagePath),
       conventions,
       specs,
+      concern: "layout",
       projectId: input.projectId,
       buildId: input.buildId,
       ctx: input.ctx,
@@ -95,16 +108,23 @@ export async function runFrontendPhase(
       containerId: input.containerId,
       cwd: input.cwd,
       provider: input.provider,
+      onDegrade: input.onDegrade
+        ? (step) => input.onDegrade!(pagePath, step)
+        : undefined,
     });
-    filesGenerated.push(pagePath);
+    if (result.omitted) omitted.push(pagePath);
+    else filesGenerated.push(pagePath);
   }
 
-  if (await cancelled()) return { status: "cancelled", filesGenerated };
-  await generateFile({
-    path: input.template.conventions.authConfigPath,
+  if (await cancelled())
+    return { status: "cancelled", filesGenerated, omitted };
+  const authPath = input.template.conventions.authConfigPath;
+  const authResult = await generateFile({
+    path: authPath,
     task: authTask(input.template),
     conventions,
     specs,
+    concern: "authorization",
     projectId: input.projectId,
     buildId: input.buildId,
     ctx: input.ctx,
@@ -113,8 +133,12 @@ export async function runFrontendPhase(
     containerId: input.containerId,
     cwd: input.cwd,
     provider: input.provider,
+    onDegrade: input.onDegrade
+      ? (step) => input.onDegrade!(authPath, step)
+      : undefined,
   });
-  filesGenerated.push(input.template.conventions.authConfigPath);
+  if (authResult.omitted) omitted.push(authPath);
+  else filesGenerated.push(authPath);
 
-  return { status: "completed", filesGenerated };
+  return { status: "completed", filesGenerated, omitted };
 }

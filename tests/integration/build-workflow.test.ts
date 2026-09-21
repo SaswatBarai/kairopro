@@ -70,16 +70,28 @@ async function waitForTerminal(
 }
 
 describe("build workflow (Phase 15 / BE-10, real DB + stub runtime)", () => {
-  it("start → provision → generate → checkpoint → SUCCEEDED, with gap-free, duplicate-free logs", async () => {
+  it("start → provision → generate (fails fast: no approved specs, Phase 16's real gate) — FAILED, with gap-free, duplicate-free logs", async () => {
     const { ctx } = await seedOrgWithOwner();
     const project = await core.createProject({ name: "BuildableApp" }, ctx);
 
     const started = await core.startBuild(project.id, ctx);
     expect(started.status).toBe("QUEUED");
 
+    // No spec has been approved for this project, so the real "generate"
+    // step (Phase 16 / AI-6) refuses before writing a single file — code
+    // generation is gated on approved specs, not best-effort. This is the
+    // real, current behavior, not a stand-in for a slower happy path:
+    // exercising that path for real needs a real LLM and `npm install`,
+    // which `tests/integration/gate-i5-i6.test.ts` covers directly
+    // instead, against a fake provider and a scoped fixture.
     const finished = await waitForTerminal(started.id, ctx);
-    expect(finished.status).toBe("SUCCEEDED");
-    expect(finished.commitHash).toMatch(/^[0-9a-f]{7}$/);
+    expect(finished.status).toBe("FAILED");
+
+    const errors = await prisma.internalError.findMany({
+      where: { buildId: started.id },
+    });
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0]!.message).toMatch(/approved first/i);
 
     const logs = await prisma.buildLog.findMany({
       where: { buildId: started.id },
@@ -90,12 +102,12 @@ describe("build workflow (Phase 15 / BE-10, real DB + stub runtime)", () => {
     expect(seqs).toEqual(seqs.map((_, i) => i)); // 0..n-1, no gaps, no duplicates
     expect(logs.some((l) => l.type === "EVENT")).toBe(true);
 
-    // The checkpoint commit was actually recorded as a Version row.
-    const versions = await prisma.version.findMany({
-      where: { projectId: project.id },
-      orderBy: { createdAt: "asc" },
-    });
-    expect(versions.some((v) => v.hash === finished.commitHash)).toBe(true);
+    // User-safe only — no internal detail reaches the client-facing log.
+    const errorEvent = logs.find(
+      (l) => l.type === "EVENT" && l.content.includes('"event":"error"'),
+    );
+    expect(errorEvent).toBeDefined();
+    expect(errorEvent!.content).not.toMatch(/approved first/i);
   }, 20_000);
 
   it("refuses a second build while one is already active for the project", async () => {

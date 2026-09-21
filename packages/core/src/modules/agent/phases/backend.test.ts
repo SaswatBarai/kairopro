@@ -13,14 +13,20 @@ vi.mock("../workflow/steps/generate-data-model", () => ({
   validatePrismaSchema: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("../workflow/steps/freeze-contracts", () => ({
-  freezeContracts: vi
-    .fn()
-    .mockResolvedValue({ path: "src/lib/contracts.ts", fixAttempts: 0 }),
+  freezeContracts: vi.fn().mockResolvedValue({
+    path: "src/lib/contracts.ts",
+    fixAttempts: 1,
+    level: "full",
+    omitted: false,
+  }),
 }));
 vi.mock("../workflow/steps/generate-code", () => ({
-  generateFile: vi
-    .fn()
-    .mockResolvedValue({ path: "generated", fixAttempts: 0 }),
+  generateFile: vi.fn().mockResolvedValue({
+    path: "generated",
+    fixAttempts: 1,
+    level: "full",
+    omitted: false,
+  }),
 }));
 
 import { validatePrismaSchema } from "../workflow/steps/generate-data-model";
@@ -121,11 +127,15 @@ beforeEach(() => {
   );
   vi.mocked(freezeContracts).mockResolvedValue({
     path: "src/lib/contracts.ts",
-    fixAttempts: 0,
+    fixAttempts: 1,
+    level: "full",
+    omitted: false,
   });
   vi.mocked(generateFile).mockResolvedValue({
     path: "generated",
-    fixAttempts: 0,
+    fixAttempts: 1,
+    level: "full",
+    omitted: false,
   });
 });
 
@@ -147,11 +157,21 @@ describe("runBackendPhase (AI-6) — generation order", () => {
     );
     vi.mocked(freezeContracts).mockImplementation(async () => {
       calls.push("freeze-contracts");
-      return { path: "src/lib/contracts.ts", fixAttempts: 0 };
+      return {
+        path: "src/lib/contracts.ts",
+        fixAttempts: 1,
+        level: "full",
+        omitted: false,
+      };
     });
     vi.mocked(generateFile).mockImplementation(async (input) => {
       calls.push(`route:${input.path}`);
-      return { path: input.path, fixAttempts: 0 };
+      return {
+        path: input.path,
+        fixAttempts: 1,
+        level: "full",
+        omitted: false,
+      };
     });
 
     await runBackendPhase({
@@ -241,6 +261,107 @@ describe("runBackendPhase (AI-6) — generation order", () => {
       .mock.calls.find((c) => c[0].path === "src/app/api/tasks/route.ts")!;
     expect(tasksCall[0].task).toContain("GET /api/tasks");
     expect(tasksCall[0].task).toContain("POST /api/tasks");
+  });
+
+  it("tags omitted files separately from files actually generated", async () => {
+    vi.mocked(generateFile).mockResolvedValueOnce({
+      path: "src/app/api/tasks/route.ts",
+      fixAttempts: 5,
+      level: "omit",
+      omitted: true,
+    });
+    const workspace = fakeWorkspace();
+    const runtime = fakeRuntime();
+
+    const result = await runBackendPhase({
+      projectId: "p1",
+      ctx,
+      workspace,
+      runtime,
+      containerId: "c1",
+      template,
+      specs,
+    });
+
+    expect(result.status).toBe("completed");
+    expect(result.filesGenerated).not.toContain("src/app/api/tasks/route.ts");
+    expect(result.omitted).toContain("src/app/api/tasks/route.ts");
+  });
+});
+
+describe("runBackendPhase (AI-6) — concern tagging (rules.ts input)", () => {
+  it("tags a mutating endpoint on a permission-matrix-governed entity as authorization", async () => {
+    const workspace = fakeWorkspace();
+    const runtime = fakeRuntime();
+
+    await runBackendPhase({
+      projectId: "p1",
+      ctx,
+      workspace,
+      runtime,
+      containerId: "c1",
+      template,
+      specs,
+    });
+
+    const tasksCall = vi
+      .mocked(generateFile)
+      .mock.calls.find((c) => c[0].path === "src/app/api/tasks/route.ts")!;
+    // /api/tasks groups GET + POST; POST mutates the PRD-governed "Task"
+    // entity, so the whole file is tagged authorization — never GET alone.
+    expect(tasksCall[0].concern).toBe("authorization");
+  });
+
+  it("tags an endpoint outside the permission matrix and with no money vocabulary as other", async () => {
+    const workspace = fakeWorkspace();
+    const runtime = fakeRuntime();
+
+    await runBackendPhase({
+      projectId: "p1",
+      ctx,
+      workspace,
+      runtime,
+      containerId: "c1",
+      template,
+      specs,
+    });
+
+    const healthCall = vi
+      .mocked(generateFile)
+      .mock.calls.find((c) => c[0].path === "src/app/api/health/route.ts")!;
+    expect(healthCall[0].concern).toBe("other");
+  });
+
+  it("tags an endpoint whose types mention money vocabulary as money-handling", async () => {
+    const moneySpecs: ApprovedSpecs = {
+      ...specs,
+      appStructure: {
+        ...appStructure,
+        endpoints: [
+          {
+            method: "POST",
+            path: "/api/checkout",
+            requestType: "CreateCheckoutRequest",
+            responseType: "CheckoutTotalResponse",
+          },
+        ],
+      },
+    };
+    const workspace = fakeWorkspace();
+    const runtime = fakeRuntime();
+
+    await runBackendPhase({
+      projectId: "p1",
+      ctx,
+      workspace,
+      runtime,
+      containerId: "c1",
+      template,
+      specs: moneySpecs,
+    });
+
+    const call = vi.mocked(generateFile).mock.calls[0]!;
+    expect(call[0].concern).toBe("money-handling");
   });
 });
 

@@ -9,6 +9,9 @@ import type { LLMCompleteResult, LLMProvider } from "../../llm/provider";
 
 vi.mock("../../../usage/usage.service", () => ({ emit: vi.fn() }));
 vi.mock("../../validators/typecheck", () => ({ runTypecheck: vi.fn() }));
+vi.mock("../../../build/build.repository", () => ({
+  createInternalErrorRow: vi.fn().mockResolvedValue({ id: "err-1" }),
+}));
 
 import { runTypecheck } from "../../validators/typecheck";
 import { freezeContracts } from "./freeze-contracts";
