@@ -36,6 +36,7 @@ describe("prompt fixtures (AI-3)", () => {
         "pm-questions",
         "prd",
         "system",
+        "test-gen",
       ].sort(),
     );
   });

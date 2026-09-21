@@ -16,7 +16,12 @@ export interface RecoveryLogEntry {
   buildId?: string | null;
   /** The unit of work this failure belongs to — usually a file path. */
   step: string;
-  errorType: FailureCategory | "never-degradable" | "unrecognized";
+  /** A `classify.ts` category for a genuine fix-loop failure, or a free
+   * label for a recovery-adjacent event that isn't one (Phase 18's
+   * test-modification guardrail, for one) — this column is a label, not a
+   * closed enum; the DB stores it as a plain string either way. */
+  errorType:
+    FailureCategory | "never-degradable" | "unrecognized" | (string & {});
   message: string;
   file?: string;
   attempt: number;

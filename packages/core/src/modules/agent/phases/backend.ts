@@ -56,7 +56,10 @@ export type BackendPhaseResult =
     }
   | { status: "cancelled"; filesGenerated: string[]; omitted: string[] };
 
-function routeFilePath(
+/** Exported for reuse by `phases/test-authoring.ts`, which needs the same
+ * endpoint → file mapping to point an integration test at the route it
+ * exercises — never re-derived, so the two can't drift apart. */
+export function routeFilePath(
   template: TemplateManifest,
   endpointPath: string,
 ): string {

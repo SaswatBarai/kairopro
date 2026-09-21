@@ -7,10 +7,16 @@ import { logger, withCorrelation } from "../../platform/logger";
 import { getWorkspaceStore } from "../../platform/workspace";
 import { runBackendPhase } from "../agent/phases/backend";
 import { runFrontendPhase } from "../agent/phases/frontend";
+import { runTestAuthoringPhase } from "../agent/phases/test-authoring";
 import type { DegradationLevel } from "../agent/recovery/degradation";
-import { loadTemplate } from "../agent/template";
+import { loadTemplate, renderConventions, type TemplateManifest } from "../agent/template";
 import { scaffoldProject } from "../agent/workflow/steps/scaffold";
-import { loadApprovedSpecs } from "../agent/workflow/steps/generation-context";
+import {
+  loadApprovedSpecs,
+  renderSpecsForPrompt,
+  type ApprovedSpecs,
+} from "../agent/workflow/steps/generation-context";
+import { runTestPhase } from "../agent/workflow/steps/run-tests";
 import { ownerOf } from "../org/access";
 import { recordVersion } from "../version/version.service";
 import { emit as emitUsage } from "../usage/usage.service";
@@ -136,6 +142,28 @@ export async function listBuilds(
   return rows.map(toBuild);
 }
 
+function makeCheckCancelled(buildId: string): () => Promise<boolean> {
+  return async () => {
+    const row = await findBuildById(buildId);
+    return row?.status === "CANCELLED";
+  };
+}
+
+function makeOnDegrade(
+  buildId: string,
+): (unit: string, step: { level: DegradationLevel; message: string }) => void {
+  return (unit, step) => {
+    void emitLog(
+      buildId,
+      "EVENT",
+      encodeEventContent({
+        event: "code",
+        data: { unit, level: step.level, message: step.message },
+      }),
+    );
+  };
+}
+
 /** Exported only for tests to exercise a single step's body directly —
  * every `executeBuild` test drives `runWorkflow` mocked wholesale instead,
  * which never calls into these closures. Not part of the public API. */
@@ -193,24 +221,12 @@ export function buildSteps(
 
         const template = loadTemplate(project.templateId);
         const specs = await loadApprovedSpecs(projectId, stepCtx);
+        state.template = template;
+        state.specs = specs;
+        state.workspacePath = workspacePath;
 
-        const checkCancelled = async () => {
-          const row = await findBuildById(buildId);
-          return row?.status === "CANCELLED";
-        };
-        const onDegrade = (
-          unit: string,
-          degradeStep: { level: DegradationLevel; message: string },
-        ) => {
-          void emitLog(
-            buildId,
-            "EVENT",
-            encodeEventContent({
-              event: "code",
-              data: { unit, level: degradeStep.level, message: degradeStep.message },
-            }),
-          );
-        };
+        const checkCancelled = makeCheckCancelled(buildId);
+        const onDegrade = makeOnDegrade(buildId);
 
         const backendResult = await runBackendPhase({
           projectId,
@@ -252,6 +268,99 @@ export function buildSteps(
           "STDOUT",
           `Generated ${filesGenerated.length} file(s)` +
             (omitted.length > 0 ? `, omitted ${omitted.length}: ${omitted.join(", ")}` : ""),
+        );
+      },
+    },
+    {
+      name: "test",
+      // test-authoring (Phase 18 / AI-8): writes unit/integration/e2e
+      // tests from the specs and frozen contracts alone — never the
+      // implementation, see `phases/test-authoring.ts`'s own module doc —
+      // runs them in the project container, and repairs a failing test's
+      // *implementation*, never the test, using the failing assertion.
+      // Unresolved failures throw `UnresolvedTestFailuresError`, caught by
+      // this function's own outer try/catch below like any other step
+      // failure — "unresolved failures do not silently proceed" is just
+      // this step raising like every other one, not a special case.
+      async run({ buildId, projectId, ctx: stepCtx, state }) {
+        const containerId = state.containerId as string;
+        const workspaceStore = getWorkspaceStore();
+        const template = state.template as TemplateManifest;
+        const specs = state.specs as ApprovedSpecs;
+        const workspacePath = state.workspacePath as string;
+
+        const checkCancelled = makeCheckCancelled(buildId);
+        const onDegrade = makeOnDegrade(buildId);
+
+        const contractsContent = await workspaceStore.readFile(
+          projectId,
+          template.conventions.contractsPath,
+        );
+
+        const authoringResult = await runTestAuthoringPhase({
+          projectId,
+          buildId,
+          ctx: stepCtx,
+          workspace: workspaceStore,
+          runtime,
+          containerId,
+          cwd: workspacePath,
+          template,
+          specs,
+          contractsContent,
+          checkCancelled,
+          onDegrade,
+        });
+        if (authoringResult.status === "cancelled") return;
+
+        await emitLog(
+          buildId,
+          "STDOUT",
+          `Authored ${authoringResult.filesGenerated.length} test(s)` +
+            (authoringResult.omitted.length > 0
+              ? `, omitted ${authoringResult.omitted.length}`
+              : ""),
+        );
+
+        const conventions = renderConventions(template);
+        const specsText = renderSpecsForPrompt(specs);
+
+        const testPhaseResult = await runTestPhase({
+          projectId,
+          buildId,
+          ctx: stepCtx,
+          workspace: workspaceStore,
+          runtime,
+          containerId,
+          cwd: workspacePath,
+          conventions,
+          specs: specsText,
+          testCases: authoringResult.testCases,
+          checkCancelled,
+          onRepair: (file, outcome) => {
+            void emitLog(
+              buildId,
+              "EVENT",
+              encodeEventContent({
+                event: "code",
+                data: { unit: file, repair: outcome.status },
+              }),
+            );
+          },
+        });
+        if (testPhaseResult.status === "cancelled") return;
+
+        const totals = Object.values(testPhaseResult.reports).reduce(
+          (acc, report) => ({
+            total: acc.total + report.total,
+            passed: acc.passed + report.passed,
+          }),
+          { total: 0, passed: 0 },
+        );
+        await emitLog(
+          buildId,
+          "STDOUT",
+          `Tests green: ${totals.passed}/${totals.total}`,
         );
       },
     },

@@ -46,7 +46,13 @@ export type FrontendPhaseResult =
   | { status: "completed"; filesGenerated: string[]; omitted: string[] }
   | { status: "cancelled"; filesGenerated: string[]; omitted: string[] };
 
-function pageFilePath(template: TemplateManifest, route: string): string {
+/** Exported for reuse by `phases/test-authoring.ts`'s e2e test cases,
+ * which need the same route → file mapping to point at the page they
+ * exercise — never re-derived, so the two can't drift apart. */
+export function pageFilePath(
+  template: TemplateManifest,
+  route: string,
+): string {
   const segments = route
     .replace(/^\//, "")
     .split("/")

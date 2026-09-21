@@ -461,3 +461,38 @@ export {
   type AttemptFailure,
 } from "./modules/agent/recovery/fix-loop";
 export { type InternalErrorRow } from "./modules/build/build.repository";
+
+// Phase 18 Test agent exports (AI-8)
+export {
+  deriveTestCases,
+  generateTestFile,
+  readImplementationHeader,
+  runTestAuthoringPhase,
+  TEST_LEVELS,
+  type GenerateTestFileInput,
+  type GenerateTestFileResult,
+  type RunTestAuthoringPhaseInput,
+  type TestAuthoringResult,
+  type TestCase,
+  type TestLevel,
+  type TestSource,
+} from "./modules/agent/phases/test-authoring";
+export {
+  parsePlaywrightOutput,
+  parseVitestOutput,
+  type TestReport,
+  type TestResult,
+} from "./modules/agent/test/report";
+export {
+  guardTestModification,
+  looksLikeTestPath,
+  repairFromTestFailure,
+  runTestPhase,
+  runTestSuite,
+  UnresolvedTestFailuresError,
+  type RepairFromTestFailureInput,
+  type RepairResult,
+  type RunTestPhaseInput,
+  type RunTestPhaseResult,
+  type RunTestSuiteInput,
+} from "./modules/agent/workflow/steps/run-tests";
