@@ -71,6 +71,7 @@ const PHASE_TAG_INTEREST: Partial<Record<WorkflowPhase, readonly string[]>> = {
   design: ["component"],
   "code-gen": ["schema", "route", "component"],
   fix: ["schema", "route", "component", "test"],
+  change: ["schema", "route", "component", "test"],
 };
 
 const REASON_RANK: Record<RetrievalReason, number> = {

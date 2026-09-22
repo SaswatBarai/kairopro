@@ -543,3 +543,14 @@ export {
   type RateLimiter,
   type RateLimitResult,
 } from "./platform/ratelimit/limiter";
+
+// Phase 20 Change request exports (AI-9)
+export {
+  approveChangeRequest,
+  cancelChangeRequest,
+  getChangeRequest,
+  listChangeRequests,
+  requestChange,
+} from "./modules/agent/workflow/steps/change-request";
+export { buildChangeSummary } from "./modules/agent/context/change-summary";
+export { discardUncommittedChanges } from "./modules/version/git.service";

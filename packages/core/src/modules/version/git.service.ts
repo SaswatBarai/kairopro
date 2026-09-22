@@ -134,6 +134,21 @@ export async function isWorkingTreeClean(dir: string): Promise<boolean> {
 }
 
 /**
+ * Discards every uncommitted change — staged, unstaged, and untracked —
+ * restoring the working tree to HEAD. Unlike `revertToCommit`, this never
+ * creates a commit and never touches history: it only throws away work
+ * that was never committed in the first place, which is exactly what a
+ * cancelled change request needs (Phase 20 / AI-9's "cancelling leaves the
+ * workspace unchanged" guarantee) — `git reset --hard` is safe here
+ * precisely because nothing has been committed yet.
+ */
+export async function discardUncommittedChanges(dir: string): Promise<void> {
+  const git = simpleGit(dir);
+  await git.reset(["--hard"]);
+  await git.clean("f", ["-d"]);
+}
+
+/**
  * Restores every path tracked at `hash` into the working tree, exactly as
  * it existed then — including paths `hash` deleted later commits restore,
  * via `git checkout <hash> -- .`. Paths that exist now but didn't exist at

@@ -12,6 +12,7 @@ import {
   commitAll,
   diffRaw,
   diffStat,
+  discardUncommittedChanges,
   headCommit,
   initRepo,
   isWorkingTreeClean,
@@ -140,5 +141,23 @@ describe("git.service (BE-4)", () => {
     const { readFileSync, existsSync: exists } = await import("node:fs");
     expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe("v1\n");
     expect(exists(join(dir, "b.txt"))).toBe(false);
+  });
+
+  it("discardUncommittedChanges restores modified and removes untracked files, never touching history", async () => {
+    await initRepo(dir);
+    writeFileSync(join(dir, "a.txt"), "committed\n");
+    const hash = await commitAll(dir, "initial");
+
+    writeFileSync(join(dir, "a.txt"), "uncommitted edit\n");
+    writeFileSync(join(dir, "new-file.txt"), "untracked\n");
+    expect(await isWorkingTreeClean(dir)).toBe(false);
+
+    await discardUncommittedChanges(dir);
+
+    expect(await isWorkingTreeClean(dir)).toBe(true);
+    expect(await headCommit(dir)).toBe(hash);
+    const { readFileSync, existsSync: exists } = await import("node:fs");
+    expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe("committed\n");
+    expect(exists(join(dir, "new-file.txt"))).toBe(false);
   });
 });

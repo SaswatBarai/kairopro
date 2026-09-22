@@ -59,6 +59,15 @@ enum BuildStatus {
   CANCELLED
 }
 
+enum ChangeRequestStatus {
+  PLANNING
+  AWAITING_APPROVAL
+  APPLYING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
 enum BuildLogType {
   STEP
   STDOUT
@@ -201,6 +210,7 @@ model Project {
   builds           Build[]
   usageEvents      UsageEvent[]
   githubConnection GithubConnection?
+  changeRequests   ChangeRequest[]
 
   @@index([orgId])
   @@index([userId])
@@ -306,6 +316,27 @@ model Build {
   internalErrors InternalError[]
 
   @@index([projectId])
+}
+
+model ChangeRequest {
+  id         String              @id @default(cuid())
+  projectId  String
+  status     ChangeRequestStatus @default(PLANNING)
+  // The user's free-text description of what they want changed.
+  request    String
+  // { summary, diffSummary, tasks: [{ path, task }] } — null until planning
+  // finishes. Never mutated once approval starts (Phase 20 exit criterion:
+  // the plan presented for approval is the plan that gets applied).
+  plan       Json?
+  commitHash String?
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
 }
 
 model BuildLog {

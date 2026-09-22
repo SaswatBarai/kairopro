@@ -29,6 +29,7 @@ describe("prompt fixtures (AI-3)", () => {
     expect(names).toEqual(
       [
         "app-structure",
+        "change",
         "code-gen",
         "data-model",
         "design",

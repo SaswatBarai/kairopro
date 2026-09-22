@@ -18,6 +18,7 @@ export const WORKFLOW_PHASES = [
   "code-gen",
   "fix",
   "test-gen",
+  "change",
 ] as const;
 
 export type WorkflowPhase = (typeof WORKFLOW_PHASES)[number];
@@ -33,6 +34,7 @@ const MODEL_BY_PHASE: Record<WorkflowPhase, string> = {
   "code-gen": DEFAULT_MODEL,
   fix: DEFAULT_MODEL,
   "test-gen": DEFAULT_MODEL,
+  change: DEFAULT_MODEL,
 };
 
 /** Throws for any phase name not in `WORKFLOW_PHASES` — including a value
