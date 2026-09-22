@@ -72,3 +72,11 @@ export class TimeoutError extends AppError {
   readonly code = "TIMEOUT_ERROR" as const;
   readonly status = 504;
 }
+
+/** The caller exceeded a rate limit. `details.retryAfterSeconds` (internal
+ * only — never serialized by `toJSON`) is how the route boundary derives
+ * the `Retry-After` header. */
+export class RateLimitedError extends AppError {
+  readonly code = "RATE_LIMITED" as const;
+  readonly status = 429;
+}

@@ -21,6 +21,7 @@ function fakeRuntime(lines: string[], result: ExecResult): ContainerRuntime {
     health: async () => ({ ready: true }),
     stop: async () => undefined,
     destroy: async () => undefined,
+    list: async () => [],
   };
 }
 

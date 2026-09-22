@@ -24,6 +24,8 @@
     "db:up": "docker compose --env-file .env -f docker/docker-compose.yml up -d",
     "db:down": "docker compose --env-file .env -f docker/docker-compose.yml down",
     "provision-project": "tsx scripts/provision-project.ts",
+    "cleanup-inactive": "tsx scripts/cleanup-inactive.ts",
+    "health-check": "tsx scripts/health-check.ts",
     "design:lint": "npx -p @google/design.md designmd lint DESIGN.md",
     "design:export": "npx -p @google/design.md designmd export --format css-tailwind DESIGN.md > apps/web/src/app/theme.css"
   },

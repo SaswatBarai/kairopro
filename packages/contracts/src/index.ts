@@ -17,3 +17,4 @@ export * from "./upload";
 export * from "./credential";
 export * from "./version";
 export * from "./usage";
+export * from "./deploy";

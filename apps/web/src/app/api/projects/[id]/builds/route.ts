@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { listBuilds, startBuild } from "@kairopro/core";
 import { toErrorResponse } from "@/lib/api";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { getRequestContext } from "@/lib/request-context";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -11,6 +12,7 @@ export async function POST(_req: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
     const ctx = await getRequestContext();
+    enforceRateLimit("build", ctx.orgId);
     const build = await startBuild(id, ctx);
     return NextResponse.json(build, { status: 202 });
   } catch (err) {

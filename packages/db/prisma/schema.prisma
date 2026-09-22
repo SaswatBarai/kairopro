@@ -165,35 +165,62 @@ model Membership {
 // ─── Core ────────────────────────────────────────────────────────────────────
 
 model Project {
-  id          String        @id @default(cuid())
-  orgId       String
+  id            String        @id @default(cuid())
+  orgId         String
   // Creator attribution only — access is via Membership. Survives user
   // deletion (SetNull) because the org, not the user, owns the project.
-  userId      String?
-  name        String
-  description String?
-  status      ProjectStatus @default(DRAFT)
-  templateId  String        @default("nextjs-shadcn")
-  previewUrl  String?
-  deployedUrl String?
+  userId        String?
+  name          String
+  description   String?
+  status        ProjectStatus @default(DRAFT)
+  templateId    String        @default("nextjs-shadcn")
+  previewUrl    String?
+  deployedUrl   String?
+  // The deployed subdomain's leftmost label only (e.g. "acme-crm", not the
+  // full host) — unique across every project, checked at deploy time
+  // against the reserved-word list before this is ever set (Phase 19 /
+  // BE-11). Null until first deploy.
+  subdomain     String?       @unique
+  // Bumped on build start and on successful container provisioning — the
+  // signal `cleanup-inactive` uses to stop an idle preview container. Never
+  // used to gate a DEPLOYED project, which is exempt regardless of this
+  // value (Phase 19 exit criterion).
+  lastActiveAt  DateTime?
   // Absolute workspace path, allocated once at creation. Derived from the
   // project id — never from user input (BE-4 exit criterion).
   workspacePath String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  inputs      Input[]
-  specs       Spec[]
-  versions    Version[]
-  credentials Credential[]
-  builds      Build[]
-  usageEvents UsageEvent[]
+  org              Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  inputs           Input[]
+  specs            Spec[]
+  versions         Version[]
+  credentials      Credential[]
+  builds           Build[]
+  usageEvents      UsageEvent[]
+  githubConnection GithubConnection?
 
   @@index([orgId])
   @@index([userId])
   @@index([status])
+}
+
+model GithubConnection {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  githubLogin String
+  // { access_token: { iv, tag, data } } — AES-256-GCM, same per-field shape
+  // as `Credential.secrets` (BE-7). The access token never appears in
+  // plaintext outside github.service's function bodies, and never touches
+  // the workspace or a commit (Phase 19 note).
+  secrets     Json
+  repoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Input {

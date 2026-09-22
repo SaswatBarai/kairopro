@@ -18,6 +18,7 @@ import {
 } from "../agent/workflow/steps/generation-context";
 import { runTestPhase } from "../agent/workflow/steps/run-tests";
 import { ownerOf } from "../org/access";
+import { touchProjectActivity } from "../project/project.repository";
 import { recordVersion } from "../version/version.service";
 import { emit as emitUsage } from "../usage/usage.service";
 import {
@@ -95,6 +96,7 @@ export async function startBuild(
   }
 
   const row = await createBuildRow(projectId);
+  await touchProjectActivity(projectId);
   void executeBuild(row.id, project, ctx).catch((cause) => {
     // executeBuild already turns every failure it can see into a FAILED
     // build + InternalError row; this only catches a crash outside that
@@ -183,6 +185,7 @@ export function buildSteps(
         await updateBuildRow(buildId, {
           previewUrl: container.previewUrl || null,
         });
+        await touchProjectActivity(project.id);
         await emitLog(
           buildId,
           "STDOUT",

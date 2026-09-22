@@ -17,6 +17,7 @@ export const ProjectSchema = z.object({
   templateId: z.string(),
   previewUrl: z.url().nullable(),
   deployedUrl: z.url().nullable(),
+  subdomain: z.string().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });

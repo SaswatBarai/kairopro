@@ -44,6 +44,11 @@ export interface ContainerHealth {
   detail?: string;
 }
 
+export interface ManagedContainer {
+  containerId: string;
+  projectId: string;
+}
+
 export interface ContainerRuntime {
   provision(input: ProvisionInput): Promise<ProvisionedContainer>;
   exec(input: ExecInput): Promise<ExecResult>;
@@ -58,4 +63,9 @@ export interface ContainerRuntime {
   stop(containerId: string): Promise<void>;
   /** Remove the container and its volumes. */
   destroy(containerId: string): Promise<void>;
+  /** Every running app container this runtime manages, labeled with the
+   * project it belongs to (Phase 19) — `cleanup-inactive` and
+   * `cleanup-orphans` sweep this list rather than tracking container ids in
+   * the database themselves. */
+  list(): Promise<ManagedContainer[]>;
 }

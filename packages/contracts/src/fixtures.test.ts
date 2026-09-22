@@ -43,6 +43,7 @@ const taskflow = {
   templateId: "nextjs-shadcn",
   previewUrl: null,
   deployedUrl: "https://taskflow.kairopro.app",
+  subdomain: "taskflow",
   createdAt: "2026-09-01T09:12:00Z",
   updatedAt: "2026-09-12T16:40:00Z",
 };

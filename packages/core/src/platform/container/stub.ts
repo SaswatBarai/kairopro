@@ -8,6 +8,7 @@ import type {
   ContainerRuntime,
   ExecInput,
   ExecResult,
+  ManagedContainer,
   ProvisionInput,
 } from "./runtime";
 
@@ -33,6 +34,12 @@ function assertDevelopment(): void {
 
 export function createStubContainerRuntime(): ContainerRuntime {
   assertDevelopment();
+
+  // No real container exists to list, but jobs that sweep `list()` (Phase
+  // 19's cleanup-inactive/cleanup-orphans) still need something to iterate
+  // in dev/test — tracked here purely in memory, keyed by the fake id
+  // `provision` hands back.
+  const managed = new Map<string, string>(); // containerId -> projectId
 
   async function run(
     input: ExecInput,
@@ -105,7 +112,9 @@ export function createStubContainerRuntime(): ContainerRuntime {
       assertDevelopment();
       // No container is created; the id is stable so callers can treat it
       // as opaque.
-      return { containerId: `stub-${input.projectId}`, previewUrl: "" };
+      const containerId = `stub-${input.projectId}`;
+      managed.set(containerId, input.projectId);
+      return { containerId, previewUrl: "" };
     },
     exec: (input) => run(input),
     execStream: (input, onLine) => run(input, onLine),
@@ -116,8 +125,16 @@ export function createStubContainerRuntime(): ContainerRuntime {
     async stop(_containerId: string) {
       assertDevelopment();
     },
-    async destroy(_containerId: string) {
+    async destroy(containerId: string) {
       assertDevelopment();
+      managed.delete(containerId);
+    },
+    async list(): Promise<ManagedContainer[]> {
+      assertDevelopment();
+      return [...managed.entries()].map(([containerId, projectId]) => ({
+        containerId,
+        projectId,
+      }));
     },
   };
 }

@@ -54,6 +54,23 @@ export function findProjectById(id: string): Promise<ProjectRow | null> {
   return db.project.findUnique({ where: { id } });
 }
 
+export function findProjectBySubdomain(
+  subdomain: string,
+): Promise<ProjectRow | null> {
+  return db.project.findUnique({ where: { subdomain } });
+}
+
+/** Every project with an active build container to sweep for inactivity —
+ * anything not yet DEPLOYED, since deployed containers are exempt from
+ * `cleanup-inactive` regardless of `lastActiveAt` (Phase 19 exit criterion). */
+export function listNonDeployedProjects(): Promise<ProjectRow[]> {
+  return db.project.findMany({ where: { status: { not: "DEPLOYED" } } });
+}
+
+export function listAllProjectIds(): Promise<{ id: string }[]> {
+  return db.project.findMany({ select: { id: true } });
+}
+
 export function listProjectsByOrg(
   orgId: string,
 ): Promise<ProjectWithActivity[]> {
@@ -77,6 +94,9 @@ export function updateProject(
     description?: string | null;
     status?: ProjectRow["status"];
     workspacePath?: string | null;
+    subdomain?: string;
+    deployedUrl?: string;
+    lastActiveAt?: Date;
   },
 ): Promise<ProjectRow> {
   return db.project.update({ where: { id }, data });
@@ -84,4 +104,14 @@ export function updateProject(
 
 export function deleteProject(id: string): Promise<ProjectRow> {
   return db.project.delete({ where: { id } });
+}
+
+/** Bumps `lastActiveAt` to now — the signal `cleanup-inactive` reads to
+ * decide whether a preview container is idle. Best-effort: called from
+ * build start and from a successful container provision. */
+export function touchProjectActivity(id: string): Promise<ProjectRow> {
+  return db.project.update({
+    where: { id },
+    data: { lastActiveAt: new Date() },
+  });
 }

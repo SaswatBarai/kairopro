@@ -70,6 +70,7 @@ function toProject(row: ProjectRow): Project {
     templateId: row.templateId,
     previewUrl: row.previewUrl,
     deployedUrl: row.deployedUrl,
+    subdomain: row.subdomain,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

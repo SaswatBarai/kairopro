@@ -15,6 +15,9 @@ vi.mock("./build.repository", () => ({
 vi.mock("./workflow", () => ({ runWorkflow: vi.fn() }));
 vi.mock("./logs", () => ({ emitLog: vi.fn() }));
 vi.mock("../version/version.service", () => ({ recordVersion: vi.fn() }));
+vi.mock("../project/project.repository", () => ({
+  touchProjectActivity: vi.fn(),
+}));
 vi.mock("../usage/usage.service", () => ({ emit: vi.fn() }));
 // The "generate" step's real body (scaffold → backend phase → frontend
 // phase) is never invoked here — every test below mocks `runWorkflow`
@@ -37,6 +40,7 @@ vi.mock("../../platform/container", () => ({
     health: vi.fn(),
     stop: vi.fn(),
     destroy: vi.fn(),
+    list: vi.fn(),
   })),
 }));
 

@@ -4,7 +4,9 @@ import Docker from "dockerode";
 import { ProviderError, TimeoutError } from "../../lib/errors";
 import {
   buildComposeSpec,
+  MANAGED_LABEL,
   PROJECT_LABEL,
+  ROLE_LABEL,
   type ComposeSpec,
 } from "../../modules/execution/docker/compose";
 import { waitForContainerHealthy } from "../../modules/execution/docker/health";
@@ -21,6 +23,7 @@ import type {
   ContainerRuntime,
   ExecInput,
   ExecResult,
+  ManagedContainer,
   ProvisionedContainer,
   ProvisionInput,
 } from "./runtime";
@@ -243,6 +246,21 @@ export function createDockerRuntime(
         appContainerId: containerId,
         dbContainerId: dbContainerId ?? containerId,
       });
+    },
+
+    async list(): Promise<ManagedContainer[]> {
+      const containers = await docker.listContainers({
+        all: true,
+        filters: JSON.stringify({
+          label: [`${MANAGED_LABEL}=true`, `${ROLE_LABEL}=app`],
+        }),
+      });
+      return containers
+        .map((info) => ({
+          containerId: info.Id,
+          projectId: info.Labels?.[PROJECT_LABEL] ?? "",
+        }))
+        .filter((c) => c.projectId !== "");
     },
   };
 }

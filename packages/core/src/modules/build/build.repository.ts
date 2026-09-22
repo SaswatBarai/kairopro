@@ -42,6 +42,26 @@ export function listBuildsByProject(projectId: string): Promise<BuildRow[]> {
   });
 }
 
+/** The most recent successful build with a live preview URL — what `deploy`
+ * promotes to production. Null when the project has never built cleanly. */
+export function findLatestSucceededBuild(
+  projectId: string,
+): Promise<BuildRow | null> {
+  return db.build.findFirst({
+    where: { projectId, status: "SUCCEEDED", previewUrl: { not: null } },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/** Deletes build logs older than `cutoff` — `prune-logs` (Phase 19). Returns
+ * the number of rows removed. */
+export async function pruneBuildLogsOlderThan(cutoff: Date): Promise<number> {
+  const result = await db.buildLog.deleteMany({
+    where: { createdAt: { lt: cutoff } },
+  });
+  return result.count;
+}
+
 export function updateBuildRow(
   buildId: string,
   data: Prisma.BuildUpdateInput,

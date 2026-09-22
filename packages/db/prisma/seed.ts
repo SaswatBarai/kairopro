@@ -53,6 +53,7 @@ async function main() {
       status: "DEPLOYED",
       templateId: "nextjs-shadcn",
       deployedUrl: "https://taskflow.kairopro.app",
+      subdomain: "taskflow",
       createdAt: new Date("2026-09-01T09:12:00Z"),
       updatedAt: new Date("2026-09-12T16:40:00Z"),
     },

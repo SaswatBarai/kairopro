@@ -33,6 +33,7 @@ export type {
   ContainerHealth,
   ExecInput,
   ExecResult,
+  ManagedContainer,
   ProvisionInput,
   ProvisionedContainer,
 } from "./runtime";

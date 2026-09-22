@@ -496,3 +496,50 @@ export {
   type RunTestPhaseResult,
   type RunTestSuiteInput,
 } from "./modules/agent/workflow/steps/run-tests";
+
+// Phase 19 Deploy, export, and jobs exports (BE-11)
+export {
+  deploy,
+  deployedUrlFor,
+  validateSubdomainFormat,
+} from "./modules/deploy/deploy.service";
+export {
+  getDnsProvider,
+  type DnsProvider,
+  type DnsRecord,
+} from "./modules/deploy/dns";
+export {
+  activateDeployRoute,
+  hostFor,
+  removeDeployRoute,
+} from "./modules/deploy/ssl";
+export {
+  connectGithub,
+  disconnectGithub,
+  exportToGithub,
+  getGithubConnectionStatus,
+} from "./modules/deploy/github.service";
+export {
+  runCleanupInactive,
+  INACTIVITY_THRESHOLD_MS,
+  type CleanupInactiveResult,
+} from "./platform/jobs/definitions/cleanup-inactive";
+export {
+  runCleanupOrphans,
+  type CleanupOrphansResult,
+} from "./platform/jobs/definitions/cleanup-orphans";
+export {
+  runHealthProbe,
+  type HealthProbeResult,
+} from "./platform/jobs/definitions/health-probe";
+export {
+  runPruneLogs,
+  LOG_RETENTION_MS,
+  type PruneLogsResult,
+} from "./platform/jobs/definitions/prune-logs";
+export { registerJobs } from "./platform/jobs/bootstrap";
+export {
+  createRateLimiter,
+  type RateLimiter,
+  type RateLimitResult,
+} from "./platform/ratelimit/limiter";

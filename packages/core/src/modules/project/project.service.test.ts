@@ -79,6 +79,8 @@ function projectRow(
     templateId: "nextjs-shadcn",
     previewUrl: null,
     deployedUrl: null,
+    subdomain: null,
+    lastActiveAt: null,
     workspacePath: null,
     versions: [],
     builds: [],
