@@ -1,99 +1,6 @@
-import { CheckCircle2, LockKeyhole } from "lucide-react";
-
-const FEATURES = [
-  {
-    title: "User accounts",
-    description: "Auth, session management, profile state",
-  },
-  {
-    title: "Teams & Tenants",
-    description: "Workspace isolation, multi-tenancy",
-  },
-  {
-    title: "Task Authoring",
-    description: "Markdown editing, attachments, schema meta",
-  },
-  {
-    title: "Assignment Router",
-    description: "Single & role-based ticket assignment",
-  },
-  { title: "Priorities", description: "Urgent, High, Medium, Low levels" },
-  {
-    title: "Lifecycle Stages",
-    description: "Backlog, Todo, In Progress, Review, Done",
-  },
-  {
-    title: "Activity & Logs",
-    description: "Activity feed, comments, system audits",
-  },
-  {
-    title: "Admin Controls",
-    description: "Member roles, workspace governance, keys",
-  },
-];
-
-const ROLES = [
-  {
-    role: "Admin",
-    scope: "Global platform operator",
-    permissions:
-      "Full workspace management, member invites, API tokens, billing controls.",
-    highlighted: true,
-  },
-  {
-    role: "Manager",
-    scope: "Sprint & release controller",
-    permissions:
-      "Project creation, sprint cadence setup, bulk assignment, QA approvals.",
-    highlighted: false,
-  },
-  {
-    role: "Member",
-    scope: "Individual contributor",
-    permissions:
-      "Create issues, mutate assigned tickets, comment on threads, inspect boards.",
-    highlighted: false,
-  },
-];
-
-const USER_STORIES = [
-  {
-    id: "US-01",
-    actor: "As an Admin",
-    story:
-      ", I want to invite team members with specific roles, so that access control is maintained from day one.",
-  },
-  {
-    id: "US-02",
-    actor: "As a Manager",
-    story:
-      ", I want to create projects and set task priorities, so that the team understands delivery urgency.",
-  },
-  {
-    id: "US-03",
-    actor: "As a Member",
-    story:
-      ", I want to update task statuses and add progress comments, so that sprint status is transparent.",
-  },
-  {
-    id: "US-04",
-    actor: "As a Member",
-    story:
-      ", I want keyboard shortcuts to filter and assign tasks, so that I can manage my work without context switching.",
-  },
-  {
-    id: "US-05",
-    actor: "As an Admin",
-    story:
-      ", I want an audit trail of task status changes, so that historical progress can be reviewed.",
-  },
-];
-
-const ASSUMPTIONS = [
-  "Single PostgreSQL instance with multi-tenant row-level security policies per organization.",
-  "Outbound notifications leverage standard SMTP transport variables injected into application secrets.",
-  "Local encrypted POSIX volume fallback activated when S3 object credentials are not provisioned.",
-];
+import { CheckCircle2, Loader2 } from "lucide-react";
+import type { Spec } from "@kairopro/contracts";
+import type { PrdContent } from "@/lib/spec-content";
 
 function SectionHeading({ children }: { children: string }) {
   return (
@@ -103,99 +10,95 @@ function SectionHeading({ children }: { children: string }) {
   );
 }
 
-export function PrdDocument() {
+interface PrdDocumentProps {
+  spec: Spec | undefined;
+  isLoading: boolean;
+}
+
+export function PrdDocument({ spec, isLoading }: PrdDocumentProps) {
+  if (!spec) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-white/[0.1] bg-brand-surface p-10 text-center shadow-sm">
+        <Loader2 className="h-6 w-6 animate-spin text-brand-purple-light" />
+        <p className="text-sm text-zinc-400">
+          {isLoading
+            ? "Generating the PRD from your requirements..."
+            : "Waiting for the PRD to be generated."}
+        </p>
+      </div>
+    );
+  }
+
+  const content = spec.content as unknown as PrdContent;
+  const { businessRules } = content;
+
   return (
     <div className="rounded-lg border border-white/[0.1] bg-brand-surface p-6 shadow-sm">
       <div className="border-b border-white/[0.1] pb-4">
         <div className="mb-1 flex items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">
-            Product Requirements — TaskFlow
+            Product Requirements
           </h1>
           <span className="shrink-0 rounded-[3px] bg-white/[0.06] px-2 py-0.5 font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-            Spec-Draft
+            {spec.status}
           </span>
         </div>
         <p className="font-mono-tech text-[11px] text-zinc-400">
-          Generated from your description and 1 attachment • v1.0 • PRD-001
+          v{spec.version} • generated from your requirements
         </p>
       </div>
 
       <section className="mt-6">
         <SectionHeading>01. Overview</SectionHeading>
-        <div className="space-y-2 text-sm leading-relaxed text-zinc-400">
-          <p>
-            TaskFlow is an ultra-lean, high-throughput task management system
-            engineered for technical teams. It favors deterministic keyboard
-            shortcuts, multi-pane real-time viewports, and zero-latency
-            local-first indexing over heavy corporate workflows.
-          </p>
-          <p>
-            The application couples distributed state tracking with strict audit
-            milestones, giving technical leads immutable provenance over
-            architecture decisions, release blockers, and ticket transitions
-            across multiple engineering squads.
-          </p>
-        </div>
+        <p className="text-sm leading-relaxed text-zinc-400">
+          {content.overview}
+        </p>
       </section>
 
       <section className="mt-6 border-t border-white/[0.06] pt-3">
-        <div className="mb-2 flex items-center justify-between">
-          <SectionHeading>02. Must-Have Features</SectionHeading>
-          <span className="font-mono-tech text-[10px] text-brand-green">
-            8 verified items
-          </span>
-        </div>
+        <SectionHeading>02. Goals</SectionHeading>
         <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
-          {FEATURES.map((feature) => (
+          {content.goals.map((goal) => (
             <div
               className="flex items-start gap-2 rounded-[3px] border border-white/[0.06] bg-brand-dark p-2"
-              key={feature.title}
+              key={goal}
             >
               <CheckCircle2
                 className="mt-0.5 h-[18px] w-[18px] shrink-0 text-brand-green"
                 fill="currentColor"
               />
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-zinc-100">
-                  {feature.title}
-                </div>
-                <div className="truncate text-xs text-zinc-400">
-                  {feature.description}
-                </div>
-              </div>
+              <div className="min-w-0 text-[13px] text-zinc-100">{goal}</div>
             </div>
           ))}
         </div>
+        {content.nonGoals.length > 0 && (
+          <div className="mt-2 text-xs text-zinc-500">
+            <span className="font-semibold text-zinc-400">Non-goals: </span>
+            {content.nonGoals.join("; ")}
+          </div>
+        )}
       </section>
 
       <section className="mt-6 border-t border-white/[0.06] pt-3">
-        <SectionHeading>03. User Roles</SectionHeading>
+        <SectionHeading>03. Personas</SectionHeading>
         <div className="overflow-x-auto rounded-[3px] border border-white/[0.08]">
           <table className="w-full text-left text-xs">
             <thead className="border-b border-white/[0.08] bg-white/[0.06]">
               <tr className="font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-100">
-                <th className="w-28 p-2">Role</th>
-                <th className="p-2">Scope Description</th>
-                <th className="p-2">Permissions</th>
+                <th className="w-40 p-2">Persona</th>
+                <th className="p-2">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.06]">
-              {ROLES.map((role) => (
+              {content.personas.map((persona) => (
                 <tr
                   className="transition-colors hover:bg-white/[0.03]"
-                  key={role.role}
+                  key={persona.name}
                 >
-                  <td
-                    className={
-                      role.highlighted
-                        ? "p-2 font-semibold text-brand-purple-light"
-                        : "p-2 font-semibold text-zinc-100"
-                    }
-                  >
-                    {role.role}
+                  <td className="p-2 font-semibold text-zinc-100">
+                    {persona.name}
                   </td>
-                  <td className="p-2 text-zinc-400">{role.scope}</td>
-                  <td className="p-2 text-zinc-100">{role.permissions}</td>
+                  <td className="p-2 text-zinc-400">{persona.description}</td>
                 </tr>
               ))}
             </tbody>
@@ -206,16 +109,15 @@ export function PrdDocument() {
       <section className="mt-6 border-t border-white/[0.06] pt-3">
         <SectionHeading>04. User Stories</SectionHeading>
         <div className="space-y-1">
-          {USER_STORIES.map((story) => (
+          {content.userStories.map((story, i) => (
             <div
               className="flex items-start gap-2 rounded-[3px] border border-white/[0.05] bg-brand-dark p-2"
-              key={story.id}
+              key={`${story.persona}-${i}`}
             >
               <span className="shrink-0 font-mono-tech text-[10px] font-semibold text-brand-purple-light">
-                {story.id}
+                {story.persona}
               </span>
               <p className="text-xs leading-relaxed text-zinc-400">
-                <span className="font-medium text-zinc-100">{story.actor}</span>
                 {story.story}
               </p>
             </div>
@@ -224,40 +126,97 @@ export function PrdDocument() {
       </section>
 
       <section className="mt-6 border-t border-white/[0.06] pt-3">
-        <SectionHeading>05. External Integrations</SectionHeading>
-        <div className="flex items-center justify-between rounded-[3px] border border-white/[0.08] bg-brand-dark p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-brand-surface-muted text-brand-purple-light">
-              <LockKeyhole className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-[13px] font-medium text-zinc-100">
-                Google Sign-In
-              </div>
-              <div className="text-xs text-zinc-400">
-                OAuth 2.0 Client ID &amp; Secret required at deployment
-              </div>
-            </div>
-          </div>
-          <span className="shrink-0 rounded-[3px] bg-white/[0.06] px-2 py-1 font-mono-tech text-[10px] uppercase tracking-wider text-zinc-500">
-            Pending Env
-          </span>
+        <SectionHeading>05. Permission Matrix</SectionHeading>
+        <div className="overflow-x-auto rounded-[3px] border border-white/[0.08]">
+          <table className="w-full text-left text-xs">
+            <thead className="border-b border-white/[0.08] bg-white/[0.06]">
+              <tr className="font-mono-tech text-[10px] font-semibold uppercase tracking-wider text-zinc-100">
+                <th className="w-28 p-2">Role</th>
+                <th className="w-40 p-2">Entity</th>
+                <th className="p-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.06]">
+              {businessRules.permissionMatrix.map((rule, i) => (
+                <tr
+                  className="transition-colors hover:bg-white/[0.03]"
+                  key={`${rule.role}-${rule.entity}-${i}`}
+                >
+                  <td className="p-2 font-semibold text-brand-purple-light">
+                    {rule.role}
+                  </td>
+                  <td className="p-2 text-zinc-100">{rule.entity}</td>
+                  <td className="p-2 text-zinc-400">
+                    {rule.actions.join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
       <section className="mt-6 border-t border-white/[0.06] pt-3">
-        <div className="mb-2 flex items-center justify-between">
-          <SectionHeading>06. Architecture Assumptions</SectionHeading>
-          <span className="font-mono-tech text-[10px] italic text-zinc-400">
-            Editable during Gate 2
-          </span>
+        <SectionHeading>06. Business Rules</SectionHeading>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <p className="mb-1 font-mono-tech text-[10px] uppercase tracking-wider text-zinc-500">
+              Invariants
+            </p>
+            <ul className="list-inside list-disc space-y-1 rounded-[3px] border border-white/[0.06] bg-brand-dark p-2 text-xs leading-relaxed text-zinc-400">
+              {businessRules.invariants.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-1 font-mono-tech text-[10px] uppercase tracking-wider text-zinc-500">
+              Validation
+            </p>
+            <ul className="list-inside list-disc space-y-1 rounded-[3px] border border-white/[0.06] bg-brand-dark p-2 text-xs leading-relaxed text-zinc-400">
+              {businessRules.validationRules.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-1 font-mono-tech text-[10px] uppercase tracking-wider text-zinc-500">
+              Money
+            </p>
+            <ul className="list-inside list-disc space-y-1 rounded-[3px] border border-white/[0.06] bg-brand-dark p-2 text-xs leading-relaxed text-zinc-400">
+              {businessRules.moneyRules.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-1 font-mono-tech text-[10px] uppercase tracking-wider text-zinc-500">
+              Side effects
+            </p>
+            <ul className="list-inside list-disc space-y-1 rounded-[3px] border border-white/[0.06] bg-brand-dark p-2 text-xs leading-relaxed text-zinc-400">
+              {businessRules.sideEffects.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <ol className="list-inside list-decimal space-y-1 rounded-[3px] border border-white/[0.06] bg-brand-dark p-3 text-xs leading-relaxed text-zinc-400">
-          {ASSUMPTIONS.map((assumption) => (
-            <li key={assumption}>{assumption}</li>
-          ))}
-        </ol>
       </section>
+
+      {content.assumptions.length > 0 && (
+        <section className="mt-6 border-t border-white/[0.06] pt-3">
+          <div className="mb-2 flex items-center justify-between">
+            <SectionHeading>07. Assumptions</SectionHeading>
+            <span className="font-mono-tech text-[10px] italic text-zinc-400">
+              From unanswered clarification questions
+            </span>
+          </div>
+          <ol className="list-inside list-decimal space-y-1 rounded-[3px] border border-white/[0.06] bg-brand-dark p-3 text-xs leading-relaxed text-zinc-400">
+            {content.assumptions.map((a) => (
+              <li key={a.questionId}>{a.assumption}</li>
+            ))}
+          </ol>
+        </section>
+      )}
     </div>
   );
 }

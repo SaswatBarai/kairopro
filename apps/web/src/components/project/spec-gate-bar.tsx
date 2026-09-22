@@ -1,30 +1,36 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { ArrowRight, CheckCheck, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCheck, RefreshCw } from "lucide-react";
+import type { Spec } from "@kairopro/contracts";
 
 import { Button } from "@/components/ui/button";
+import { useApproveSpecMutation } from "@/lib/queries/specs";
 import { cn } from "@/lib/utils";
 
-type ApproveState = "idle" | "saving" | "approved";
+interface SpecGateBarProps {
+  spec: Spec | undefined;
+}
 
-export function SpecGateBar() {
+export function SpecGateBar({ spec }: SpecGateBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const projectId = searchParams.get("projectId");
-  const [approveState, setApproveState] = useState<ApproveState>("idle");
+  const projectId = searchParams.get("projectId") ?? "";
+  const approveMutation = useApproveSpecMutation(projectId);
+
+  const isApproved = spec?.status === "APPROVED";
+  const canApprove = Boolean(spec) && !isApproved && !approveMutation.isPending;
 
   const onApprove = () => {
-    if (approveState !== "idle") return;
-    setApproveState("saving");
-    window.setTimeout(() => {
-      setApproveState("approved");
-      const nextUrl = projectId
-        ? `/projects/new/data-model?projectId=${projectId}`
-        : "/projects/new/data-model";
-      window.setTimeout(() => router.push(nextUrl), 900);
-    }, 1200);
+    if (!spec || !canApprove) return;
+    approveMutation.mutate(spec.id, {
+      onSuccess: () => {
+        const nextUrl = projectId
+          ? `/projects/new/data-model?projectId=${projectId}`
+          : "/projects/new/data-model";
+        router.push(nextUrl);
+      },
+    });
   };
 
   return (
@@ -68,33 +74,40 @@ export function SpecGateBar() {
         </div>
 
         <div className="flex items-center gap-2">
+          {approveMutation.isError && (
+            <span className="flex items-center gap-1 text-xs text-rose-400">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {approveMutation.error instanceof Error
+                ? approveMutation.error.message
+                : "Failed to approve"}
+            </span>
+          )}
           <Button
             className={cn(
               "h-9 gap-1.5 rounded-[3px] px-3",
-              approveState === "saving" && "pointer-events-none opacity-80",
+              approveMutation.isPending && "pointer-events-none opacity-80",
             )}
+            disabled={!canApprove && !isApproved}
             id="approveBtn"
             type="button"
             onClick={onApprove}
           >
-            {approveState === "idle" && (
+            {isApproved ? (
               <>
-                <span>Approve and continue</span>
-                <ArrowRight className="h-4 w-4" />
+                <span>Gate 1 Approved</span>
+                <CheckCheck className="h-4 w-4" />
               </>
-            )}
-            {approveState === "saving" && (
+            ) : approveMutation.isPending ? (
               <>
                 <span className="font-mono-tech text-[11px] uppercase tracking-wider">
                   Saving spec...
                 </span>
                 <RefreshCw className="h-4 w-4 animate-spin" />
               </>
-            )}
-            {approveState === "approved" && (
+            ) : (
               <>
-                <span>Gate 1 Approved</span>
-                <CheckCheck className="h-4 w-4" />
+                <span>Approve and continue</span>
+                <ArrowRight className="h-4 w-4" />
               </>
             )}
           </Button>

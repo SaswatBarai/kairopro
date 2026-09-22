@@ -1,36 +1,53 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 import {
+  AlertCircle,
   ArrowRight,
   Check,
   CheckCheck,
-  History,
   RefreshCw,
 } from "lucide-react";
+import type { Spec } from "@kairopro/contracts";
 
 import { Button } from "@/components/ui/button";
+import { useStartBuildMutation } from "@/lib/queries/builds";
+import { useApproveSpecMutation } from "@/lib/queries/specs";
 import { cn } from "@/lib/utils";
 
-type BuildState = "idle" | "provisioning" | "started";
+interface AppStructureGateBarProps {
+  spec: Spec | undefined;
+  prdApproved: boolean;
+  dataModelApproved: boolean;
+}
 
-export function AppStructureGateBar() {
+export function AppStructureGateBar({
+  spec,
+  prdApproved,
+  dataModelApproved,
+}: AppStructureGateBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const projectId = searchParams.get("projectId");
-  const [buildState, setBuildState] = useState<BuildState>("idle");
+  const projectId = searchParams.get("projectId") ?? "";
+  const approveMutation = useApproveSpecMutation(projectId);
+  const startBuildMutation = useStartBuildMutation(projectId);
 
-  const onStartBuild = () => {
-    if (buildState !== "idle") return;
-    setBuildState("provisioning");
-    window.setTimeout(() => {
-      setBuildState("started");
-      const nextUrl = projectId
-        ? `/projects/new/build?projectId=${projectId}`
-        : "/projects/new/build";
-      window.setTimeout(() => router.push(nextUrl), 900);
-    }, 1200);
+  const isBusy = approveMutation.isPending || startBuildMutation.isPending;
+  const canStart = Boolean(spec) && !isBusy;
+  const error = approveMutation.error ?? startBuildMutation.error;
+
+  const onStartBuild = async () => {
+    if (!spec || !canStart) return;
+    try {
+      if (spec.status !== "APPROVED") {
+        await approveMutation.mutateAsync(spec.id);
+      }
+      const build = await startBuildMutation.mutateAsync();
+      const nextUrl = `/projects/new/build?projectId=${projectId}&buildId=${build.id}`;
+      router.push(nextUrl);
+    } catch {
+      // Surfaced below via approveMutation.error / startBuildMutation.error.
+    }
   };
 
   return (
@@ -44,73 +61,85 @@ export function AppStructureGateBar() {
             <span className="text-zinc-600">/</span>
             <span className="text-zinc-300">Gate 3: App Structure</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-base font-semibold tracking-tight text-zinc-100">
-              TaskFlow — Architectural Review
-            </h1>
-            <span className="rounded-[3px] border border-white/[0.08] bg-brand-surface-muted px-2 py-0.5 font-mono-tech text-[11px] font-medium text-zinc-400">
-              ID: PRD-001
-            </span>
-          </div>
         </div>
 
         <div className="flex items-center gap-1.5 self-start rounded-lg border border-white/[0.08] bg-brand-dark p-1 text-xs font-medium md:self-center">
-          <div className="flex items-center gap-1.5 rounded-[3px] border border-white/[0.08] bg-white/[0.06] px-2.5 py-1 text-zinc-300">
+          <div
+            className={cn(
+              "flex items-center gap-1.5 rounded-[3px] border border-white/[0.08] px-2.5 py-1",
+              prdApproved
+                ? "bg-white/[0.06] text-zinc-300"
+                : "bg-transparent text-zinc-500",
+            )}
+          >
             <Check
-              className="h-[13px] w-[13px] text-brand-green"
+              className={cn(
+                "h-[13px] w-[13px]",
+                prdApproved ? "text-brand-green" : "text-zinc-600",
+              )}
               strokeWidth={3}
             />
-            <span className="font-mono-tech text-[11px]">1 PRD</span>
+            <span className="font-mono-tech text-[11px]">PRD</span>
           </div>
           <span className="text-xs text-zinc-600">/</span>
-          <div className="flex items-center gap-1.5 rounded-[3px] border border-white/[0.08] bg-white/[0.06] px-2.5 py-1 text-zinc-300">
+          <div
+            className={cn(
+              "flex items-center gap-1.5 rounded-[3px] border border-white/[0.08] px-2.5 py-1",
+              dataModelApproved
+                ? "bg-white/[0.06] text-zinc-300"
+                : "bg-transparent text-zinc-500",
+            )}
+          >
             <Check
-              className="h-[13px] w-[13px] text-brand-green"
+              className={cn(
+                "h-[13px] w-[13px]",
+                dataModelApproved ? "text-brand-green" : "text-zinc-600",
+              )}
               strokeWidth={3}
             />
-            <span className="font-mono-tech text-[11px]">2 Data Model</span>
+            <span className="font-mono-tech text-[11px]">Data Model</span>
           </div>
           <span className="text-xs text-zinc-600">/</span>
           <div className="flex items-center gap-1.5 rounded-[3px] bg-brand-purple px-2.5 py-1 font-mono-tech text-[11px] font-semibold text-white">
             <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-            <span>3 App Structure</span>
+            <span>App Structure</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3 self-end md:self-center">
-          <button
-            className="flex h-9 cursor-pointer items-center gap-2 rounded-md border border-white/[0.08] bg-white/[0.05] px-3 font-mono-tech text-xs text-zinc-300 transition-colors hover:bg-white/[0.08]"
-            type="button"
-          >
-            <History className="h-3.5 w-3.5" />
-            <span>Revisions (3)</span>
-          </button>
+          {error && (
+            <span className="flex items-center gap-1 text-xs text-rose-400">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {error instanceof Error ? error.message : "Failed to start build"}
+            </span>
+          )}
           <Button
             className={cn(
               "h-9 gap-2 rounded-md px-4 text-xs font-semibold",
-              buildState === "provisioning" && "pointer-events-none opacity-80",
+              isBusy && "pointer-events-none opacity-80",
             )}
+            disabled={!canStart}
             type="button"
-            onClick={onStartBuild}
+            onClick={() => void onStartBuild()}
           >
-            {buildState === "idle" && (
-              <>
-                <span>Start build</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </>
-            )}
-            {buildState === "provisioning" && (
-              <>
-                <span className="font-mono-tech text-[11px] uppercase tracking-wider">
-                  Provisioning...
-                </span>
-                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              </>
-            )}
-            {buildState === "started" && (
+            {startBuildMutation.isSuccess ? (
               <>
                 <span>Build started</span>
                 <CheckCheck className="h-3.5 w-3.5" />
+              </>
+            ) : isBusy ? (
+              <>
+                <span className="font-mono-tech text-[11px] uppercase tracking-wider">
+                  {approveMutation.isPending
+                    ? "Approving..."
+                    : "Provisioning..."}
+                </span>
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              </>
+            ) : (
+              <>
+                <span>Start build</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </>
             )}
           </Button>

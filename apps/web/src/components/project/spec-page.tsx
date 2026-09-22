@@ -9,10 +9,14 @@ import { DesignDirectionPanel } from "@/components/project/design-direction-pane
 import { NoProjectEmptyState } from "@/components/project/no-project-empty-state";
 import { PrdDocument } from "@/components/project/prd-document";
 import { SpecGateBar } from "@/components/project/spec-gate-bar";
+import { findSpec, useSpecsQuery } from "@/lib/queries/specs";
 
 export function SpecPage() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get("projectId");
+
+  const { data: specs, isLoading } = useSpecsQuery(projectId ?? "");
+  const prdSpec = findSpec(specs, "PRD");
 
   return (
     <DashboardAppShell
@@ -26,11 +30,11 @@ export function SpecPage() {
         <NoProjectEmptyState stepName="spec review" />
       ) : (
         <>
-          <SpecGateBar />
+          <SpecGateBar spec={prdSpec} />
           <div className="mx-auto flex w-full max-w-[1240px] flex-col items-start gap-4 px-4 pb-6 pt-4 md:px-6 lg:flex-row">
             <div className="flex w-full flex-col gap-4 lg:w-[720px] lg:shrink-0">
               <FadeIn>
-                <PrdDocument />
+                <PrdDocument spec={prdSpec} isLoading={isLoading} />
               </FadeIn>
               <FadeIn delay={0.1}>
                 <DesignDirectionPanel />

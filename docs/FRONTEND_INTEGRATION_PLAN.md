@@ -16,6 +16,15 @@ built from.
 
 ---
 
+## Status
+
+- **F0 — done.** Workspace route now threads real `projectId`/project data through `WorkspacePage` → `WorkspaceApp`; `HistoryDrawer` is live; deploy/export modal titles use the real project name.
+- **F1 — done.** Attachment delete/reload wired to the real inputs API; the clarification-questions page now actually triggers `POST .../specs/generate` instead of doing nothing.
+- **F2 — done**, with one scope note found along the way: `POST .../specs/[specId]/revise` takes a fully-formed replacement `content` object, not free text — it's a direct content-replacement endpoint, not an LLM-mediated "regenerate from feedback" one. Wiring a chat box to it as originally described would either require an LLM call from the frontend (wrong layer) or silently produce garbage content. **Left unwired for now**, rather than force a fake-looking real call — `agent-chat-panel.tsx`, `agent-review-sidebar.tsx`, and `agent-structure-sidebar.tsx` remain local-only pending a decision on this (either a real conversational revise endpoint gets added server-side, or these become a structured editor that calls `revise` with actual edited content). Everything else in F2 is real: PRD/data-model/app-structure pages fetch and render real generated specs (data-model's rich mock cards were replaced with a generic real-schema renderer since there's no way to fit an arbitrary real Prisma schema into hand-tuned demo card layouts), all three gate bars call the real approve endpoint, and "Start build" now also calls the real `POST .../builds` (pulled forward from F3, since the UI only ever had one button for both steps).
+- **F3–F10 — not started.**
+
+---
+
 ## 0. TL;DR
 
 **Actually wired to a real backend call today:** login/register, project
