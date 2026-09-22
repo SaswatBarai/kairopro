@@ -33,16 +33,29 @@ import { runTypecheck, type TypecheckError } from "../../validators/typecheck";
 const REPORT_PATH = "test-results/report.json";
 const STDERR_PATH = "test-results/report.stderr";
 
-/** Failing the suite must not fail this shell command — `; true` keeps the
+/**
+ * Failing the suite must not fail this shell command — `; true` keeps the
  * exec's own exit code irrelevant; the *parsed report* is the signal this
- * reads, never the process exit code. */
+ * reads, never the process exit code.
+ *
+ * Neither runner's JSON goes to stdout by default — verified against the
+ * actual installed Vitest, which writes a *confirmation message* ("JSON
+ * report written to …") to stdout and the real report to
+ * `.vitest/json/output.json` unless told otherwise; shell-redirecting
+ * stdout silently captured that message instead of the report. Both
+ * runners are told explicitly where to write instead: Vitest's
+ * `--outputFile` flag, Playwright's `PLAYWRIGHT_JSON_OUTPUT_NAME` env var
+ * (its own `--reporter=json` streams to stdout by default, which the same
+ * class of surprise could apply to depending on the installed version —
+ * this sidesteps it the same way for both).
+ */
 function commandFor(level: TestLevel): string {
   if (level === "e2e") {
-    return `mkdir -p test-results && npx playwright test --reporter=json > ${REPORT_PATH} 2>${STDERR_PATH}; true`;
+    return `mkdir -p test-results && PLAYWRIGHT_JSON_OUTPUT_NAME=${REPORT_PATH} npx playwright test --reporter=json >${STDERR_PATH} 2>&1; true`;
   }
   const dir =
     level === "unit" ? "src/__tests__/unit" : "src/__tests__/integration";
-  return `mkdir -p test-results && npx vitest run ${dir} --reporter=json > ${REPORT_PATH} 2>${STDERR_PATH}; true`;
+  return `mkdir -p test-results && npx vitest run ${dir} --reporter=json --outputFile=${REPORT_PATH} >${STDERR_PATH} 2>&1; true`;
 }
 
 export interface RunTestSuiteInput {
