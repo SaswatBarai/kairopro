@@ -12,6 +12,20 @@ export function useProjectsQuery(initialData?: ProjectListItem[]) {
   });
 }
 
+export function projectQueryKey(id: string) {
+  return ["project", id] as const;
+}
+
+export function useProjectQuery(id: string, initialData?: Project | null) {
+  return useQuery({
+    queryKey: projectQueryKey(id),
+    queryFn: () => fetchProject(id),
+    initialData: initialData ?? undefined,
+    enabled: Boolean(id),
+    staleTime: 15_000,
+  });
+}
+
 export function useCreateProjectMutation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -47,6 +61,10 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
 export function fetchProjects(): Promise<ProjectListItem[]> {
   return request<ProjectListItem[]>("/api/projects");
+}
+
+export function fetchProject(id: string): Promise<Project> {
+  return request<Project>(`/api/projects/${encodeURIComponent(id)}`);
 }
 
 export function createProjectRequest(input: {

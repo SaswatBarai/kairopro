@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useProjectStore } from "@/stores";
 
 const DEPLOY_STEPS = [
   { message: "Dispatching build image to us-east-1", progress: 33 },
@@ -39,8 +40,21 @@ interface DeployModalProps {
   onDeployed: (url: string) => void;
 }
 
+function slugify(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "project"
+  );
+}
+
 export function DeployModal({ open, onClose, onDeployed }: DeployModalProps) {
-  const [subdomain, setSubdomain] = useState("taskflow");
+  const activeProjectName = useProjectStore((s) => s.activeProjectName);
+  const [subdomain, setSubdomain] = useState(() =>
+    slugify(activeProjectName ?? "project"),
+  );
   const [deploying, setDeploying] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -57,9 +71,10 @@ export function DeployModal({ open, onClose, onDeployed }: DeployModalProps) {
     if (open) {
       setDeploying(false);
       setStepIndex(0);
+      setSubdomain(slugify(activeProjectName ?? "project"));
     }
     return clearTimers;
-  }, [open]);
+  }, [open, activeProjectName]);
 
   useEffect(() => {
     if (!open) return;
@@ -144,7 +159,7 @@ export function DeployModal({ open, onClose, onDeployed }: DeployModalProps) {
                   <p className="mt-0.5 text-[12px] leading-4 text-zinc-300">
                     Ship{" "}
                     <span className="font-mono-tech text-[11px] text-zinc-100">
-                      TaskFlow
+                      {activeProjectName ?? "this project"}
                     </span>{" "}
                     to Kairo Edge Network with zero-downtime routing.
                   </p>

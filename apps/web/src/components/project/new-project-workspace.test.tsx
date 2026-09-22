@@ -2,13 +2,23 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import React from "react";
 import { NewProjectWorkspace } from "./new-project-workspace";
 
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  );
+}
+
 describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
   it("renders requirements textarea and counter", () => {
-    render(<NewProjectWorkspace />);
+    renderWithClient(<NewProjectWorkspace />);
 
     const textarea = screen.getByLabelText(/Application requirements/i);
     expect(textarea).toBeInTheDocument();
@@ -19,7 +29,7 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
 
   it("updates character count when typing requirements", async () => {
     const user = userEvent.setup();
-    render(<NewProjectWorkspace />);
+    renderWithClient(<NewProjectWorkspace />);
 
     const textarea = screen.getByLabelText(/Application requirements/i);
     await user.clear(textarea);
@@ -32,7 +42,7 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
 
   it("clicking a template chip populates requirements textarea", async () => {
     const user = userEvent.setup();
-    render(<NewProjectWorkspace />);
+    renderWithClient(<NewProjectWorkspace />);
 
     const crmButton = screen.getByRole("button", { name: "CRM" });
     await user.click(crmButton);
@@ -45,9 +55,14 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
 
   it("shows attached file and allows removing it", async () => {
     const user = userEvent.setup();
-    render(<NewProjectWorkspace />);
+    renderWithClient(<NewProjectWorkspace />);
 
-    // Initially has product-requirements.pdf
+    const fileInput = document.getElementById("file-input") as HTMLInputElement;
+    const file = new File(["sample specs"], "product-requirements.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
     expect(screen.getByText("product-requirements.pdf")).toBeInTheDocument();
     expect(screen.getByText("1 / 5 uploaded")).toBeInTheDocument();
 
@@ -61,7 +76,7 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
   });
 
   it("attaches a new file selected through file picker", () => {
-    render(<NewProjectWorkspace />);
+    renderWithClient(<NewProjectWorkspace />);
 
     const fileInput = document.getElementById("file-input") as HTMLInputElement;
     expect(fileInput).toBeInTheDocument();
@@ -77,7 +92,7 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
   });
 
   it("rejects unsupported file type with error message", () => {
-    render(<NewProjectWorkspace />);
+    renderWithClient(<NewProjectWorkspace />);
 
     const fileInput = document.getElementById("file-input") as HTMLInputElement;
     const invalidFile = new File(["malware payload"], "exploit.exe", {
@@ -91,7 +106,7 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
   });
 
   it("rejects files larger than 10MB", () => {
-    render(<NewProjectWorkspace />);
+    renderWithClient(<NewProjectWorkspace />);
 
     const fileInput = document.getElementById("file-input") as HTMLInputElement;
     const hugeBlob = new Uint8Array(11 * 1024 * 1024);
@@ -109,7 +124,7 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
 
   it("disables Generate PRD button when text length is under 10 chars", async () => {
     const user = userEvent.setup();
-    render(<NewProjectWorkspace />);
+    renderWithClient(<NewProjectWorkspace />);
 
     const textarea = screen.getByLabelText(/Application requirements/i);
     await user.clear(textarea);

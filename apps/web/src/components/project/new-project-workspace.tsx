@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { useDeleteInputMutation, useInputsQuery } from "@/lib/queries/inputs";
 import { validateFile } from "@/lib/validation/file";
 import { cn } from "@/lib/utils";
 
@@ -54,17 +55,11 @@ interface AttachedFile {
   name: string;
   sizeKb: number;
   rawFile?: File;
-  isMock?: boolean;
+  /** Set once this attachment is a real, persisted `Input` row — present
+   * for anything loaded from the backend or already uploaded this
+   * session, absent for a freshly-picked file still staged locally. */
+  inputId?: string;
 }
-
-const INITIAL_FILES: AttachedFile[] = [
-  {
-    id: "initial-mock-file",
-    name: "product-requirements.pdf",
-    sizeKb: 482,
-    isMock: true,
-  },
-];
 
 function formatSizeKb(bytes: number): number {
   return Math.max(1, Math.round(bytes / 1024));
@@ -75,14 +70,41 @@ export function NewProjectWorkspace() {
   const searchParams = useSearchParams();
   const existingProjectId = searchParams.get("projectId");
 
+  const { data: existingInputs } = useInputsQuery(existingProjectId ?? "");
+  const deleteInputMutation = useDeleteInputMutation(existingProjectId ?? "");
+  const hydratedRef = useRef(false);
+
   const [requirements, setRequirements] = useState(DEFAULT_REQUIREMENTS);
-  const [files, setFiles] = useState<AttachedFile[]>(INITIAL_FILES);
+  const [files, setFiles] = useState<AttachedFile[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragging, setDragging] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Hydrate from whatever was already saved for this project, once, the
+  // first time the query resolves — never clobbers text/files the user has
+  // since typed or attached in this session.
+  useEffect(() => {
+    if (hydratedRef.current || !existingInputs) return;
+    hydratedRef.current = true;
+
+    const textInput = existingInputs.find((i) => i.kind === "TEXT");
+    if (textInput?.extraction) setRequirements(textInput.extraction);
+
+    const fileInputs = existingInputs.filter((i) => i.kind === "FILE");
+    if (fileInputs.length > 0) {
+      setFiles(
+        fileInputs.map((i) => ({
+          id: i.id,
+          inputId: i.id,
+          name: i.originalName ?? "attachment",
+          sizeKb: formatSizeKb(i.sizeBytes),
+        })),
+      );
+    }
+  }, [existingInputs]);
 
   const charCount = requirements.trim().length;
   const isValidText = charCount >= 10 && charCount <= 10000;
@@ -100,7 +122,7 @@ export function NewProjectWorkspace() {
     setFileError(null);
 
     const incoming = Array.from(selectedList);
-    const existing = files.length === 1 && files[0]?.isMock ? [] : [...files];
+    const existing = [...files];
 
     const toAdd: AttachedFile[] = [];
     for (const f of incoming) {
@@ -120,9 +142,22 @@ export function NewProjectWorkspace() {
     setFiles([...existing, ...toAdd]);
   };
 
-  const onRemoveFile = (id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
+  const onRemoveFile = async (id: string) => {
     setFileError(null);
+    const target = files.find((f) => f.id === id);
+
+    if (target?.inputId && existingProjectId) {
+      try {
+        await deleteInputMutation.mutateAsync(target.inputId);
+      } catch (err: unknown) {
+        setFileError(
+          err instanceof Error ? err.message : "Failed to remove attachment",
+        );
+        return;
+      }
+    }
+
+    setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
   const onGeneratePrd = async () => {
@@ -365,7 +400,7 @@ export function NewProjectWorkspace() {
                     id="remove-file-btn"
                     title="Remove attachment"
                     type="button"
-                    onClick={() => onRemoveFile(item.id)}
+                    onClick={() => void onRemoveFile(item.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

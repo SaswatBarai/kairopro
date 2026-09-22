@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
+  AlertCircle,
   ArrowRight,
   Building2,
   Check,
   CreditCard,
+  Loader2,
   Network,
   ShieldCheck,
 } from "lucide-react";
@@ -104,11 +106,14 @@ const INITIAL_ANSWERS: Record<string, string> = {
 };
 
 export function ClarificationForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const projectId = searchParams.get("projectId");
 
   const [answers, setAnswers] =
     useState<Record<string, string>>(INITIAL_ANSWERS);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!projectId) {
     return <NoProjectEmptyState stepName="project clarification questions" />;
@@ -118,6 +123,33 @@ export function ClarificationForm() {
 
   const onSelect = (questionId: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  // The backend doesn't yet have a route to submit these answers (see
+  // docs/FRONTEND_INTEGRATION_PLAN.md, gap G1) — every question is always
+  // treated as unanswered and becomes an explicit assumption in the PRD
+  // instead. Selecting an option here is a preview of what the agent
+  // weighs, not something that gets sent anywhere; what's real is kicking
+  // off generation itself, which nothing in the app did until now.
+  const onContinue = async () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/specs/generate`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error?.message ?? "Failed to generate specs");
+      }
+      router.push(specUrl);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred",
+      );
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -249,22 +281,38 @@ export function ClarificationForm() {
 
         <div className="flex flex-col items-center gap-2 pt-3">
           <p className="text-center text-xs text-zinc-500">
-            Unanswered questions become assumptions you can edit in the PRD.
+            These choices aren&apos;t saved yet — unanswered questions become
+            assumptions you can edit in the PRD.
           </p>
+          {error && (
+            <div
+              className="flex w-full items-center gap-2 rounded-[3px] border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300"
+              role="alert"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+              <span>{error}</span>
+            </div>
+          )}
           <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button asChild className="h-10 w-full gap-2 px-6 sm:w-auto">
-              <Link href={specUrl}>
-                <span>Continue to spec</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+            <Button
+              className="h-10 w-full gap-2 px-6 sm:w-auto"
+              disabled={isGenerating}
+              type="button"
+              onClick={() => void onContinue()}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Generating spec...</span>
+                </>
+              ) : (
+                <>
+                  <span>Continue to spec</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </Button>
           </div>
-          <Link
-            className="pt-1 text-xs text-zinc-400 underline-offset-4 transition-colors hover:text-zinc-100 hover:underline"
-            href={specUrl}
-          >
-            Skip and let me review the assumptions
-          </Link>
         </div>
       </form>
     </FadeIn>

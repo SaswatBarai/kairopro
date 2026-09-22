@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useProjectStore } from "@/stores";
 
 export function GithubMark({ className }: { className?: string }) {
   return (
@@ -41,8 +42,21 @@ interface ExportModalProps {
   onExported: (message: string) => void;
 }
 
+function slugify(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "project"
+  );
+}
+
 export function ExportModal({ open, onClose, onExported }: ExportModalProps) {
-  const [repoName, setRepoName] = useState("taskflow");
+  const activeProjectName = useProjectStore((s) => s.activeProjectName);
+  const [repoName, setRepoName] = useState(() =>
+    slugify(activeProjectName ?? "project"),
+  );
   const [visibility, setVisibility] = useState<"private" | "public">("private");
   const [readme, setReadme] = useState(true);
   const [phase, setPhase] = useState<ExportPhase>("idle");
@@ -54,9 +68,12 @@ export function ExportModal({ open, onClose, onExported }: ExportModalProps) {
   };
 
   useEffect(() => {
-    if (open) setPhase("idle");
+    if (open) {
+      setPhase("idle");
+      setRepoName(slugify(activeProjectName ?? "project"));
+    }
     return clearTimers;
-  }, [open]);
+  }, [open, activeProjectName]);
 
   useEffect(() => {
     if (!open) return;

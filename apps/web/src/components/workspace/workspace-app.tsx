@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Project } from "@kairopro/contracts";
 
+import { useProjectQuery } from "@/lib/queries/projects";
 import { cn } from "@/lib/utils";
 import { useBuildStreamStore, useProjectStore } from "@/stores";
 import {
@@ -59,11 +61,25 @@ function ResizeHandle({
   );
 }
 
-export function WorkspaceApp() {
+interface WorkspaceAppProps {
+  projectId: string;
+  initialProject: Project | null;
+}
+
+export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
   const router = useRouter();
   const setSelectedFile = useProjectStore((s) => s.setSelectedFile);
   const setTerminalOpen = useProjectStore((s) => s.setTerminalOpen);
+  const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const setBuildStatus = useBuildStreamStore((s) => s.setBuildStatus);
+
+  const { data: project } = useProjectQuery(projectId, initialProject);
+
+  useEffect(() => {
+    if (project) {
+      setActiveProject(project.id, project.name, project.status);
+    }
+  }, [project, setActiveProject]);
 
   const [explorerOpen, setExplorerOpen] = useState(true);
   const [explorerWidth, setExplorerWidth] = useState(240);
@@ -362,6 +378,7 @@ export function WorkspaceApp() {
 
       <HistoryDrawer
         open={historyOpen}
+        projectId={projectId}
         currentId={checkpointId}
         onClose={() => setHistoryOpen(false)}
         onView={viewCheckpoint}
