@@ -1,13 +1,13 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { RequestContext } from "../../../../lib/context";
 import { getLLMProvider } from "../../llm";
 import type { LLMProvider } from "../../llm/provider";
 import { modelFor } from "../../llm/router";
-import { completeWithValidator } from "../../llm/structured";
+import { completeWithValidator, stripCodeFence } from "../../llm/structured";
 import { renderPrompt } from "../../prompts/loader";
 
 /**
@@ -45,10 +45,24 @@ generator client {
 
 `;
 
-function resolvePrismaBin(): string {
-  const require = createRequire(import.meta.url);
-  const pkgPath = require.resolve("prisma/package.json");
-  const pkg = require(pkgPath) as { bin: string | Record<string, string> };
+/** `prisma`'s package directory — walked from this file's own location via
+ * `import.meta.url`, never through `require.resolve`'s package-resolution
+ * algorithm. Next's Turbopack dev server preserves `import.meta.url` as
+ * the true original source path but virtualizes `require.resolve` into a
+ * logical id like `[project]/node_modules/...` — not a real filesystem
+ * path — which every plain-`vitest`-run test here was blind to, since
+ * those never go through Turbopack at all (same bug, same fix, as
+ * `template.ts`'s `resolveTemplateJson`). `prisma` is a direct
+ * devDependency of this package specifically so this resolves
+ * deterministically, via a fixed relative path. */
+async function resolvePrismaBin(): Promise<string> {
+  const pkgPath = join(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../../../node_modules/prisma/package.json",
+  );
+  const pkg = JSON.parse(await readFile(pkgPath, "utf8")) as {
+    bin: string | Record<string, string>;
+  };
   const bin = typeof pkg.bin === "string" ? pkg.bin : pkg.bin.prisma;
   if (!bin) {
     throw new Error("Could not resolve the prisma CLI's bin entry");
@@ -61,12 +75,16 @@ function resolvePrismaBin(): string {
  * step, which re-validates the already-approved data model spec before
  * writing it into a real project — the same check, a different caller. */
 export async function validatePrismaSchema(content: string): Promise<string> {
-  const trimmed = content.trim();
+  // Fences are already stripped for completions arriving via
+  // `completeWithValidator`; this repeats it because Phase 16's `schema`
+  // step calls this validator directly with stored spec content, which
+  // never passed through that path. Idempotent either way.
+  const trimmed = stripCodeFence(content);
   if (!trimmed) {
     throw new Error("Data model must not be empty");
   }
 
-  const prismaBin = resolvePrismaBin();
+  const prismaBin = await resolvePrismaBin();
   const dir = await mkdtemp(join(tmpdir(), "kairopro-prisma-validate-"));
   const schemaPath = join(dir, "schema.prisma");
   try {

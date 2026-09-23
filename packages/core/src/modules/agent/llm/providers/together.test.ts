@@ -50,7 +50,7 @@ describe("Together provider — complete (AI-1)", () => {
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe("zai-org/GLM-5.3-Flash");
     expect(body.messages).toEqual(input.messages);
-    expect(body.max_tokens).toBe(4096);
+    expect(body.max_tokens).toBe(16384);
     expect(body.stream).toBe(false);
   });
 

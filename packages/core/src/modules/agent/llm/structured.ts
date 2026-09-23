@@ -135,6 +135,31 @@ function parseJson(
   }
 }
 
+/**
+ * Strips a markdown code fence that wraps an *entire* response — Claude
+ * reliably does this (```yaml around a DESIGN.md, ```prisma around a
+ * schema) even when the prompt says not to, and the validators downstream
+ * parse formats that are position-sensitive: YAML frontmatter has to start
+ * on line 1, Prisma DSL has to start with a keyword.
+ *
+ * Deliberately conservative — it only unwraps when the opening line is a
+ * bare fence (optionally language-tagged) and the very last characters
+ * close it. A document that merely *contains* fenced code blocks, which a
+ * DESIGN.md legitimately can, is returned untouched.
+ */
+export function stripCodeFence(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("```") || !trimmed.endsWith("```")) return trimmed;
+
+  const firstNewline = trimmed.indexOf("\n");
+  if (firstNewline === -1) return trimmed;
+
+  const openingLine = trimmed.slice(0, firstNewline).trim();
+  if (!/^```[a-zA-Z0-9_-]*$/.test(openingLine)) return trimmed;
+
+  return trimmed.slice(firstNewline + 1, -3).trim();
+}
+
 export interface CompleteWithValidatorInput<T> {
   provider: LLMProvider;
   model: string;
@@ -188,7 +213,7 @@ export async function completeWithValidator<T>(
     await recordCallUsage(result.usage, input.ctx, input.refs);
 
     try {
-      return await input.validate(result.content);
+      return await input.validate(stripCodeFence(result.content));
     } catch (cause) {
       correction = cause instanceof Error ? cause.message : String(cause);
     }

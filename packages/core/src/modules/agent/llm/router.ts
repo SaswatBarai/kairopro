@@ -3,10 +3,16 @@
  * place a model name appears anywhere in the codebase; every call site
  * asks for a model by workflow phase, never by name.
  *
- * Provider decision (Open Items, resolved): Together AI, model
- * `zai-org/GLM-5.3-Flash` — cheap, vision-capable, 1M-token context,
- * confirmed live against the real API. Every phase uses it today; split
- * phases onto different models here if cost/quality data later calls for it.
+ * Provider decision, revised: Anthropic, model `claude-haiku-4-5` — chosen
+ * for speed over the previous Together model (`zai-org/GLM-5.3-Flash`),
+ * which was a reasoning model that had to have its provider's
+ * `DEFAULT_MAX_TOKENS`/`DEFAULT_TIMEOUT_MS` raised repeatedly (see
+ * `providers/together.ts`'s history) to survive its own "thinking" token
+ * spend on real structured-generation prompts. Haiku 4.5 is called here
+ * with no extended thinking requested, confirmed live against the real
+ * API. Together AI (`providers/together.ts`) is kept as an automatic
+ * fallback in `llm/index.ts`'s selector, not deleted, in case Anthropic is
+ * ever unconfigured.
  */
 
 export const WORKFLOW_PHASES = [
@@ -23,7 +29,7 @@ export const WORKFLOW_PHASES = [
 
 export type WorkflowPhase = (typeof WORKFLOW_PHASES)[number];
 
-const DEFAULT_MODEL = "zai-org/GLM-5.3-Flash";
+const DEFAULT_MODEL = "claude-haiku-4-5";
 
 const MODEL_BY_PHASE: Record<WorkflowPhase, string> = {
   "pm-questions": DEFAULT_MODEL,

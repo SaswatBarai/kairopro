@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RequestContext } from "../../../lib/context";
 import { LLMStructuredOutputError } from "./errors";
 import type { LLMCompleteResult, LLMProvider } from "./provider";
-import { completeStructured, completeWithValidator } from "./structured";
+import {
+  completeStructured,
+  completeWithValidator,
+  stripCodeFence,
+} from "./structured";
 
 vi.mock("../../usage/usage.service", () => ({
   emit: vi.fn(),
@@ -230,5 +234,45 @@ describe("completeWithValidator (AI-1)", () => {
     expect(emit).toHaveBeenCalledWith("LLM_TOKENS", 15, ctx, {
       projectId: "prj-1",
     });
+  });
+});
+
+describe("stripCodeFence (AI-5)", () => {
+  it("unwraps a language-tagged fence around the whole response", () => {
+    // The real shape Claude returns for a DESIGN.md: the `---` frontmatter
+    // lands on line 2, which is what broke the YAML parse.
+    expect(stripCodeFence('```yaml\n---\ncolor:\n  bg: "#fff"\n---\n```')).toBe(
+      '---\ncolor:\n  bg: "#fff"\n---',
+    );
+  });
+
+  it("unwraps an untagged fence", () => {
+    expect(stripCodeFence("```\nmodel User {}\n```")).toBe("model User {}");
+  });
+
+  it("leaves a document that merely contains fenced blocks untouched", () => {
+    const doc = "---\ntitle: x\n---\n\nUse this:\n\n```ts\nconst a = 1;\n```";
+    expect(stripCodeFence(doc)).toBe(doc);
+  });
+
+  it("leaves unfenced content untouched", () => {
+    expect(stripCodeFence("  model User {}  ")).toBe("model User {}");
+  });
+
+  it("is idempotent", () => {
+    const once = stripCodeFence("```prisma\nmodel User {}\n```");
+    expect(stripCodeFence(once)).toBe(once);
+  });
+
+  it("strips the fence before handing content to the validator", async () => {
+    const provider = providerReturning("```yaml\n---\nok: true\n---\n```");
+    const seen = await completeWithValidator({
+      provider,
+      model: "m",
+      messages: [{ role: "user", content: "go" }],
+      ctx,
+      validate: (content) => content,
+    });
+    expect(seen).toBe("---\nok: true\n---");
   });
 });

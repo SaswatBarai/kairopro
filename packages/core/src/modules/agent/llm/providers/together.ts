@@ -16,12 +16,36 @@ import type {
 
 const API_URL = "https://api.together.xyz/v1/chat/completions";
 /** Exported for tests — so a timeout test can drive fake timers by the
- * real value instead of duplicating the constant. */
-export const DEFAULT_TIMEOUT_MS = 120_000;
+ * real value instead of duplicating the constant.
+ *
+ * Raised from 120s after two real, consecutive production timeouts on the
+ * same call (data-model generation) — a raw, unconstrained timing of that
+ * exact call measured 111.4s wall-clock (9,590 reasoning tokens this run),
+ * within ~9s of the old cap. That's not network flakiness, it's the real
+ * cost of a reasoning-heavy prompt at the token budget above; ordinary
+ * variance was enough to tip it over on two separate real attempts. */
+export const DEFAULT_TIMEOUT_MS = 240_000;
 /** GLM-5.3-Flash is a reasoning model — it spends tokens thinking before
  * answering. Too low a cap truncates mid-thought with no final answer
- * (verified: `max_tokens: 10` cut off before any `content` appeared). */
-const DEFAULT_MAX_TOKENS = 4096;
+ * (verified: `max_tokens: 10` cut off before any `content` appeared).
+ * This has been raised twice, each time from a real production failure,
+ * each time re-verified against the live API before picking the new
+ * number — reasoning-token usage scales with how much the prompt asks
+ * for, and an under-budget run doesn't fail loudly, it just returns
+ * truncated/empty JSON that `completeStructured` retries into the same
+ * failure 3 times:
+ *  - 4096: too tight even for pm-questions (~2,200-2,400 reasoning
+ *    tokens observed, with real run-to-run variance).
+ *  - 8192: enough for pm-questions, not enough for app-structure (a
+ *    bigger schema — pages + endpoints + components) — one real run
+ *    burned the entire 8192 on reasoning alone (`finish_reason:
+ *    "length"`, empty content) before any JSON was written.
+ *  - 16000: verified against the real app-structure prompt that failed
+ *    at 12000 (12000/12000 reasoning tokens, zero content) — succeeded
+ *    with ~30% headroom (11,254 of 16,000 used, `finish_reason: "stop"`,
+ *    valid JSON). Rounded up for margin against the next prompt that
+ *    turns out to need more. */
+const DEFAULT_MAX_TOKENS = 16384;
 
 interface TogetherChoice {
   message?: { content?: string };

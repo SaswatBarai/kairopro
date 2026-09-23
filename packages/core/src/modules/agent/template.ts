@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { ValidationError } from "../../lib/errors";
 
 /**
@@ -77,16 +77,28 @@ export function renderConventions(manifest: TemplateManifest): string {
   ].join("\n");
 }
 
+/** `packages/templates`'s real directory — walked from this file's own
+ * location via `import.meta.url`, never through `require.resolve`'s
+ * package-`exports`-map lookup. Next's Turbopack dev server preserves
+ * `import.meta.url` as the true original source path (the documented,
+ * supported pattern for build-time asset resolution) but virtualizes
+ * `require.resolve` for workspace packages into a logical id like
+ * `[project]/packages/...` — not a real filesystem path — which every
+ * plain-`vitest`-run test here was blind to, since those never go through
+ * Turbopack at all. */
+const TEMPLATES_ROOT = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../../templates",
+);
+
 function resolveTemplateJson(templateId: string): string {
-  const require = createRequire(import.meta.url);
-  try {
-    return require.resolve(`@kairopro/templates/${templateId}/template.json`);
-  } catch (cause) {
+  const manifestPath = join(TEMPLATES_ROOT, templateId, "template.json");
+  if (!existsSync(manifestPath)) {
     throw new ValidationError({
       message: `Unknown template id "${templateId}"`,
-      cause,
     });
   }
+  return manifestPath;
 }
 
 /** Resolves a template's skeleton directory via the same `exports` map. */

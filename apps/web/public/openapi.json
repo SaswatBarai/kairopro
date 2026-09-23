@@ -1,0 +1,1428 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "KairoPro API",
+    "version": "1.0.0",
+    "description": "The full KairoPro backend API — every route under apps/web/src/app/api. Session auth is a NextAuth cookie (`next-auth.session-token`); log in through the app in the same browser tab first, then 'Try it' requests here will carry that cookie automatically since this page is served from the same origin."
+  },
+  "servers": [{ "url": "/", "description": "This app" }],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Registration and NextAuth-managed sign-in"
+    },
+    { "name": "Projects", "description": "Project CRUD" },
+    {
+      "name": "Inputs",
+      "description": "Requirements text and file attachments"
+    },
+    {
+      "name": "Specs",
+      "description": "PRD / Design / Data Model / App Structure generation and approval"
+    },
+    {
+      "name": "Builds",
+      "description": "Build orchestration and live log streaming"
+    },
+    {
+      "name": "Changes",
+      "description": "Post-build change requests (plan → approve → apply)"
+    },
+    {
+      "name": "Credentials",
+      "description": "Per-project third-party service credentials"
+    },
+    { "name": "Deploy", "description": "Production deploy to a subdomain" },
+    {
+      "name": "GitHub Export",
+      "description": "Export a project's workspace to a GitHub repo"
+    },
+    {
+      "name": "Versions",
+      "description": "Git-backed version history, diff, and revert"
+    },
+    { "name": "Webhooks", "description": "Inbound webhooks from third parties" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "next-auth.session-token",
+        "description": "Set by signing in through the app's own /login page in this browser."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "VALIDATION_ERROR",
+                  "UNAUTHORIZED",
+                  "NOT_FOUND",
+                  "CONFLICT",
+                  "PROVIDER_ERROR",
+                  "TIMEOUT_ERROR",
+                  "RATE_LIMITED",
+                  "INTERNAL_ERROR"
+                ]
+              },
+              "message": { "type": "string" }
+            }
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "orgId": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "status": {
+            "type": "string",
+            "enum": ["DRAFT", "SPECIFYING", "BUILDING", "READY", "DEPLOYED"]
+          },
+          "templateId": { "type": "string" },
+          "previewUrl": { "type": "string", "nullable": true },
+          "deployedUrl": { "type": "string", "nullable": true },
+          "subdomain": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProjectListItem": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Project" },
+          {
+            "type": "object",
+            "properties": {
+              "stack": { "type": "string", "nullable": true },
+              "latestCommitHash": { "type": "string", "nullable": true },
+              "lastActivityAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        ]
+      },
+      "CreateProjectInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "description": { "type": "string", "maxLength": 2000 }
+        }
+      },
+      "UpdateProjectInput": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2000
+          }
+        }
+      },
+      "RegisterInput": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8 }
+        }
+      },
+      "Input": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "projectId": { "type": "string" },
+          "kind": { "type": "string", "enum": ["TEXT", "FILE"] },
+          "originalName": { "type": "string", "nullable": true },
+          "mimeType": { "type": "string", "nullable": true },
+          "sizeBytes": { "type": "integer" },
+          "extraction": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SaveTextInput": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": { "type": "string", "minLength": 1, "maxLength": 50000 }
+        }
+      },
+      "Spec": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "projectId": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["PRD", "DESIGN", "DATA_MODEL", "APP_STRUCTURE"]
+          },
+          "version": { "type": "integer" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_APPROVAL",
+              "APPROVED",
+              "REJECTED",
+              "STALE"
+            ]
+          },
+          "content": {
+            "description": "Opaque, shape depends on `type` — see docs/BACKEND_AI_PLAN.md Phase 11.",
+            "type": "object"
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ReviseSpecInput": {
+        "type": "object",
+        "required": ["content"],
+        "description": "The FULL replacement content for this spec type — not a free-text change request.",
+        "properties": { "content": { "type": "object" } }
+      },
+      "Build": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "projectId": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "commitHash": { "type": "string", "nullable": true },
+          "previewUrl": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ChangeRequest": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "projectId": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PLANNING",
+              "AWAITING_APPROVAL",
+              "APPLYING",
+              "SUCCEEDED",
+              "FAILED",
+              "CANCELLED"
+            ]
+          },
+          "request": { "type": "string" },
+          "plan": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "summary": { "type": "string" },
+              "diffSummary": { "type": "string" },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": { "type": "string" },
+                    "task": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "commitHash": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RequestChangeInput": {
+        "type": "object",
+        "required": ["request"],
+        "properties": {
+          "request": { "type": "string", "minLength": 1, "maxLength": 4000 }
+        }
+      },
+      "CredentialField": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "label": { "type": "string" },
+          "maskedValue": { "type": "string" }
+        }
+      },
+      "ServiceCredentials": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "enum": ["google_oauth", "stripe", "sendgrid", "aws_s3"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["CONNECTED", "UNCONFIGURED", "UNUSED"]
+          },
+          "fields": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CredentialField" }
+          }
+        }
+      },
+      "PutCredentialInput": {
+        "type": "object",
+        "required": ["values"],
+        "properties": {
+          "values": {
+            "type": "object",
+            "description": "fieldKey -> raw secret value, e.g. { \"secretKey\": \"sk_live_...\" } for stripe",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "DeployInput": {
+        "type": "object",
+        "properties": {
+          "subdomain": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 63,
+            "pattern": "^[a-z0-9-]+$",
+            "description": "Required on first deploy; ignored (reused) on redeploy."
+          }
+        }
+      },
+      "DeployResult": {
+        "type": "object",
+        "properties": {
+          "projectId": { "type": "string" },
+          "subdomain": { "type": "string" },
+          "deployedUrl": { "type": "string", "format": "uri" }
+        }
+      },
+      "GithubConnectInput": {
+        "type": "object",
+        "required": ["accessToken", "githubLogin"],
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "A GitHub personal access token (no OAuth App flow yet — see docs/FRONTEND_INTEGRATION_PLAN.md gap G3)."
+          },
+          "githubLogin": { "type": "string" }
+        }
+      },
+      "GithubConnectionStatus": {
+        "type": "object",
+        "properties": {
+          "connected": { "type": "boolean" },
+          "githubLogin": { "type": "string", "nullable": true },
+          "repoUrl": { "type": "string", "nullable": true }
+        }
+      },
+      "GithubExportResult": {
+        "type": "object",
+        "properties": {
+          "repoUrl": { "type": "string", "format": "uri" },
+          "defaultBranch": { "type": "string" }
+        }
+      },
+      "Version": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "projectId": { "type": "string" },
+          "hash": { "type": "string" },
+          "message": { "type": "string" },
+          "filesChanged": { "type": "integer" },
+          "revertible": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "VersionDiff": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "object",
+            "properties": {
+              "filesChanged": { "type": "integer" },
+              "insertions": { "type": "integer" },
+              "deletions": { "type": "integer" }
+            }
+          },
+          "raw": { "type": "string", "description": "Unified diff text" }
+        }
+      }
+    }
+  },
+  "security": [{ "sessionCookie": [] }],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new account",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created — signed in on the frontend right after this"
+          },
+          "409": {
+            "description": "Email already registered",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/csrf": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Step 1 of login: get a CSRF token",
+        "security": [],
+        "description": "Also sets a `next-auth.csrf-token` cookie that must accompany the token below in the next request — 'Try it' keeps cookies automatically within this page.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "csrfToken": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/callback/credentials": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Step 2 of login: sign in with email + password",
+        "security": [],
+        "description": "Form-encoded, not JSON. `csrfToken` must be the value GET /api/auth/csrf just returned. On success this sets the session cookie — after this, every other request in this page is authenticated. Set `json` to `true` to get a JSON response back instead of a redirect.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "csrfToken"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" },
+                  "csrfToken": { "type": "string" },
+                  "json": { "type": "boolean", "default": true },
+                  "callbackUrl": { "type": "string", "default": "/dashboard" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session cookie set (wrong credentials also come back 200, with a `url` pointing at /login?error=CredentialsSignin — no session cookie in that case)"
+          }
+        }
+      }
+    },
+    "/api/auth/session": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Check who (if anyone) is currently signed in",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "`{}` when signed out; `{user:{...}, expires}` when signed in",
+            "content": {
+              "application/json": { "schema": { "type": "object" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/signout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Sign out (clears the session cookie)",
+        "security": [],
+        "description": "Also needs a fresh csrfToken, same as signing in.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["csrfToken"],
+                "properties": {
+                  "csrfToken": { "type": "string" },
+                  "json": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Signed out" } }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": ["Projects"],
+        "summary": "List the caller's org's projects",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProjectListItem" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Projects"],
+        "summary": "Create a project",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateProjectInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Project" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Projects"],
+        "summary": "Get one project",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Project" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Projects"],
+        "summary": "Update a project's name/description",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateProjectInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Project" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Projects"],
+        "summary": "Delete a project",
+        "responses": { "204": { "description": "Deleted" } }
+      }
+    },
+    "/api/projects/{id}/inputs": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Inputs"],
+        "summary": "List a project's requirement inputs",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Input" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Inputs"],
+        "summary": "Save requirements text OR upload file attachment(s)",
+        "description": "Send EITHER application/json ({text}) to upsert the project's single text input, OR multipart/form-data with a `files` field to upload an attachment. To upload more than one file at once, switch content type to multipart/form-data, click 'Add item' next to files if shown, or just repeat this request once per file — each call adds one more attachment.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SaveTextInput" }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["files"],
+                "properties": {
+                  "files": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/api/projects/{id}/inputs/{inputId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "inputId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "delete": {
+        "tags": ["Inputs"],
+        "summary": "Delete one attachment",
+        "responses": { "204": { "description": "Deleted" } }
+      }
+    },
+    "/api/projects/{id}/specs": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Specs"],
+        "summary": "List the project's latest spec of each type",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Spec" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/specs/generate": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Specs"],
+        "summary": "Kick off spec generation (pm-questions -> PRD -> design -> data model -> app structure)",
+        "description": "Returns 202 immediately; generation runs in the background. Poll GET /specs to watch each spec type land.",
+        "responses": {
+          "202": { "description": "Accepted" },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/specs/{specId}/approve": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "specId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Specs"],
+        "summary": "Approve a spec",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Spec" }
+              }
+            }
+          },
+          "409": {
+            "description": "Not in an approvable status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/specs/{specId}/reject": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "specId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Specs"],
+        "summary": "Reject a spec",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Spec" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/specs/{specId}/revise": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "specId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Specs"],
+        "summary": "Replace a spec's content with a new version",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReviseSpecInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK — new DRAFT version created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Spec" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/builds": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Builds"],
+        "summary": "Start a build",
+        "description": "Requires every spec to be APPROVED first. Returns 202 immediately; the workflow runs in the background.",
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Build" }
+              }
+            }
+          },
+          "409": {
+            "description": "A build is already running",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Builds"],
+        "summary": "List a project's builds",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Build" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/builds/{buildId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "buildId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Builds"],
+        "summary": "Get one build's current status",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Build" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/builds/{buildId}/cancel": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "buildId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Builds"],
+        "summary": "Cancel a build (idempotent)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Build" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/builds/{buildId}/stream": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "buildId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Builds"],
+        "summary": "Live build log stream (Server-Sent Events)",
+        "description": "Not really testable from a 'Try it' button — open this URL directly in a browser tab, or use `curl -N`, to watch the event stream. Supports `Last-Event-ID` for resuming.",
+        "parameters": [
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "text/event-stream of status/terminal/code/checkpoint/done/error frames",
+            "content": {
+              "text/event-stream": { "schema": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/changes": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Changes"],
+        "summary": "Request a change (produces a plan)",
+        "description": "Returns 202 immediately in PLANNING status; planning runs in the background and moves to AWAITING_APPROVAL. Poll GET .../changes/{changeId}.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RequestChangeInput" }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChangeRequest" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Changes"],
+        "summary": "List a project's change requests",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ChangeRequest" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/changes/{changeId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "changeId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Changes"],
+        "summary": "Get one change request (poll this for its plan/status)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChangeRequest" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/changes/{changeId}/approve": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "changeId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Changes"],
+        "summary": "Approve the plan and start applying it",
+        "description": "Requires status AWAITING_APPROVAL. Returns 202; apply runs in the background.",
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChangeRequest" }
+              }
+            }
+          },
+          "409": {
+            "description": "Not awaiting approval",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/changes/{changeId}/cancel": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "changeId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Changes"],
+        "summary": "Cancel a change request (idempotent)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChangeRequest" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/credentials": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Credentials"],
+        "summary": "List credential status for every known service",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ServiceCredentials" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/credentials/{service}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "service",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": ["google_oauth", "stripe", "sendgrid", "aws_s3"]
+          }
+        }
+      ],
+      "put": {
+        "tags": ["Credentials"],
+        "summary": "Set (encrypt and store) a service's credential values",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PutCredentialInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ServiceCredentials" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Credentials"],
+        "summary": "Remove a service's stored credentials",
+        "responses": { "204": { "description": "Deleted" } }
+      }
+    },
+    "/api/projects/{id}/deploy": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Deploy"],
+        "summary": "Deploy the latest successful build to a production subdomain",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeployInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeployResult" }
+              }
+            }
+          },
+          "409": {
+            "description": "No successful build, or subdomain taken",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/export/github": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["GitHub Export"],
+        "summary": "Connect GitHub (optional, if not already connected) and export",
+        "description": "Send an empty body if already connected; include accessToken+githubLogin to connect first.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GithubConnectInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GithubExportResult" }
+              }
+            }
+          },
+          "409": {
+            "description": "GitHub not connected",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["GitHub Export"],
+        "summary": "Get the project's GitHub connection status",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GithubConnectionStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/versions": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Versions"],
+        "summary": "List a project's version history",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Version" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/versions/{versionId}/diff": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "versionId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Versions"],
+        "summary": "Diff a version against its parent",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VersionDiff" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/versions/{versionId}/revert": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "versionId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Versions"],
+        "summary": "Revert to a version (forward commit, never rewrites history)",
+        "description": "Requires a clean working tree.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Version" }
+              }
+            }
+          },
+          "409": {
+            "description": "Working tree not clean",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/github": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "GitHub webhook receiver",
+        "security": [],
+        "description": "Authenticated via HMAC-SHA256 signature (X-Hub-Signature-256), not a session cookie — not testable from 'Try it' without a real signed payload.",
+        "parameters": [
+          {
+            "name": "X-Hub-Signature-256",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "X-GitHub-Event",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Acknowledged" },
+          "401": { "description": "Invalid signature" }
+        }
+      }
+    }
+  }
+}
