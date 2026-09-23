@@ -94,8 +94,39 @@ export async function completeStructured<T>(
 function parseJson(
   text: string,
 ): { ok: true; value: unknown } | { ok: false; error: string } {
+  let cleaned = text.trim();
+
+  // Strip markdown code block wrappers if present (e.g., ```json ... ``` or ``` ...)
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
+  }
+
+  // Find the boundaries of the JSON payload if wrapped in extraneous prose/text
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  const firstBracket = cleaned.indexOf("[");
+  const lastBracket = cleaned.lastIndexOf("]");
+
+  let start = -1;
+  let end = -1;
+
+  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    start = firstBrace;
+    end = lastBrace;
+  } else if (firstBracket !== -1) {
+    start = firstBracket;
+    end = lastBracket;
+  }
+
+  if (start !== -1 && end > start) {
+    cleaned = cleaned.substring(start, end + 1);
+  }
+
   try {
-    return { ok: true, value: JSON.parse(text) };
+    return { ok: true, value: JSON.parse(cleaned) };
   } catch (cause) {
     return {
       ok: false,

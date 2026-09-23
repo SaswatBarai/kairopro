@@ -108,6 +108,22 @@ describe("completeStructured (AI-1)", () => {
     expect(result).toEqual({ title: "x", count: 1 });
   });
 
+  it("parses JSON wrapped in markdown code blocks and prose", async () => {
+    const provider = providerReturning(
+      'Here is the response:\n```json\n{"title":"x","count":1}\n```',
+    );
+
+    const result = await completeStructured({
+      provider,
+      model: "m",
+      schema,
+      messages: [{ role: "user", content: "go" }],
+      ctx,
+    });
+
+    expect(result).toEqual({ title: "x", count: 1 });
+  });
+
   it("exhausts retries and throws LLMStructuredOutputError", async () => {
     const provider = providerReturning("bad-1", "bad-2", "bad-3", "bad-4");
 

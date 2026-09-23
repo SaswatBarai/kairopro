@@ -17,7 +17,7 @@ import type {
 const API_URL = "https://api.together.xyz/v1/chat/completions";
 /** Exported for tests — so a timeout test can drive fake timers by the
  * real value instead of duplicating the constant. */
-export const DEFAULT_TIMEOUT_MS = 60_000;
+export const DEFAULT_TIMEOUT_MS = 120_000;
 /** GLM-5.3-Flash is a reasoning model — it spends tokens thinking before
  * answering. Too low a cap truncates mid-thought with no final answer
  * (verified: `max_tokens: 10` cut off before any `content` appeared). */
