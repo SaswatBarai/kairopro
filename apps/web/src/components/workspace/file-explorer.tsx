@@ -1,23 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ChevronsDownUp,
   ChevronDown,
   ChevronRight,
-  FilePlus,
   Folder,
   FolderOpen,
-  FolderPlus,
-  GitFork,
+  Loader2,
   Search,
 } from "lucide-react";
 
+import {
+  buildFileTree,
+  fileBadge,
+  fileTone,
+  folderPaths,
+  type TreeNode,
+} from "@/lib/file-tree";
+import { useProjectFilesQuery } from "@/lib/queries/files";
 import { cn } from "@/lib/utils";
-import { ROOT, fileBadge, fileTone, type TreeNode } from "./code-content";
 
 interface FileExplorerProps {
+  projectId: string;
+  projectName: string;
   width: number;
   activeFile: string | null;
   className?: string;
@@ -120,55 +128,39 @@ function TreeRows({
 }
 
 export function FileExplorer({
+  projectId,
+  projectName,
   width,
   activeFile,
   className,
   onOpenFile,
   onSearch,
 }: FileExplorerProps) {
-  const [tree, setTree] = useState<TreeNode>(ROOT);
-  const [expanded, setExpanded] = useState<string[]>([
-    "taskflow",
-    "app",
-    "app/api",
-    "app/api/tasks",
-    "components",
-    "lib",
-    "prisma",
-    "tests",
-  ]);
-  const [nextId, setNextId] = useState(1);
+  const { data: files, isLoading, error } = useProjectFilesQuery(projectId);
+  const tree = useMemo(() => buildFileTree(files ?? []), [files]);
 
-  const toggleFolder = (path: string) => {
-    setExpanded((prev) =>
-      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path],
-    );
-  };
+  // Folders the user has toggled; the rest use the default, which opens the
+  // top two levels.
+  const [toggled, setToggled] = useState<Record<string, boolean>>({});
+  const defaultOpen = useMemo(
+    () => new Set(folderPaths(files ?? [], 2)),
+    [files],
+  );
+  const openFolders = useMemo(
+    () => allFolders(tree).filter((p) => toggled[p] ?? defaultOpen.has(p)),
+    [tree, toggled, defaultOpen],
+  );
+  const rootOpen = toggled[ROOT_PATH] ?? true;
+  const expanded = rootOpen ? [ROOT_PATH, ...openFolders] : openFolders;
 
-  const addFile = () => {
-    const name = `untitled-${nextId}.ts`;
-    setTree((prev) => ({
+  const toggleFolder = (path: string) =>
+    setToggled((prev) => ({
       ...prev,
-      children: [...(prev.children ?? []), { name, path: name, kind: "file" }],
+      [path]: !(path === ROOT_PATH ? rootOpen : openFolders.includes(path)),
     }));
-    setNextId((n) => n + 1);
-    onOpenFile(name);
-  };
 
-  const addFolder = () => {
-    const name = `new-folder-${nextId}`;
-    setTree((prev) => ({
-      ...prev,
-      children: [
-        ...(prev.children ?? []),
-        { name, path: name, kind: "folder", children: [] },
-      ],
-    }));
-    setNextId((n) => n + 1);
-    setExpanded((prev) => [...prev, name]);
-  };
-
-  const collapseAll = () => setExpanded(["taskflow"]);
+  const collapseAll = () =>
+    setToggled(Object.fromEntries(allFolders(tree).map((p) => [p, false])));
 
   return (
     <aside
@@ -183,22 +175,6 @@ export function FileExplorer({
           Files
         </span>
         <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            title="New file"
-            onClick={addFile}
-            className="flex h-6 w-6 items-center justify-center rounded-[3px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
-          >
-            <FilePlus className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            title="New folder"
-            onClick={addFolder}
-            className="flex h-6 w-6 items-center justify-center rounded-[3px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
-          >
-            <FolderPlus className="h-3.5 w-3.5" />
-          </button>
           <button
             type="button"
             title="Search files"
@@ -219,51 +195,86 @@ export function FileExplorer({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto py-1">
-        <button
-          type="button"
-          onClick={() => toggleFolder(tree.path)}
-          className="flex h-[26px] w-full items-center gap-1.5 px-2.5 text-left text-[12px] font-medium text-zinc-200 transition-colors hover:bg-white/[0.04]"
-        >
-          {expanded.includes(tree.path) ? (
-            <ChevronDown className="h-3 w-3 shrink-0 text-zinc-500" />
-          ) : (
-            <ChevronRight className="h-3 w-3 shrink-0 text-zinc-500" />
-          )}
-          {expanded.includes(tree.path) ? (
-            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-brand-purple-light" />
-          ) : (
-            <Folder className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
-          )}
-          <span className="truncate">{tree.name}</span>
-        </button>
-        <AnimatePresence initial={false}>
-          {expanded.includes(tree.path) && (
-            <motion.div
-              key="root-children"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.16, ease: "easeOut" }}
-              className="overflow-hidden"
+        {isLoading && (
+          <div className="flex items-center gap-2 px-3 py-3 text-[12px] text-zinc-500">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Loading files…
+          </div>
+        )}
+
+        {error && (
+          <p className="px-3 py-3 text-[12px] text-zinc-400" role="alert">
+            Couldn&apos;t load the files. {error.message}
+          </p>
+        )}
+
+        {!isLoading && !error && files?.length === 0 && (
+          <div className="flex flex-col gap-2 px-3 py-4 text-[12px] leading-relaxed text-zinc-400">
+            <p>No files yet. They appear here once your first build has run.</p>
+            <Link
+              className="text-brand-purple-light hover:underline"
+              href={`/projects/${encodeURIComponent(projectId)}/build`}
             >
-              <TreeRows
-                nodes={tree.children ?? []}
-                depth={1}
-                expanded={expanded}
-                onToggleFolder={toggleFolder}
-                activeFile={activeFile}
-                onOpenFile={onOpenFile}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+              Go to the build
+            </Link>
+          </div>
+        )}
+
+        {files && files.length > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={() => toggleFolder(ROOT_PATH)}
+              className="flex h-[26px] w-full items-center gap-1.5 px-2.5 text-left text-[12px] font-medium text-zinc-200 transition-colors hover:bg-white/[0.04]"
+            >
+              {expanded.includes(ROOT_PATH) ? (
+                <ChevronDown className="h-3 w-3 shrink-0 text-zinc-500" />
+              ) : (
+                <ChevronRight className="h-3 w-3 shrink-0 text-zinc-500" />
+              )}
+              {expanded.includes(ROOT_PATH) ? (
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-brand-purple-light" />
+              ) : (
+                <Folder className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+              )}
+              <span className="truncate">{projectName}</span>
+            </button>
+            <AnimatePresence initial={false}>
+              {expanded.includes(ROOT_PATH) && (
+                <motion.div
+                  key="root-children"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <TreeRows
+                    nodes={tree}
+                    depth={1}
+                    expanded={expanded}
+                    onToggleFolder={toggleFolder}
+                    activeFile={activeFile}
+                    onOpenFile={onOpenFile}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
       </div>
 
-      <div className="flex h-8 shrink-0 items-center gap-2 border-t border-white/[0.07] px-3 font-mono-tech text-[10px] text-zinc-500">
-        <GitFork className="h-3 w-3 text-brand-purple-light" />
-        <span className="truncate">feat/taskflow</span>
-        <span className="ml-auto shrink-0 text-zinc-400">+2 ~1</span>
+      <div className="flex h-8 shrink-0 items-center border-t border-white/[0.07] px-3 font-mono-tech text-[10px] text-zinc-500">
+        {files ? `${files.length} file${files.length === 1 ? "" : "s"}` : ""}
       </div>
     </aside>
+  );
+}
+
+const ROOT_PATH = "";
+
+function allFolders(nodes: TreeNode[]): string[] {
+  return nodes.flatMap((n) =>
+    n.kind === "folder" ? [n.path, ...allFolders(n.children ?? [])] : [],
   );
 }

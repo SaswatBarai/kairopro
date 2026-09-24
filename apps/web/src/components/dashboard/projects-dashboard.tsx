@@ -225,13 +225,7 @@ export function ProjectsDashboard({
                 <button
                   key={item.label}
                   type="button"
-                  onClick={() => {
-                    if (item.id === "deployments") {
-                      router.push("/projects/new/build");
-                    } else {
-                      setActiveMainTab(item.id as any);
-                    }
-                  }}
+                  onClick={() => setActiveMainTab(item.id as any)}
                   className={
                     item.active
                       ? "flex w-full items-center gap-2.5 rounded-sm bg-brand-surface-muted px-2.5 py-1.5 text-sm font-medium text-zinc-100"

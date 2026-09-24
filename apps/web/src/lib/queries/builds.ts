@@ -63,16 +63,21 @@ export function useStartBuildMutation(projectId: string) {
   });
 }
 
-export function useBuildQuery(
-  projectId: string,
-  buildId: string,
-  options?: { refetchInterval?: number | false },
-) {
+const ACTIVE_STATUSES = new Set(["QUEUED", "RUNNING"]);
+
+/**
+ * The Build row. The live stream is what updates the build screen; this
+ * polls only while the build is active, as a fallback if the stream is
+ * blocked (some proxies buffer or drop event streams), and stops once the
+ * build is terminal.
+ */
+export function useBuildQuery(projectId: string, buildId: string) {
   return useQuery({
     queryKey: buildQueryKey(projectId, buildId),
     queryFn: () => fetchBuild(projectId, buildId),
     enabled: Boolean(projectId && buildId),
-    refetchInterval: options?.refetchInterval,
+    refetchInterval: (query) =>
+      ACTIVE_STATUSES.has(query.state.data?.status ?? "") ? 4000 : false,
   });
 }
 

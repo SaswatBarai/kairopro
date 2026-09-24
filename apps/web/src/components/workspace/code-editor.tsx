@@ -1,199 +1,108 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
-import {
-  CheckCircle2,
-  Eye,
-  FileDiff,
-  FolderOpen,
-  Save,
-  Share,
-  X,
-} from "lucide-react";
+import { Check, Copy, Eye, FolderOpen, Loader2, X } from "lucide-react";
 
+import { HighlightedCode } from "@/components/code/highlighted-code";
+import { basename, dirname, fileTone, languageOf } from "@/lib/file-tree";
+import { useProjectFileQuery } from "@/lib/queries/files";
 import { cn } from "@/lib/utils";
-import {
-  ACTIVE_LINE,
-  DIFF,
-  FILES,
-  MODIFIED_TAB,
-  NEW_FILE_LINES,
-  TARGET_MARKS,
-  basename,
-  fileTone,
-} from "./code-content";
 
 interface CodeEditorProps {
+  projectId: string;
   tabs: string[];
   activeTab: string | null;
-  diffMode: boolean;
   className?: string;
   onSelectTab: (path: string) => void;
   onCloseTab: (path: string) => void;
-  onToggleDiff: (open: boolean) => void;
-  onAcceptChanges: () => void;
-  onRejectChanges: () => void;
   onPreview: () => void;
-  onSave: () => void;
   onAskKairo: () => void;
 }
 
-const lineVariants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1 },
-};
+const formatSize = (bytes: number) =>
+  bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
 
-function CodePane({
-  lines,
-  activeLine,
-  marks,
-}: {
-  lines: ReactNode[];
-  activeLine?: number;
-  marks?: Record<number, "target" | "candidate">;
-}) {
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
   return (
-    <motion.div
-      key="code"
-      initial="hidden"
-      animate="show"
-      variants={{ show: { transition: { staggerChildren: 0.02 } } }}
-      className="w-fit min-w-full py-2 font-mono-tech text-[13px] leading-[22px]"
+    <button
+      type="button"
+      title={copied ? "Copied" : "Copy file"}
+      onClick={() => {
+        void navigator.clipboard?.writeText(text);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1400);
+      }}
+      className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
     >
-      {lines.map((line, i) => {
-        const isActive = activeLine === i + 1;
-        const mark = marks?.[i + 1];
-        return (
-          <motion.div
-            key={i}
-            variants={lineVariants}
-            className={cn(
-              "flex select-text whitespace-pre border-l-2",
-              isActive && "border-brand-purple bg-brand-purple/[0.08]",
-              mark === "target" && "border-brand-cyan/70 bg-brand-cyan/[0.08]",
-              mark === "candidate" &&
-                "border-brand-green/70 bg-brand-green/[0.08]",
-              !isActive && !mark && "border-transparent",
-            )}
-          >
-            <span
-              className={cn(
-                "w-10 shrink-0 select-none pr-3 text-right",
-                isActive
-                  ? "text-brand-purple-light"
-                  : mark === "target"
-                    ? "font-bold text-brand-cyan"
-                    : mark === "candidate"
-                      ? "font-bold text-brand-green"
-                      : "text-zinc-600",
-              )}
-            >
-              {i + 1}
-            </span>
-            {mark === "target" ? (
-              <span className="flex flex-1 items-center justify-between gap-3 pr-6 text-zinc-100">
-                <span>{line}</span>
-                <span className="shrink-0 rounded-[2px] bg-brand-cyan/15 px-1 py-px font-mono-tech text-[9px] font-semibold uppercase tracking-wider text-brand-cyan">
-                  Target insertion
-                </span>
-              </span>
-            ) : (
-              <span
-                className={cn(
-                  "pr-6",
-                  isActive
-                    ? "text-zinc-100"
-                    : mark === "candidate"
-                      ? "text-brand-green/90"
-                      : "text-zinc-300",
-                )}
-              >
-                {line}
-              </span>
-            )}
-          </motion.div>
-        );
-      })}
-    </motion.div>
+      {copied ? (
+        <Check className="h-4 w-4 text-brand-green" />
+      ) : (
+        <Copy className="h-4 w-4" />
+      )}
+    </button>
   );
 }
 
-function DiffPane({
-  title,
-  lines,
-  marks,
-  tone,
-}: {
-  title: string;
-  lines: ReactNode[];
-  marks: number[];
-  tone: "removed" | "added";
-}) {
+function FileBody({ projectId, path }: { projectId: string; path: string }) {
+  const { data: file, isLoading, error } = useProjectFileQuery(projectId, path);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 p-4 text-[12px] text-zinc-500">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        Loading {basename(path)}…
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <p className="p-4 text-[13px] text-zinc-400" role="alert">
+        Couldn&apos;t open this file. {error.message}
+      </p>
+    );
+  }
+  if (!file) return null;
+
+  if (file.content === null) {
+    return (
+      <p className="p-4 text-[13px] text-zinc-400">
+        {file.reason === "binary"
+          ? "This file isn't text, so it can't be shown here."
+          : `This file is too large to show here (${formatSize(file.size)}).`}
+      </p>
+    );
+  }
+
   return (
-    <div className="min-w-0 flex-1">
-      <div className="sticky top-0 z-[1] flex h-7 items-center border-b border-white/[0.06] bg-brand-surface px-3">
-        <span
-          className={cn(
-            "font-mono-tech text-[10px] font-semibold uppercase tracking-[0.12em]",
-            tone === "removed" ? "text-rose-300/80" : "text-brand-green",
-          )}
-        >
-          {title}
-        </span>
-      </div>
-      <div className="w-fit min-w-full py-1.5 font-mono-tech text-[13px] leading-[22px]">
-        {lines.map((line, i) => {
-          const marked = marks.includes(i);
-          return (
-            <div
-              key={i}
-              className={cn(
-                "flex whitespace-pre border-l-2 border-transparent pr-6",
-                marked &&
-                  tone === "removed" &&
-                  "border-l-rose-400/60 bg-rose-500/[0.07] text-rose-200",
-                marked &&
-                  tone === "added" &&
-                  "border-l-brand-green/60 bg-brand-green/[0.07] text-brand-green/90",
-                !marked && "text-zinc-300",
-              )}
-            >
-              <span className="w-10 shrink-0 select-none pr-2 text-right text-zinc-600">
-                {marked ? (tone === "removed" ? "-" : "+") : ""}
-              </span>
-              <span>{line}</span>
-            </div>
-          );
-        })}
-      </div>
+    <div className="w-fit min-w-full p-3">
+      <HighlightedCode text={file.content} />
     </div>
   );
 }
 
 export function CodeEditor({
+  projectId,
   tabs,
   activeTab,
-  diffMode,
   className,
   onSelectTab,
   onCloseTab,
-  onToggleDiff,
-  onAcceptChanges,
-  onRejectChanges,
   onPreview,
-  onSave,
   onAskKairo,
 }: CodeEditorProps) {
-  const isRoute = activeTab === MODIFIED_TAB;
-  const showDiff = diffMode && isRoute;
-  const lines = (activeTab && FILES[activeTab]) || NEW_FILE_LINES;
+  const { data: file } = useProjectFileQuery(projectId, activeTab);
 
   return (
     <section
       className={cn("flex min-w-0 flex-1 flex-col bg-brand-surface", className)}
     >
-      <div className="flex h-9 shrink-0 items-stretch overflow-x-auto border-b border-white/[0.07]">
+      <div
+        aria-label="Open files"
+        className="flex h-9 shrink-0 items-stretch overflow-x-auto border-b border-white/[0.07]"
+        role="tablist"
+      >
         {tabs.map((tab) => {
           const active = tab === activeTab;
           return (
@@ -205,9 +114,12 @@ export function CodeEditor({
               )}
             >
               <button
+                aria-selected={active}
+                className="flex items-center gap-2 py-2 font-mono-tech text-[12px]"
+                role="tab"
+                title={tab}
                 type="button"
                 onClick={() => onSelectTab(tab)}
-                className="flex items-center gap-2 py-2 font-mono-tech text-[12px]"
               >
                 <span
                   className={cn("h-[5px] w-[5px] rounded-full", fileTone(tab))}
@@ -215,6 +127,7 @@ export function CodeEditor({
                 {basename(tab)}
               </button>
               <button
+                aria-label={`Close ${basename(tab)}`}
                 type="button"
                 title="Close"
                 onClick={() => onCloseTab(tab)}
@@ -240,33 +153,17 @@ export function CodeEditor({
         <>
           <div className="flex h-9 shrink-0 items-center justify-between gap-2 border-b border-white/[0.07] px-3">
             <div className="flex min-w-0 items-center gap-2 font-mono-tech text-[12px]">
+              {dirname(activeTab) && (
+                <span className="truncate text-zinc-600">
+                  {dirname(activeTab)}/
+                </span>
+              )}
               <span className="truncate text-zinc-300">
                 {basename(activeTab)}
               </span>
-              {isRoute && (
-                <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-zinc-500">
-                  <span className="h-[5px] w-[5px] rounded-full bg-amber-400" />
-                  Modified
-                </span>
-              )}
             </div>
             <div className="flex shrink-0 items-center gap-0.5">
-              <button
-                type="button"
-                title="Toggle diff"
-                disabled={!isRoute}
-                onClick={() => onToggleDiff(!diffMode)}
-                className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-[4px] transition-colors",
-                  showDiff
-                    ? "bg-brand-purple/15 text-brand-purple-light"
-                    : "text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-200",
-                  !isRoute &&
-                    "cursor-default opacity-30 hover:bg-transparent hover:text-zinc-500",
-                )}
-              >
-                <FileDiff className="h-4 w-4" />
-              </button>
+              {file?.content != null && <CopyButton text={file.content} />}
               <button
                 type="button"
                 title="Open preview"
@@ -275,84 +172,20 @@ export function CodeEditor({
               >
                 <Eye className="h-4 w-4" />
               </button>
-              <button
-                type="button"
-                title="Save (⌘S)"
-                onClick={onSave}
-                className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
-              >
-                <Save className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                title="Share"
-                className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
-              >
-                <Share className="h-4 w-4" />
-              </button>
             </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto">
-            {showDiff ? (
-              <div className="flex min-h-full flex-col">
-                <div className="flex flex-1 divide-x divide-white/[0.06] overflow-x-auto">
-                  <DiffPane
-                    title="Before"
-                    lines={DIFF.before.lines}
-                    marks={DIFF.before.marks}
-                    tone="removed"
-                  />
-                  <DiffPane
-                    title="After"
-                    lines={DIFF.after.lines}
-                    marks={DIFF.after.marks}
-                    tone="added"
-                  />
-                </div>
-                <div className="flex h-11 shrink-0 items-center justify-end gap-2 border-t border-white/[0.07] px-3">
-                  <button
-                    type="button"
-                    onClick={onRejectChanges}
-                    className="h-7 rounded-[4px] border border-white/[0.1] px-3 font-mono-tech text-[11px] text-zinc-300 transition-colors hover:bg-white/[0.06]"
-                  >
-                    Reject changes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onAcceptChanges}
-                    className="h-7 rounded-[4px] bg-brand-purple px-3 font-mono-tech text-[11px] font-medium text-white transition-colors hover:bg-brand-purple/85"
-                  >
-                    Accept changes
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <CodePane
-                lines={lines}
-                activeLine={isRoute ? ACTIVE_LINE : undefined}
-                marks={isRoute ? TARGET_MARKS : undefined}
-              />
-            )}
+            <FileBody projectId={projectId} path={activeTab} />
           </div>
 
           <div className="flex h-7 shrink-0 select-none items-center justify-between border-t border-white/[0.07] bg-brand-surface px-3 font-mono-tech text-[10px] text-zinc-500">
             <div className="flex items-center gap-3">
-              <span>TypeScript</span>
+              <span>{languageOf(activeTab)}</span>
               <span className="hidden sm:inline">UTF-8</span>
-              <span>Ln {isRoute ? ACTIVE_LINE : 1}, Col 22</span>
-              <span className="hidden sm:inline">2 spaces</span>
+              {file && <span>{formatSize(file.size)}</span>}
             </div>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 font-semibold uppercase tracking-wider text-brand-green">
-                <CheckCircle2 className="h-3 w-3" />
-                <span className="hidden sm:inline">Prettier ok</span>
-              </span>
-              <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-brand-cyan">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-cyan" />
-                Agent sync: ready
-              </span>
-            </div>
+            <span>Read-only</span>
           </div>
         </>
       ) : (
@@ -372,7 +205,7 @@ export function CodeEditor({
             onClick={onAskKairo}
             className="h-8 rounded-[4px] border border-white/[0.1] px-3.5 text-[12px] text-zinc-200 transition-colors hover:border-brand-purple/50 hover:bg-brand-purple/10 hover:text-white"
           >
-            Ask Kairo to create one
+            Ask Kairo to change something
           </button>
         </div>
       )}

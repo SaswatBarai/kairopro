@@ -4,15 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Project } from "@kairopro/contracts";
 
+import { defaultFileToOpen } from "@/lib/file-tree";
+import { useProjectFilesQuery } from "@/lib/queries/files";
 import { useProjectQuery } from "@/lib/queries/projects";
 import { cn } from "@/lib/utils";
-import { useBuildStreamStore, useProjectStore } from "@/stores";
-import {
-  ACTIVE_TAB,
-  DEFAULT_TABS,
-  MODIFIED_TAB,
-  basename,
-} from "./code-content";
+import { useProjectStore } from "@/stores";
 import { ActivityRail } from "./activity-rail";
 import { AgentPanel } from "./agent-panel";
 import { CodeEditor } from "./code-editor";
@@ -71,7 +67,6 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
   const setSelectedFile = useProjectStore((s) => s.setSelectedFile);
   const setTerminalOpen = useProjectStore((s) => s.setTerminalOpen);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
-  const setBuildStatus = useBuildStreamStore((s) => s.setBuildStatus);
 
   const { data: project } = useProjectQuery(projectId, initialProject);
 
@@ -90,9 +85,8 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
   const [sandboxState, setSandboxState] = useState<SandboxState>("running");
   const [sandboxMode, setSandboxMode] = useState<SandboxMode>("terminal");
   const [restartCount, setRestartCount] = useState(0);
-  const [tabs, setTabs] = useState<string[]>(DEFAULT_TABS);
-  const [activeTab, setActiveTab] = useState<string | null>(ACTIVE_TAB);
-  const [diffMode, setDiffMode] = useState(false);
+  const [tabs, setTabs] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [deployOpen, setDeployOpen] = useState(false);
@@ -101,6 +95,9 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
   const [checkpointId, setCheckpointId] = useState(CHECKPOINTS[0]?.id ?? "");
   const [savedFile, setSavedFile] = useState<string | null>(null);
   const [resizing, setResizing] = useState<ResizeTarget | null>(null);
+
+  const { data: files } = useProjectFilesQuery(projectId);
+  const autoOpened = useRef(false);
 
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const agentInputRef = useRef<HTMLTextAreaElement>(null);
@@ -126,6 +123,14 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
     [setSelectedFile],
   );
 
+  // Open the project's most telling file once, the first time files arrive.
+  useEffect(() => {
+    if (autoOpened.current || !files?.length) return;
+    autoOpened.current = true;
+    const first = defaultFileToOpen(files);
+    if (first) openFile(first);
+  }, [files, openFile]);
+
   const closeTab = useCallback(
     (path: string) => {
       const next = tabs.filter((t) => t !== path);
@@ -139,10 +144,6 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
     },
     [tabs, setSelectedFile],
   );
-
-  const save = useCallback(() => {
-    if (activeTab) flashSaved(`Saved ${basename(activeTab)}`);
-  }, [activeTab, flashSaved]);
 
   const restart = useCallback(() => {
     if (sandboxState === "restarting" || sandboxState === "building") return;
@@ -197,9 +198,8 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
   );
 
   const viewCheckpoint = useCallback(
-    (path: string, diff: boolean) => {
+    (path: string) => {
       openFile(path);
-      setDiffMode(diff);
       setHistoryOpen(false);
     },
     [openFile],
@@ -220,13 +220,6 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
     [run, restart, toggleTerminal, preview, askKairo, router],
   );
 
-  const acceptChanges = useCallback(() => {
-    setDiffMode(false);
-    flashSaved("Applied changes to route.ts");
-  }, [flashSaved]);
-
-  const rejectChanges = useCallback(() => setDiffMode(false), []);
-
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
@@ -235,9 +228,6 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
       if (key === "p" || key === "k") {
         e.preventDefault();
         setPaletteOpen(true);
-      } else if (key === "s") {
-        e.preventDefault();
-        save();
       } else if (key === "b") {
         e.preventDefault();
         setExplorerOpen((v) => !v);
@@ -251,7 +241,7 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [save, toggleTerminal, undoCurrentCheckpoint]);
+  }, [toggleTerminal, undoCurrentCheckpoint]);
 
   useEffect(() => {
     if (!resizing) return;
@@ -282,7 +272,6 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
       <WorkspaceHeader
         sandboxState={sandboxState}
         onPreview={preview}
-        onSave={save}
         onOpenHistory={() => setHistoryOpen(true)}
         onDeploy={() => setDeployOpen(true)}
         onExport={() => setExportOpen(true)}
@@ -303,6 +292,8 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
         {explorerOpen && (
           <>
             <FileExplorer
+              projectId={projectId}
+              projectName={project?.name ?? "Project"}
               width={explorerWidth}
               activeFile={activeTab}
               onOpenFile={openFile}
@@ -317,16 +308,12 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
         )}
 
         <CodeEditor
+          projectId={projectId}
           tabs={tabs}
           activeTab={activeTab}
-          diffMode={diffMode}
           onSelectTab={setActiveTab}
           onCloseTab={closeTab}
-          onToggleDiff={setDiffMode}
-          onAcceptChanges={acceptChanges}
-          onRejectChanges={rejectChanges}
           onPreview={preview}
-          onSave={save}
           onAskKairo={askKairo}
         />
 
@@ -340,10 +327,7 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
               width={agentWidth}
               inputRef={agentInputRef}
               className="hidden md:flex"
-              onOpenDiff={() => {
-                setActiveTab(MODIFIED_TAB);
-                setDiffMode(true);
-              }}
+              onOpenDiff={() => undefined}
               onDock={() => setAgentOpen(false)}
             />
           </>
@@ -370,6 +354,7 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
       <WorkspaceStatusBar sandboxState={sandboxState} savedFile={savedFile} />
 
       <CommandPalette
+        files={files ?? []}
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         onOpenFile={openFile}

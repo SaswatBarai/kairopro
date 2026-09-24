@@ -6,7 +6,6 @@ import {
   GitFork,
   History,
   Rocket,
-  Save,
   Share,
   Terminal,
 } from "lucide-react";
@@ -19,7 +18,6 @@ import { SANDBOX_STATUS, type SandboxState } from "./sandbox-panel";
 interface WorkspaceHeaderProps {
   sandboxState: SandboxState;
   onPreview: () => void;
-  onSave: () => void;
   onOpenHistory: () => void;
   onDeploy: () => void;
   onExport: () => void;
@@ -37,7 +35,6 @@ const HEADER_LABEL: Record<SandboxState, string> = {
 export function WorkspaceHeader({
   sandboxState,
   onPreview,
-  onSave,
   onOpenHistory,
   onDeploy,
   onExport,
@@ -128,14 +125,6 @@ export function WorkspaceHeader({
           className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
         >
           <Share className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          title="Save (⌘S)"
-          onClick={onSave}
-          className="flex h-7 w-7 items-center justify-center rounded-[4px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
-        >
-          <Save className="h-4 w-4" />
         </button>
         <div className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-brand-purple to-brand-cyan text-[9px] font-bold text-white">
           {userInitials}

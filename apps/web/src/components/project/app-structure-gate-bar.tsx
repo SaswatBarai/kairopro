@@ -45,7 +45,7 @@ export function AppStructureGateBar({
         await approveMutation.mutateAsync(spec.id);
       }
       const build = await startBuildMutation.mutateAsync();
-      const nextUrl = `/projects/new/build?projectId=${projectId}&buildId=${build.id}`;
+      const nextUrl = `/projects/${encodeURIComponent(projectId)}/build?buildId=${encodeURIComponent(build.id)}`;
       router.push(nextUrl);
     } catch {
       // Surfaced below via approveMutation.error / startBuildMutation.error.

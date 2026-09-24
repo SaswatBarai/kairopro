@@ -33,7 +33,10 @@ describe("POST /api/projects/[id]/specs/generate", () => {
   it("triggers generation and returns 202 when the caller owns the project", async () => {
     vi.mocked(ownerOf).mockResolvedValueOnce({ id: "prj-1" } as never);
     const generate = vi.fn().mockResolvedValueOnce(undefined);
-    vi.mocked(getSpecGenerator).mockReturnValueOnce({ generate });
+    vi.mocked(getSpecGenerator).mockReturnValueOnce({
+      generate,
+      revise: vi.fn(),
+    });
 
     const res = await POST(new Request("http://x"), routeContext);
 

@@ -10,6 +10,9 @@ import {
 import { LEGAL_TRANSITIONS, transitionStatus } from "./project.service";
 
 vi.mock("../../platform/db/client", () => ({ db: {} }));
+vi.mock("../../platform/app-database", () => ({
+  dropAppDatabase: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock("./project.repository", () => ({
   createProject: vi.fn(),
@@ -47,6 +50,7 @@ import {
 import { purgeProjectUploads } from "../input/input.service";
 import { createVersionRow } from "../version/version.repository";
 import { createWorkspace, destroyWorkspace } from "./workspace";
+import { dropAppDatabase } from "../../platform/app-database";
 import { ownerOf } from "../org/access";
 import {
   createProject,
@@ -203,6 +207,23 @@ describe("project.service create/list/get/update (BE-4)", () => {
 
     expect(destroyWorkspace).toHaveBeenCalledWith("prj-1");
     expect(purgeProjectUploads).toHaveBeenCalledWith("prj-1");
+    expect(deleteProjectRepo).toHaveBeenCalledWith("prj-1");
+  });
+
+  it("delete also drops the project's own database", async () => {
+    vi.mocked(ownerOf).mockResolvedValueOnce(projectRow());
+
+    await deleteProject("prj-1", ctx);
+
+    expect(dropAppDatabase).toHaveBeenCalledWith("prj-1");
+  });
+
+  it("a database that won't drop does not stop the project being deleted", async () => {
+    vi.mocked(ownerOf).mockResolvedValueOnce(projectRow());
+    vi.mocked(dropAppDatabase).mockRejectedValueOnce(new Error("in use"));
+
+    await deleteProject("prj-1", ctx);
+
     expect(deleteProjectRepo).toHaveBeenCalledWith("prj-1");
   });
 

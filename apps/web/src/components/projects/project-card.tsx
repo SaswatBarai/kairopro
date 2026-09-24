@@ -218,9 +218,7 @@ export function ProjectCard({
               className="flex h-7 cursor-pointer items-center gap-1 rounded-[3px] border border-brand-cyan/30 bg-brand-surface-muted px-2 text-xs text-brand-cyan transition-colors hover:bg-white/[0.08]"
               type="button"
               onClick={() =>
-                handleSelectProject(
-                  `/projects/new/build?projectId=${project.id}`,
-                )
+                handleSelectProject(`/projects/${project.id}/build`)
               }
             >
               <span>View live build</span>

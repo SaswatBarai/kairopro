@@ -37,6 +37,7 @@ import {
 } from "./build.repository";
 import { encodeEventContent } from "./sse/encode";
 import { ensureAppDatabase } from "../../platform/app-database";
+import type { OnStage } from "../agent/phases/stages";
 import { createCodeStream } from "./code-stream";
 import { emitLog } from "./logs";
 import { runWorkflow, type BuildStep, type BuildStepContext } from "./workflow";
@@ -172,6 +173,12 @@ function makeOnDegrade(
   };
 }
 
+function makeOnStage(buildId: string): OnStage {
+  return (stage, status) => {
+    void emitLog(buildId, "STEP", JSON.stringify({ step: stage, status }));
+  };
+}
+
 /** Exported only for tests to exercise a single step's body directly —
  * every `executeBuild` test drives `runWorkflow` mocked wholesale instead,
  * which never calls into these closures. Not part of the public API. */
@@ -222,10 +229,13 @@ export function buildSteps(
         const workspaceStore = getWorkspaceStore();
         const workspacePath = await workspaceStore.resolve(projectId, ".");
 
+        const onStage = makeOnStage(buildId);
+        onStage("scaffold", "started");
         const scaffolded = await scaffoldProject({
           workspacePath,
           templateId: project.templateId,
         });
+        onStage("scaffold", "completed");
         await emitLog(
           buildId,
           "STDOUT",
@@ -258,6 +268,7 @@ export function buildSteps(
             checkCancelled,
             onDegrade,
             onCode: codeStream.onCode,
+            onStage,
           });
           if (backendResult.status === "cancelled") return;
 
@@ -274,6 +285,7 @@ export function buildSteps(
             checkCancelled,
             onDegrade,
             onCode: codeStream.onCode,
+            onStage,
           });
           if (frontendResult.status === "cancelled") return;
         } finally {

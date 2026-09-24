@@ -66,6 +66,25 @@ describe("LocalWorkspaceStore — happy path", () => {
     await expect(store.listFiles("prj_missing")).resolves.toEqual([]);
   });
 
+  it("leaves out skipped directories at any depth, but keeps files that merely share the name", async () => {
+    await store.allocate("prj_taskflow");
+    await store.writeFile("prj_taskflow", "src/app/page.tsx", "x");
+    await store.writeFile(
+      "prj_taskflow",
+      "node_modules/left-pad/index.js",
+      "y",
+    );
+    await store.writeFile("prj_taskflow", "src/node_modules/inner/z.js", "z");
+    await store.writeFile("prj_taskflow", ".git/HEAD", "ref");
+    await store.writeFile("prj_taskflow", "docs/node_modules.md", "notes");
+
+    await expect(
+      store.listFiles("prj_taskflow", ".", {
+        skipDirs: ["node_modules", ".git"],
+      }),
+    ).resolves.toEqual(["docs/node_modules.md", "src/app/page.tsx"]);
+  });
+
   it("deletes entries and whole workspaces without touching siblings", async () => {
     await store.allocate("prj_a");
     await store.allocate("prj_b");

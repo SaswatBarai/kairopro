@@ -18,9 +18,11 @@ import {
 
 import { cn } from "@/lib/utils";
 import { GithubMark } from "./export-modal";
-import { FILES, basename, dirname, fileTone } from "./code-content";
+import { basename, dirname, fileTone } from "@/lib/file-tree";
 
 interface CommandPaletteProps {
+  /** The project's file paths, offered for quick open. */
+  files: string[];
   open: boolean;
   onClose: () => void;
   onOpenFile: (path: string) => void;
@@ -50,6 +52,7 @@ type Row =
   { type: "file"; path: string } | { type: "command"; command: CommandItem };
 
 export function CommandPalette({
+  files,
   open,
   onClose,
   onOpenFile,
@@ -60,7 +63,7 @@ export function CommandPalette({
   const activeRef = useRef<HTMLButtonElement>(null);
 
   const q = query.trim().toLowerCase();
-  const fileRows = Object.keys(FILES)
+  const fileRows = files
     .filter(
       (path) =>
         !q ||

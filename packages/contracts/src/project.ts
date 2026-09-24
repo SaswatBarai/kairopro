@@ -44,9 +44,24 @@ export const UpdateProjectInputSchema = z.object({
   description: z.string().max(2000).nullable().optional(),
 });
 
+/** Workspace-relative paths of a project's files, without dependency and
+ * build-output folders. */
+export const ProjectFileListSchema = z.array(z.string());
+
+/** One file. `content` is null (with a `reason`) when it can't be shown as
+ * text: binary, or too large to send. */
+export const ProjectFileContentSchema = z.object({
+  path: z.string(),
+  size: z.number().int().nonnegative(),
+  content: z.string().nullable(),
+  reason: z.enum(["binary", "too-large"]).nullable(),
+});
+
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
 export type ProjectListItem = z.infer<typeof ProjectListItemSchema>;
 export type ProjectList = z.infer<typeof ProjectListSchema>;
 export type CreateProjectInput = z.infer<typeof CreateProjectInputSchema>;
+export type ProjectFileList = z.infer<typeof ProjectFileListSchema>;
+export type ProjectFileContent = z.infer<typeof ProjectFileContentSchema>;
 export type UpdateProjectInput = z.infer<typeof UpdateProjectInputSchema>;

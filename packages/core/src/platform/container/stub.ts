@@ -58,9 +58,9 @@ const HOST_ENV_ALLOWLIST = [
 ];
 
 export function hostEnvForCommands(
-  source: NodeJS.ProcessEnv = process.env,
-): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = {};
+  source: Record<string, string | undefined> = process.env,
+): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = {};
   for (const [key, value] of Object.entries(source)) {
     if (HOST_ENV_ALLOWLIST.some((re) => re.test(key))) env[key] = value;
   }
@@ -93,11 +93,13 @@ export function createStubContainerRuntime(): ContainerRuntime {
       // stdio pipes open and stall `close` forever otherwise).
       const child = spawn("sh", ["-lc", input.cmd], {
         cwd,
+        // Cast: the host's own env type (augmented by Next in the web app to
+        // require `NODE_ENV`) is stricter than what a child process needs.
         env: {
           ...hostEnvForCommands(),
           ...provisionedEnv.get(input.containerId),
           ...input.env,
-        },
+        } as NodeJS.ProcessEnv,
         detached: true,
       });
 

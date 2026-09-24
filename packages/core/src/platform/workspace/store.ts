@@ -20,8 +20,14 @@ export interface WorkspaceStore {
   ): Promise<void>;
   readFile(projectId: string, relativePath: string): Promise<string>;
   /** Recursively list file paths (POSIX-relative to the workspace). Directory
-   * symlinks are never followed — they are listed by name only. */
-  listFiles(projectId: string, relativePath?: string): Promise<string[]>;
+   * symlinks are never followed — they are listed by name only. `skipDirs`
+   * names directories to leave out entirely, at any depth — for listings
+   * meant for people, where `node_modules` would bury everything else. */
+  listFiles(
+    projectId: string,
+    relativePath?: string,
+    options?: { skipDirs?: readonly string[] },
+  ): Promise<string[]>;
   /** Delete a file or directory inside the workspace. Refuses the workspace
    * root itself — that is what deleteWorkspace is for. */
   deleteEntry(projectId: string, relativePath: string): Promise<void>;
@@ -80,12 +86,16 @@ export class LocalWorkspaceStore implements WorkspaceStore {
     return fs.readFile(target, "utf8");
   }
 
-  async listFiles(projectId: string, relativePath = "."): Promise<string[]> {
+  async listFiles(
+    projectId: string,
+    relativePath = ".",
+    options: { skipDirs?: readonly string[] } = {},
+  ): Promise<string[]> {
     const workspaceRoot = await this.#workspaceRoot(projectId);
     const base = await this.#confinedPath(projectId, relativePath);
     if (!(await pathExists(base))) return [];
     const files: string[] = [];
-    await this.#walk(base, workspaceRoot, files);
+    await this.#walk(base, workspaceRoot, files, new Set(options.skipDirs));
     return files.sort();
   }
 
@@ -192,12 +202,14 @@ export class LocalWorkspaceStore implements WorkspaceStore {
     dir: string,
     displayBase: string,
     files: string[],
+    skipDirs: ReadonlySet<string>,
   ): Promise<void> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
       const absolute = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        await this.#walk(absolute, displayBase, files);
+        if (skipDirs.has(entry.name)) continue;
+        await this.#walk(absolute, displayBase, files, skipDirs);
       } else {
         // Symlinked directories land here too: listed by name, never followed.
         files.push(

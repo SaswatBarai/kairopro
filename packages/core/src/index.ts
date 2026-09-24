@@ -109,6 +109,10 @@ export {
   transitionStatus,
   updateProject,
 } from "./modules/project/project.service";
+export {
+  listProjectFiles,
+  readProjectFile,
+} from "./modules/project/files.service";
 export { emit } from "./modules/usage/usage.service";
 export { listUsageByOrg, recordUsage } from "./modules/usage/usage.repository";
 
