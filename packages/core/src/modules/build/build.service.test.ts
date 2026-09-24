@@ -32,6 +32,11 @@ vi.mock("../agent/workflow/steps/scaffold", () => ({
 }));
 vi.mock("../agent/workflow/steps/generation-context", () => ({
   loadApprovedSpecs: vi.fn(),
+  findMissingApprovals: vi.fn(),
+}));
+vi.mock("../project/project.service", () => ({
+  advanceProjectStatus: vi.fn(),
+  revertProjectToDraft: vi.fn(),
 }));
 vi.mock("../../platform/workspace", () => ({ getWorkspaceStore: vi.fn() }));
 vi.mock("../../platform/app-database", () => ({
@@ -50,6 +55,11 @@ vi.mock("../../platform/container", () => ({
 }));
 
 import { ensureAppDatabase } from "../../platform/app-database";
+import {
+  advanceProjectStatus,
+  revertProjectToDraft,
+} from "../project/project.service";
+import { findMissingApprovals } from "../agent/workflow/steps/generation-context";
 import { ownerOf } from "../org/access";
 import { runBackendPhase } from "../agent/phases/backend";
 import { runFrontendPhase } from "../agent/phases/frontend";
@@ -124,6 +134,11 @@ beforeEach(() => {
 });
 
 describe("startBuild (BE-10)", () => {
+  beforeEach(() => {
+    // By default every spec is approved; the refusal cases override this.
+    (findMissingApprovals as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+  });
+
   it("returns immediately with a QUEUED build", async () => {
     (ownerOf as ReturnType<typeof vi.fn>).mockResolvedValue(project);
     (findActiveBuild as ReturnType<typeof vi.fn>).mockResolvedValue(null);
@@ -138,6 +153,7 @@ describe("startBuild (BE-10)", () => {
 
     expect(result.status).toBe("QUEUED");
     expect(result.id).toBe("b1");
+    expect(advanceProjectStatus).toHaveBeenCalledWith("prj1", "BUILDING", ctx);
   });
 
   it("404s when the project is not accessible", async () => {
@@ -152,6 +168,21 @@ describe("startBuild (BE-10)", () => {
     );
 
     await expect(startBuild("prj1", ctx)).rejects.toBeInstanceOf(ConflictError);
+    expect(createBuildRow).not.toHaveBeenCalled();
+  });
+
+  it("refuses to start when a spec isn't approved, and says which", async () => {
+    (ownerOf as ReturnType<typeof vi.fn>).mockResolvedValue(project);
+    (findActiveBuild as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (findMissingApprovals as ReturnType<typeof vi.fn>).mockResolvedValue([
+      "DESIGN",
+      "DATA_MODEL",
+    ]);
+
+    await expect(startBuild("prj1", ctx)).rejects.toThrow(
+      "Approve every spec before building. Still to approve: design, data model.",
+    );
+    // No Build row, so nothing shows up as a failed build.
     expect(createBuildRow).not.toHaveBeenCalled();
   });
 });
@@ -250,6 +281,29 @@ describe("executeBuild (BE-10)", () => {
       "EVENT",
       expect.stringContaining('"status":"SUCCEEDED"'),
     );
+  });
+
+  it("marks the project READY when the build succeeds, and not otherwise", async () => {
+    (runWorkflow as ReturnType<typeof vi.fn>).mockResolvedValue("completed");
+    await executeBuild("b1", project, ctx);
+    expect(advanceProjectStatus).toHaveBeenCalledWith("prj1", "READY", ctx);
+    expect(revertProjectToDraft).not.toHaveBeenCalled();
+  });
+
+  it("returns the project to draft when the build fails", async () => {
+    (runWorkflow as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("boom"),
+    );
+    await executeBuild("b1", project, ctx);
+    expect(revertProjectToDraft).toHaveBeenCalledWith("prj1", ctx);
+    expect(advanceProjectStatus).not.toHaveBeenCalledWith("prj1", "READY", ctx);
+  });
+
+  it("returns the project to draft when the build is cancelled", async () => {
+    (runWorkflow as ReturnType<typeof vi.fn>).mockResolvedValue("cancelled");
+    await executeBuild("b1", project, ctx);
+    expect(revertProjectToDraft).toHaveBeenCalledWith("prj1", ctx);
+    expect(advanceProjectStatus).not.toHaveBeenCalledWith("prj1", "READY", ctx);
   });
 
   it("leaves a cancelled run CANCELLED, without recording usage", async () => {

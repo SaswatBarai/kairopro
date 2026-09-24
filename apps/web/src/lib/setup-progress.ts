@@ -17,6 +17,14 @@ export function resumeSetupHref(projectId: string): string {
   let path = SETUP_ENTRY;
   try {
     const stored = localStorage.getItem(key(projectId));
+    // The build used to be a wizard step; it is now the project's own page.
+    // A browser that last saw the old step still has it stored.
+    if (
+      stored === "/projects/new/build" ||
+      stored === "/projects/new/build/complete"
+    ) {
+      return `/projects/${encodeURIComponent(projectId)}/build`;
+    }
     // Only ever navigate within the wizard, whatever storage contains.
     if (stored && /^\/projects\/new(\/[a-z-]+)*$/.test(stored)) path = stored;
   } catch {

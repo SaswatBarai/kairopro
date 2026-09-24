@@ -17,6 +17,7 @@ export function SpecPage() {
 
   const { data: specs, isLoading } = useSpecsQuery(projectId ?? "");
   const prdSpec = findSpec(specs, "PRD");
+  const designSpec = findSpec(specs, "DESIGN");
 
   return (
     <DashboardAppShell
@@ -30,7 +31,7 @@ export function SpecPage() {
         <NoProjectEmptyState stepName="spec review" />
       ) : (
         <>
-          <SpecGateBar spec={prdSpec} />
+          <SpecGateBar designSpec={designSpec} spec={prdSpec} />
           <div className="mx-auto flex w-full max-w-[1240px] flex-col items-start gap-4 px-4 pb-6 pt-4 md:px-6 lg:flex-row">
             <div className="flex w-full flex-col gap-4 lg:w-[720px] lg:shrink-0">
               <FadeIn>

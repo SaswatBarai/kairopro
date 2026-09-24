@@ -18,7 +18,8 @@ beforeEach(() => {
 describe("staleness (BE-6)", () => {
   it.each<[SpecType, SpecType[]]>([
     ["PRD", ["DESIGN", "DATA_MODEL", "APP_STRUCTURE"]],
-    ["DESIGN", ["DATA_MODEL", "APP_STRUCTURE"]],
+    // Nothing is derived from the design system, so approving it stales nothing.
+    ["DESIGN", []],
     ["DATA_MODEL", ["APP_STRUCTURE"]],
     ["APP_STRUCTURE", []],
   ])("downstream of %s is %j", (type, expected) => {
@@ -43,6 +44,15 @@ describe("staleness (BE-6)", () => {
     expect(updateSpecStatus).toHaveBeenCalledWith("design-1", "STALE");
     expect(updateSpecStatus).toHaveBeenCalledWith("dm-1", "STALE");
     expect(updateSpecStatus).toHaveBeenCalledWith("as-1", "STALE");
+  });
+
+  it("approving the design stales neither the data model nor the app structure", async () => {
+    vi.mocked(findApprovedSpecsByTypes).mockResolvedValueOnce([]);
+
+    await staleDownstream("prj-1", "DESIGN");
+
+    expect(findApprovedSpecsByTypes).toHaveBeenCalledWith("prj-1", []);
+    expect(updateSpecStatus).not.toHaveBeenCalled();
   });
 
   it("approving APP_STRUCTURE stales nothing", async () => {

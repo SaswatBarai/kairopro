@@ -24,6 +24,22 @@ export interface ApprovedSpecs {
   appStructure: AppStructureContent;
 }
 
+const REQUIRED_SPECS = [
+  "PRD",
+  "DESIGN",
+  "DATA_MODEL",
+  "APP_STRUCTURE",
+] as const;
+
+/** Which of the four specs a build needs have no approved version. */
+export async function findMissingApprovals(
+  projectId: string,
+): Promise<Array<(typeof REQUIRED_SPECS)[number]>> {
+  const rows = await findApprovedSpecsByTypes(projectId, [...REQUIRED_SPECS]);
+  const approved = new Set(rows.map((row) => row.type));
+  return REQUIRED_SPECS.filter((type) => !approved.has(type));
+}
+
 /** Loads and validates the project's four approved specs — throws
  * `ProviderError` naming whichever is missing, since generation cannot
  * proceed without all four (the same reasoning `buildProjectDescription`

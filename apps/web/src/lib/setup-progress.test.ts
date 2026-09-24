@@ -22,4 +22,14 @@ describe("setup progress", () => {
       expect(resumeSetupHref("p1")).toBe("/projects/new?projectId=p1");
     }
   });
+
+  it("sends a browser that last saw the old build step to the project's build page", () => {
+    for (const legacy of [
+      "/projects/new/build",
+      "/projects/new/build/complete",
+    ]) {
+      rememberSetupStep("p1", legacy);
+      expect(resumeSetupHref("p1")).toBe("/projects/p1/build");
+    }
+  });
 });

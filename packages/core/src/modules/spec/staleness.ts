@@ -13,9 +13,22 @@ export const SPEC_ORDER: SpecType[] = [
   "APP_STRUCTURE",
 ];
 
+/**
+ * What is derived from each spec type — what goes stale when it changes.
+ * Not simply "everything after it in the pipeline": the design system is
+ * generated after the PRD but nothing is derived from it, so approving it
+ * must not stale the data model or app structure (which, once stale, cannot
+ * be re-approved without being regenerated).
+ */
+const DEPENDENTS: Record<SpecType, SpecType[]> = {
+  PRD: ["DESIGN", "DATA_MODEL", "APP_STRUCTURE"],
+  DESIGN: [],
+  DATA_MODEL: ["APP_STRUCTURE"],
+  APP_STRUCTURE: [],
+};
+
 export function downstreamTypes(type: SpecType): SpecType[] {
-  const index = SPEC_ORDER.indexOf(type);
-  return SPEC_ORDER.slice(index + 1);
+  return DEPENDENTS[type];
 }
 
 /**

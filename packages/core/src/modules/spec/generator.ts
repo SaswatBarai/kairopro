@@ -14,6 +14,7 @@ import { generateDesign } from "../agent/workflow/steps/generate-design";
 import { generatePmQuestions } from "../agent/workflow/steps/pm-questions";
 import { revisePrd } from "../agent/workflow/steps/revise-prd";
 import { PrdContentSchema } from "../agent/validators/prd";
+import { advanceProjectStatus } from "../project/project.service";
 import { createSpec, listSpecs } from "./spec.service";
 
 /**
@@ -100,6 +101,7 @@ async function buildProjectDescription(
 export const RealSpecGenerator: SpecGenerator = {
   async generate(projectId, ctx) {
     const projectDescription = await buildProjectDescription(projectId, ctx);
+    await advanceProjectStatus(projectId, "SPECIFYING", ctx);
 
     const questions = await withProgress(projectId, "pm-questions", () =>
       generatePmQuestions({ projectDescription, ctx, projectId }),
@@ -134,9 +136,9 @@ export const RealSpecGenerator: SpecGenerator = {
   },
 
   async revise(projectId, instruction, ctx) {
-    const currentSpec = (await listSpecs(projectId, ctx)).find(
-      (s) => s.type === "PRD",
-    );
+    const existing = await listSpecs(projectId, ctx);
+    const currentSpec = existing.find((s) => s.type === "PRD");
+    const currentDesign = existing.find((s) => s.type === "DESIGN");
     if (!currentSpec) {
       throw new NotFoundError({
         message: "There is no PRD to change yet — generate the specs first",
@@ -171,6 +173,13 @@ export const RealSpecGenerator: SpecGenerator = {
       await createSpec(projectId, "DATA_MODEL", { schema: dataModel }, ctx),
       await createSpec(projectId, "APP_STRUCTURE", appStructure, ctx),
     ];
+    // The design is derived from the PRD, so approving this new PRD stales
+    // the approved design — and a stale spec can't be re-approved, only
+    // replaced. It didn't change, so carry it forward as a fresh version
+    // (no regeneration). Not reported: nothing about it was revised.
+    if (currentDesign) {
+      await createSpec(projectId, "DESIGN", currentDesign.content, ctx);
+    }
     return { summary, specs };
   },
 };

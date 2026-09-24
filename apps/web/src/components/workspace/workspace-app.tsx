@@ -324,10 +324,11 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
               className="hidden md:block"
             />
             <AgentPanel
+              projectId={projectId}
               width={agentWidth}
               inputRef={agentInputRef}
               className="hidden md:flex"
-              onOpenDiff={() => undefined}
+              onOpenHistory={() => setHistoryOpen(true)}
               onDock={() => setAgentOpen(false)}
             />
           </>

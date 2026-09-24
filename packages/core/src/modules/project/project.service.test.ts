@@ -53,10 +53,12 @@ import { createWorkspace, destroyWorkspace } from "./workspace";
 import { dropAppDatabase } from "../../platform/app-database";
 import { ownerOf } from "../org/access";
 import {
+  advanceProjectStatus,
   createProject,
   deleteProject,
   getProject,
   listProjects,
+  revertProjectToDraft,
   updateProject,
 } from "./project.service";
 
@@ -264,5 +266,86 @@ describe("project.service status transitions (BE-4, table-driven)", () => {
       );
       expect(updateProjectRepo).not.toHaveBeenCalled();
     }
+  });
+});
+
+describe("project lifecycle helpers", () => {
+  const statusUpdates = () =>
+    vi.mocked(updateProjectRepo).mock.calls.map((c) => c[1]);
+
+  it("walks forward through the states in between", async () => {
+    vi.mocked(ownerOf).mockResolvedValueOnce(projectRow({ status: "DRAFT" }));
+
+    await advanceProjectStatus("prj-1", "BUILDING", ctx);
+
+    // A project generated before status was tracked is still DRAFT when its
+    // first build starts; it has to pass through SPECIFYING to get there.
+    expect(statusUpdates()).toEqual([
+      { status: "SPECIFYING" },
+      { status: "BUILDING" },
+    ]);
+  });
+
+  it("moves a single step when that's all that's needed", async () => {
+    vi.mocked(ownerOf).mockResolvedValueOnce(
+      projectRow({ status: "BUILDING" }),
+    );
+
+    await advanceProjectStatus("prj-1", "READY", ctx);
+
+    expect(statusUpdates()).toEqual([{ status: "READY" }]);
+  });
+
+  it("does nothing when the project is already there or beyond", async () => {
+    for (const status of [
+      "SPECIFYING",
+      "BUILDING",
+      "READY",
+      "DEPLOYED",
+    ] as const) {
+      vi.mocked(ownerOf).mockResolvedValueOnce(projectRow({ status }));
+      await advanceProjectStatus("prj-1", "SPECIFYING", ctx);
+    }
+    expect(updateProjectRepo).not.toHaveBeenCalled();
+  });
+
+  it("never moves a deployed project back", async () => {
+    vi.mocked(ownerOf).mockResolvedValueOnce(
+      projectRow({ status: "DEPLOYED" }),
+    );
+    await advanceProjectStatus("prj-1", "READY", ctx);
+    expect(updateProjectRepo).not.toHaveBeenCalled();
+  });
+
+  it("ignores a project it can't find, and never throws", async () => {
+    vi.mocked(ownerOf).mockResolvedValueOnce(null);
+    await expect(
+      advanceProjectStatus("gone", "READY", ctx),
+    ).resolves.toBeUndefined();
+
+    vi.mocked(ownerOf).mockRejectedValueOnce(new Error("db down"));
+    await expect(
+      advanceProjectStatus("prj-1", "READY", ctx),
+    ).resolves.toBeUndefined();
+  });
+
+  it("returns a building project to draft, and touches no other", async () => {
+    vi.mocked(ownerOf).mockResolvedValueOnce(
+      projectRow({ status: "BUILDING" }),
+    );
+    await revertProjectToDraft("prj-1", ctx);
+    expect(statusUpdates()).toEqual([{ status: "DRAFT" }]);
+
+    vi.mocked(updateProjectRepo).mockClear();
+    for (const status of [
+      "DRAFT",
+      "SPECIFYING",
+      "READY",
+      "DEPLOYED",
+    ] as const) {
+      vi.mocked(ownerOf).mockResolvedValueOnce(projectRow({ status }));
+      await revertProjectToDraft("prj-1", ctx);
+    }
+    expect(updateProjectRepo).not.toHaveBeenCalled();
   });
 });

@@ -206,3 +206,59 @@ export async function transitionStatus(
   const updated = await updateProjectRow(projectId, { status: to });
   return toProject(updated);
 }
+
+const FORWARD_ORDER: ProjectStatus[] = [
+  "DRAFT",
+  "SPECIFYING",
+  "BUILDING",
+  "READY",
+  "DEPLOYED",
+];
+
+/**
+ * Moves a project forward through its lifecycle to `to`, passing through any
+ * states in between (a project whose specs were generated before this was
+ * tracked is still `DRAFT` when its first build starts, and that build must
+ * still be able to mark it `BUILDING`). Never moves backwards and does
+ * nothing if the project is already at or past `to` — the events that call
+ * this (a generation starting, a build finishing) can repeat.
+ *
+ * Best-effort by design: the lifecycle label is bookkeeping, and failing to
+ * update it must not fail the generation or build it describes.
+ */
+export async function advanceProjectStatus(
+  projectId: string,
+  to: ProjectStatus,
+  ctx: RequestContext,
+): Promise<void> {
+  try {
+    const row = await ownerOf(projectId, ctx);
+    if (!row) return;
+    const from = FORWARD_ORDER.indexOf(row.status);
+    const target = FORWARD_ORDER.indexOf(to);
+    for (const next of FORWARD_ORDER.slice(from + 1, target + 1)) {
+      await updateProjectRow(projectId, { status: next });
+    }
+  } catch (err) {
+    logger.warn(
+      { err, projectId, to },
+      "failed to advance the project's status",
+    );
+  }
+}
+
+/** A build ended without producing a working app: back to `DRAFT`, the one
+ * step the lifecycle allows from `BUILDING` other than `READY`. */
+export async function revertProjectToDraft(
+  projectId: string,
+  ctx: RequestContext,
+): Promise<void> {
+  try {
+    const row = await ownerOf(projectId, ctx);
+    if (row?.status === "BUILDING") {
+      await updateProjectRow(projectId, { status: "DRAFT" });
+    }
+  } catch (err) {
+    logger.warn({ err, projectId }, "failed to revert the project to draft");
+  }
+}

@@ -16,6 +16,7 @@ import {
 } from "../agent/template";
 import { scaffoldProject } from "../agent/workflow/steps/scaffold";
 import {
+  findMissingApprovals,
   loadApprovedSpecs,
   renderSpecsForPrompt,
   type ApprovedSpecs,
@@ -37,6 +38,10 @@ import {
 } from "./build.repository";
 import { encodeEventContent } from "./sse/encode";
 import { ensureAppDatabase } from "../../platform/app-database";
+import {
+  advanceProjectStatus,
+  revertProjectToDraft,
+} from "../project/project.service";
 import type { OnStage } from "../agent/phases/stages";
 import { createCodeStream } from "./code-stream";
 import { emitLog } from "./logs";
@@ -102,8 +107,21 @@ export async function startBuild(
     });
   }
 
+  // Refuse here, where the caller can be told what to do, rather than start
+  // a build that fails a moment later with nothing actionable to show.
+  const missing = await findMissingApprovals(projectId);
+  if (missing.length > 0) {
+    throw new ConflictError({
+      message: `Approve every spec before building. Still to approve: ${missing
+        .map((type) => SPEC_LABEL[type])
+        .join(", ")}.`,
+      details: { missing },
+    });
+  }
+
   const row = await createBuildRow(projectId);
   await touchProjectActivity(projectId);
+  await advanceProjectStatus(projectId, "BUILDING", ctx);
   void executeBuild(row.id, project, ctx).catch((cause) => {
     // executeBuild already turns every failure it can see into a FAILED
     // build + InternalError row; this only catches a crash outside that
@@ -172,6 +190,13 @@ function makeOnDegrade(
     );
   };
 }
+
+const SPEC_LABEL = {
+  PRD: "PRD",
+  DESIGN: "design",
+  DATA_MODEL: "data model",
+  APP_STRUCTURE: "app structure",
+} as const;
 
 function makeOnStage(buildId: string): OnStage {
   return (stage, status) => {
@@ -485,6 +510,7 @@ export async function executeBuild(
     });
 
     if (outcome === "cancelled") {
+      await revertProjectToDraft(project.id, ctx);
       await updateBuildRow(buildId, { finishedAt: new Date() });
       await emitLog(
         buildId,
@@ -498,6 +524,7 @@ export async function executeBuild(
       status: "SUCCEEDED",
       finishedAt: new Date(),
     });
+    await advanceProjectStatus(project.id, "READY", ctx);
     await emitUsage("BUILD", 1, ctx, { projectId: project.id, buildId });
     await emitLog(
       buildId,
@@ -517,6 +544,7 @@ export async function executeBuild(
       log.error({ err: writeCause }, "failed to write InternalError row");
     });
     await updateBuildRow(buildId, { status: "FAILED", finishedAt: new Date() });
+    await revertProjectToDraft(project.id, ctx);
     // User-safe only — no message, stack, or container output from `cause`
     // ever reaches the client; the full context is in the InternalError row.
     await emitLog(

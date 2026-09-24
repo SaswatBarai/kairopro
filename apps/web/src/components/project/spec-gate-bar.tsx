@@ -16,16 +16,23 @@ import { useApproveSpecMutation } from "@/lib/queries/specs";
 import { cn } from "@/lib/utils";
 
 interface SpecGateBarProps {
+  /** The PRD — what this gate is named for. */
   spec: Spec | undefined;
+  /** The design system, reviewed on this same page and approved with it:
+   * a build needs it approved, but it has no gate of its own. */
+  designSpec?: Spec | undefined;
 }
 
-export function SpecGateBar({ spec }: SpecGateBarProps) {
+export function SpecGateBar({ spec, designSpec }: SpecGateBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const projectId = searchParams.get("projectId") ?? "";
   const approveMutation = useApproveSpecMutation(projectId);
 
-  const isApproved = spec?.status === "APPROVED";
+  // Everything this gate covers — only what exists yet.
+  const covered = [spec, designSpec].filter((s): s is Spec => Boolean(s));
+  const isApproved =
+    covered.length > 0 && covered.every((s) => s.status === "APPROVED");
   const canApprove = Boolean(spec) && !isApproved && !approveMutation.isPending;
 
   const goNext = () => {
@@ -36,12 +43,23 @@ export function SpecGateBar({ spec }: SpecGateBarProps) {
     );
   };
 
-  const onApprove = () => {
+  const onApprove = async () => {
     if (!spec || approveMutation.isPending) return;
     // Already approved (e.g. after going Back to review): nothing to
     // approve again, just move on.
     if (isApproved) return goNext();
-    approveMutation.mutate(spec.id, { onSuccess: goNext });
+    try {
+      // In order: approving the PRD marks the design (derived from it) stale,
+      // so the design has to be approved after it, not before.
+      for (const toApprove of covered) {
+        if (toApprove.status !== "APPROVED") {
+          await approveMutation.mutateAsync(toApprove.id);
+        }
+      }
+      goNext();
+    } catch {
+      // Shown beside the button, from `approveMutation.error`.
+    }
   };
 
   return (

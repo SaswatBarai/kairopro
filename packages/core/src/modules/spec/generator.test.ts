@@ -4,6 +4,9 @@ import { NotFoundError, ProviderError } from "../../lib/errors";
 
 vi.mock("../input/input.service", () => ({ listInputs: vi.fn() }));
 vi.mock("./spec.service", () => ({ createSpec: vi.fn(), listSpecs: vi.fn() }));
+vi.mock("../project/project.service", () => ({
+  advanceProjectStatus: vi.fn(),
+}));
 vi.mock("../agent/workflow/steps/pm-questions", () => ({
   generatePmQuestions: vi.fn(),
 }));
@@ -28,6 +31,7 @@ const { publish } = vi.hoisted(() => ({ publish: vi.fn() }));
 vi.mock("../../platform/events", () => ({ eventBus: { publish } }));
 
 import { listInputs } from "../input/input.service";
+import { advanceProjectStatus } from "../project/project.service";
 import { createSpec, listSpecs } from "./spec.service";
 import { revisePrd } from "../agent/workflow/steps/revise-prd";
 import { generatePmQuestions } from "../agent/workflow/steps/pm-questions";
@@ -87,6 +91,16 @@ beforeEach(() => {
 });
 
 describe("RealSpecGenerator (AI-5)", () => {
+  it("moves the project to SPECIFYING once generation starts", async () => {
+    await RealSpecGenerator.generate(projectId, ctx);
+
+    expect(advanceProjectStatus).toHaveBeenCalledWith(
+      projectId,
+      "SPECIFYING",
+      ctx,
+    );
+  });
+
   it("runs the full pipeline and creates all four specs", async () => {
     await RealSpecGenerator.generate(projectId, ctx);
 
@@ -262,13 +276,23 @@ describe("RealSpecGenerator.revise", () => {
     expect(createSpec).toHaveBeenCalledWith(projectId, "PRD", revisedPrd, ctx);
   });
 
-  it("leaves the design spec alone", async () => {
+  it("doesn't regenerate the design, but carries it forward so Gate 1 can still be approved", async () => {
     await RealSpecGenerator.revise(projectId, "Add subtasks", ctx);
 
     expect(generateDesign).not.toHaveBeenCalled();
-    expect(vi.mocked(createSpec).mock.calls.map((c) => c[1])).not.toContain(
+    // Same content, new version — the old one goes stale when the new PRD
+    // is approved, and a stale spec can't be re-approved.
+    expect(createSpec).toHaveBeenCalledWith(
+      projectId,
       "DESIGN",
+      { markdown: "x" },
+      ctx,
     );
+  });
+
+  it("doesn't report the carried-forward design as something that was revised", async () => {
+    const out = await RealSpecGenerator.revise(projectId, "Add subtasks", ctx);
+    expect(out.specs.map((s) => s.type)).not.toContain("DESIGN");
   });
 
   it("does no regeneration and writes nothing when the PRD comes back unchanged", async () => {

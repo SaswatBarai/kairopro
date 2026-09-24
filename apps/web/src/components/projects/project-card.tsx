@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Check,
   Copy,
-  Ellipsis,
   ExternalLink,
   FileText,
   Play,
@@ -269,24 +268,38 @@ export function ProjectCard({
             </span>
             <div className="flex items-center gap-1">
               <button
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-zinc-100"
-                title="Open app"
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded-[3px] border border-white/[0.1] bg-brand-surface-muted px-3 text-xs text-zinc-100 transition-colors hover:bg-white/[0.08]"
                 type="button"
+                onClick={() => handleSelectProject(`/projects/${project.id}`)}
               >
-                <ExternalLink className="h-4 w-4" />
+                <span>Open workspace</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </button>
-              <button
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-zinc-100"
-                title="Copy URL"
-                type="button"
-                onClick={copyUrl}
-              >
-                {copied ? (
-                  <Check className="h-4 w-4 text-brand-green" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </button>
+              {project.url && (
+                <>
+                  <a
+                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-zinc-100"
+                    href={`https://${project.url.full}`}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    title="Open app"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                  <button
+                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-zinc-100"
+                    title="Copy URL"
+                    type="button"
+                    onClick={copyUrl}
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-brand-green" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </button>
+                </>
+              )}
               {onDelete && (
                 <button
                   className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-red-400"
@@ -297,13 +310,6 @@ export function ProjectCard({
                   <Trash2 className="h-4 w-4" />
                 </button>
               )}
-              <button
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-zinc-100"
-                title="More options"
-                type="button"
-              >
-                <Ellipsis className="h-4 w-4" />
-              </button>
             </div>
           </>
         )}
