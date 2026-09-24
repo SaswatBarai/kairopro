@@ -16,6 +16,7 @@ import type {
 } from "../validators/app-structure";
 import type { PrdPermissionRule } from "../validators/prd";
 import { runTypecheck, type TypecheckError } from "../validators/typecheck";
+import type { CodeStreamEvent } from "../workflow/steps/generate-code";
 import { pageFilePath } from "./frontend";
 import { routeFilePath } from "./backend";
 import {
@@ -326,6 +327,8 @@ export interface GenerateTestFileInput {
   maxFixAttempts?: number;
   maxDistinctApproaches?: number;
   onDegrade?: (step: { level: DegradationLevel; message: string }) => void;
+  /** Live view of the test file being written — see `CodeStreamEvent`. */
+  onCode?: (event: CodeStreamEvent) => void;
 }
 
 export interface GenerateTestFileResult {
@@ -349,6 +352,12 @@ export async function generateTestFile(
 ): Promise<GenerateTestFileResult> {
   const provider = input.provider ?? getLLMProvider();
   const refs = { projectId: input.projectId, buildId: input.buildId };
+  const stream = input.onCode
+    ? {
+        onAttemptStart: () => input.onCode!({ type: "reset" }),
+        onDelta: (text: string) => input.onCode!({ type: "delta", text }),
+      }
+    : undefined;
 
   async function attempt(step: {
     task: string;
@@ -374,6 +383,7 @@ export async function generateTestFile(
         ctx: input.ctx,
         refs,
         validate: validateNonEmpty,
+        stream,
       });
     } else {
       raw = await completeWithValidator({
@@ -397,6 +407,7 @@ export async function generateTestFile(
         ctx: input.ctx,
         refs,
         validate: validateNonEmpty,
+        stream,
       });
     }
 
@@ -428,6 +439,7 @@ export async function generateTestFile(
   });
 
   if (result.status === "succeeded") {
+    input.onCode?.({ type: "done", omitted: false });
     return {
       path: input.path,
       fixAttempts: result.attempts,
@@ -436,6 +448,7 @@ export async function generateTestFile(
     };
   }
   if (result.status === "omitted") {
+    input.onCode?.({ type: "done", omitted: true });
     return {
       path: input.path,
       fixAttempts: result.attempts,
@@ -466,6 +479,7 @@ export interface RunTestAuthoringPhaseInput {
     unit: string,
     step: { level: DegradationLevel; message: string },
   ) => void;
+  onCode?: (unit: string, event: CodeStreamEvent) => void;
 }
 
 export type TestAuthoringResult =
@@ -518,6 +532,9 @@ export async function runTestAuthoringPhase(
       provider: input.provider,
       onDegrade: input.onDegrade
         ? (step) => input.onDegrade!(testCase.path, step)
+        : undefined,
+      onCode: input.onCode
+        ? (event) => input.onCode!(testCase.path, event)
         : undefined,
     });
 

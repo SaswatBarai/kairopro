@@ -276,3 +276,74 @@ describe("stripCodeFence (AI-5)", () => {
     expect(seen).toBe("---\nok: true\n---");
   });
 });
+
+describe("completeWithValidator streaming (build Code Stream)", () => {
+  function streamingProvider(...contents: string[]): LLMProvider {
+    const queue = [...contents];
+    return {
+      name: "fake",
+      complete: vi.fn(),
+      stream: vi.fn(async (_input, onEvent) => {
+        const content = queue.shift()!;
+        for (const delta of [content.slice(0, 2), content.slice(2)]) {
+          onEvent({ delta });
+        }
+        return fakeResult(content);
+      }),
+    };
+  }
+
+  it("streams the attempt and returns the same validated result", async () => {
+    const provider = streamingProvider("hello");
+    const deltas: string[] = [];
+    const starts = vi.fn();
+
+    const result = await completeWithValidator({
+      provider,
+      model: "m",
+      messages: [{ role: "user", content: "go" }],
+      ctx,
+      validate: (c) => c.toUpperCase(),
+      stream: { onAttemptStart: starts, onDelta: (d) => deltas.push(d) },
+    });
+
+    expect(result).toBe("HELLO");
+    expect(deltas.join("")).toBe("hello");
+    expect(starts).toHaveBeenCalledTimes(1);
+    expect(provider.complete).not.toHaveBeenCalled();
+  });
+
+  it("announces every attempt, so a rejected one can be discarded", async () => {
+    const provider = streamingProvider("bad", "good");
+    const starts = vi.fn();
+
+    await completeWithValidator({
+      provider,
+      model: "m",
+      messages: [{ role: "user", content: "go" }],
+      ctx,
+      validate: (c) => {
+        if (c !== "good") throw new Error("nope");
+        return c;
+      },
+      stream: { onAttemptStart: starts, onDelta: () => {} },
+    });
+
+    expect(starts).toHaveBeenCalledTimes(2);
+  });
+
+  it("still strips a wrapping fence before validating", async () => {
+    const provider = streamingProvider("```ts\nx\n```");
+
+    const result = await completeWithValidator({
+      provider,
+      model: "m",
+      messages: [{ role: "user", content: "go" }],
+      ctx,
+      validate: (c) => c,
+      stream: { onAttemptStart: () => {}, onDelta: () => {} },
+    });
+
+    expect(result).toBe("x");
+  });
+});

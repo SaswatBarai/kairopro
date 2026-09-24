@@ -2,7 +2,12 @@ import { z } from "zod";
 import type { RequestContext } from "../../../lib/context";
 import { logger, withCorrelation } from "../../../platform/logger";
 import { LLMStructuredOutputError } from "./errors";
-import type { LLMCompleteInput, LLMMessage, LLMProvider } from "./provider";
+import type {
+  LLMCompleteInput,
+  LLMCompleteResult,
+  LLMMessage,
+  LLMProvider,
+} from "./provider";
 import { recordCallUsage } from "./tokens";
 
 /** Total attempts, including the first — two retries after an initial miss. */
@@ -172,6 +177,16 @@ export interface CompleteWithValidatorInput<T> {
    * async) to reject the attempt and trigger a retry — the thrown
    * message is fed back to the model as a corrective turn. */
   validate: (content: string) => T | Promise<T>;
+  /** When set, each attempt is streamed (`provider.stream`) instead of
+   * awaited whole, and its text is surfaced as it arrives — for callers
+   * that show output live (the build's Code Stream). `onAttemptStart`
+   * fires before every attempt, including validation retries, so a
+   * consumer can discard the abandoned attempt's partial text. The
+   * validated result is unchanged either way. */
+  stream?: {
+    onAttemptStart: () => void;
+    onDelta: (delta: string) => void;
+  };
 }
 
 /**
@@ -209,7 +224,16 @@ export async function completeWithValidator<T>(
       temperature: input.temperature,
     };
 
-    const result = await input.provider.complete(completeInput);
+    let result: LLMCompleteResult;
+    if (input.stream) {
+      const { onAttemptStart, onDelta } = input.stream;
+      onAttemptStart();
+      result = await input.provider.stream(completeInput, (e) =>
+        onDelta(e.delta),
+      );
+    } else {
+      result = await input.provider.complete(completeInput);
+    }
     await recordCallUsage(result.usage, input.ctx, input.refs);
 
     try {

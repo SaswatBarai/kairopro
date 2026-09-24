@@ -27,11 +27,16 @@ vi.mock("../usage/usage.service", () => ({ emit: vi.fn() }));
 vi.mock("../agent/phases/backend", () => ({ runBackendPhase: vi.fn() }));
 vi.mock("../agent/phases/frontend", () => ({ runFrontendPhase: vi.fn() }));
 vi.mock("../agent/template", () => ({ loadTemplate: vi.fn() }));
-vi.mock("../agent/workflow/steps/scaffold", () => ({ scaffoldProject: vi.fn() }));
+vi.mock("../agent/workflow/steps/scaffold", () => ({
+  scaffoldProject: vi.fn(),
+}));
 vi.mock("../agent/workflow/steps/generation-context", () => ({
   loadApprovedSpecs: vi.fn(),
 }));
 vi.mock("../../platform/workspace", () => ({ getWorkspaceStore: vi.fn() }));
+vi.mock("../../platform/app-database", () => ({
+  ensureAppDatabase: vi.fn(),
+}));
 vi.mock("../../platform/container", () => ({
   getContainerRuntime: vi.fn(() => ({
     provision: vi.fn(),
@@ -44,6 +49,7 @@ vi.mock("../../platform/container", () => ({
   })),
 }));
 
+import { ensureAppDatabase } from "../../platform/app-database";
 import { ownerOf } from "../org/access";
 import { runBackendPhase } from "../agent/phases/backend";
 import { runFrontendPhase } from "../agent/phases/frontend";
@@ -136,9 +142,7 @@ describe("startBuild (BE-10)", () => {
 
   it("404s when the project is not accessible", async () => {
     (ownerOf as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    await expect(startBuild("prj1", ctx)).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
+    await expect(startBuild("prj1", ctx)).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it("refuses a second build while one is already active", async () => {
@@ -147,9 +151,7 @@ describe("startBuild (BE-10)", () => {
       buildRow({ id: "b0", status: "RUNNING" }),
     );
 
-    await expect(startBuild("prj1", ctx)).rejects.toBeInstanceOf(
-      ConflictError,
-    );
+    await expect(startBuild("prj1", ctx)).rejects.toBeInstanceOf(ConflictError);
     expect(createBuildRow).not.toHaveBeenCalled();
   });
 });
@@ -197,9 +199,7 @@ describe("cancelBuild (BE-10)", () => {
     );
     (ownerOf as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-    await expect(cancelBuild("b1", ctx)).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
+    await expect(cancelBuild("b1", ctx)).rejects.toBeInstanceOf(NotFoundError);
   });
 });
 
@@ -287,7 +287,8 @@ describe("executeBuild (BE-10)", () => {
     );
 
     const errorLogCall = (emitLog as ReturnType<typeof vi.fn>).mock.calls.find(
-      (call) => call[1] === "EVENT" && String(call[2]).includes('"event":"error"'),
+      (call) =>
+        call[1] === "EVENT" && String(call[2]).includes('"event":"error"'),
     );
     expect(errorLogCall).toBeDefined();
     const content = String(errorLogCall![2]);
@@ -296,7 +297,9 @@ describe("executeBuild (BE-10)", () => {
   });
 
   it("writing the InternalError row failing does not prevent the build from being marked FAILED", async () => {
-    (runWorkflow as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("boom"));
+    (runWorkflow as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("boom"),
+    );
     (createInternalErrorRow as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error("db unreachable"),
     );
@@ -310,7 +313,9 @@ describe("executeBuild (BE-10)", () => {
 
   it("passes a checkpoint-commit onCancelled callback through to the workflow", async () => {
     (runWorkflow as ReturnType<typeof vi.fn>).mockImplementation(
-      async (input: { onCancelled: (stepCtx: unknown, name: string) => Promise<void> }) => {
+      async (input: {
+        onCancelled: (stepCtx: unknown, name: string) => Promise<void>;
+      }) => {
         await input.onCancelled(
           { buildId: "b1", projectId: "prj1", ctx, state: {} },
           "generate",
@@ -357,7 +362,9 @@ describe("buildSteps — generate step (BE-10 orchestration of AI-6/AI-7)", () =
       commitHash: "abc1234",
     });
     (loadTemplate as ReturnType<typeof vi.fn>).mockReturnValue(fakeTemplate);
-    (loadApprovedSpecs as ReturnType<typeof vi.fn>).mockResolvedValue(fakeSpecs);
+    (loadApprovedSpecs as ReturnType<typeof vi.fn>).mockResolvedValue(
+      fakeSpecs,
+    );
     (runBackendPhase as ReturnType<typeof vi.fn>).mockResolvedValue({
       status: "completed",
       filesGenerated: ["prisma/schema.prisma", "src/lib/contracts.ts"],
@@ -376,18 +383,33 @@ describe("buildSteps — generate step (BE-10 orchestration of AI-6/AI-7)", () =
 
   it("scaffolds, loads the template and specs, then runs backend before frontend", async () => {
     const calls: string[] = [];
-    (scaffoldProject as ReturnType<typeof vi.fn>).mockImplementation(async () => {
-      calls.push("scaffold");
-      return { templateId: "nextjs-shadcn", filesCopied: [], commitHash: null };
-    });
-    (runBackendPhase as ReturnType<typeof vi.fn>).mockImplementation(async () => {
-      calls.push("backend");
-      return { status: "completed", filesGenerated: [], omitted: [], contractsPath: "x" };
-    });
-    (runFrontendPhase as ReturnType<typeof vi.fn>).mockImplementation(async () => {
-      calls.push("frontend");
-      return { status: "completed", filesGenerated: [], omitted: [] };
-    });
+    (scaffoldProject as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push("scaffold");
+        return {
+          templateId: "nextjs-shadcn",
+          filesCopied: [],
+          commitHash: null,
+        };
+      },
+    );
+    (runBackendPhase as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push("backend");
+        return {
+          status: "completed",
+          filesGenerated: [],
+          omitted: [],
+          contractsPath: "x",
+        };
+      },
+    );
+    (runFrontendPhase as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        calls.push("frontend");
+        return { status: "completed", filesGenerated: [], omitted: [] };
+      },
+    );
 
     await generateStep().run({
       buildId: "b1",
@@ -467,13 +489,21 @@ describe("buildSteps — generate step (BE-10 orchestration of AI-6/AI-7)", () =
   it("a degradation from either phase is emitted as a code event, naming the unit and level", async () => {
     (runBackendPhase as ReturnType<typeof vi.fn>).mockImplementation(
       async (input: {
-        onDegrade: (unit: string, step: { level: string; message: string }) => void;
+        onDegrade: (
+          unit: string,
+          step: { level: string; message: string },
+        ) => void;
       }) => {
         input.onDegrade("src/app/api/tasks/route.ts", {
           level: "simpler",
           message: "src/app/api/tasks/route.ts was simplified.",
         });
-        return { status: "completed", filesGenerated: [], omitted: [], contractsPath: "x" };
+        return {
+          status: "completed",
+          filesGenerated: [],
+          omitted: [],
+          contractsPath: "x",
+        };
       },
     );
 
@@ -485,7 +515,8 @@ describe("buildSteps — generate step (BE-10 orchestration of AI-6/AI-7)", () =
     });
 
     const codeEventCall = (emitLog as ReturnType<typeof vi.fn>).mock.calls.find(
-      (call) => call[1] === "EVENT" && String(call[2]).includes('"event":"code"'),
+      (call) =>
+        call[1] === "EVENT" && String(call[2]).includes('"event":"code"'),
     );
     expect(codeEventCall).toBeDefined();
     expect(String(codeEventCall![2])).toContain("src/app/api/tasks/route.ts");
@@ -505,5 +536,36 @@ describe("buildSteps — generate step (BE-10 orchestration of AI-6/AI-7)", () =
     );
     expect(summaryCall).toBeDefined();
     expect(String(summaryCall![2])).toContain("4 file(s)");
+  });
+});
+
+describe("buildSteps — provision step", () => {
+  it("gives the container the project's own database, never the platform's", async () => {
+    (ensureAppDatabase as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "postgresql://u:p@localhost:5432/kairopro_app_prj1",
+    );
+    const provision = vi
+      .fn()
+      .mockResolvedValue({ containerId: "c1", previewUrl: "" });
+    const runtime = { provision } as never;
+    const step = buildSteps(runtime, project).find(
+      (s) => s.name === "provision",
+    )!;
+
+    await step.run({
+      buildId: "b1",
+      projectId: "prj1",
+      ctx,
+      state: {},
+    });
+
+    expect(ensureAppDatabase).toHaveBeenCalledWith("prj1");
+    expect(provision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        env: {
+          DATABASE_URL: "postgresql://u:p@localhost:5432/kairopro_app_prj1",
+        },
+      }),
+    );
   });
 });

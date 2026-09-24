@@ -9,7 +9,11 @@ import { renderConventions, type TemplateManifest } from "../template";
 import type { AppStructureEndpoint } from "../validators/app-structure";
 import type { PrdContent } from "../validators/prd";
 import { freezeContracts } from "../workflow/steps/freeze-contracts";
-import { generateFile } from "../workflow/steps/generate-code";
+import {
+  generateFile,
+  type CodeStreamEvent,
+} from "../workflow/steps/generate-code";
+import type { OnStage } from "./stages";
 import { validatePrismaSchema } from "../workflow/steps/generate-data-model";
 import {
   renderSpecsForPrompt,
@@ -45,6 +49,12 @@ export interface RunBackendPhaseInput {
     unit: string,
     step: { level: DegradationLevel; message: string },
   ) => void;
+  /** Live view of each generated file as it is written, tagged with its
+   * path. The schema is copied from the approved spec, not generated, so it
+   * has no stream. */
+  onCode?: (unit: string, event: CodeStreamEvent) => void;
+  /** Marks the `schema` and `api` stages starting and finishing. */
+  onStage?: OnStage;
 }
 
 export type BackendPhaseResult =
@@ -222,17 +232,22 @@ export async function runBackendPhase(
     return input.checkCancelled();
   };
 
+  const stage = input.onStage ?? (() => {});
+
   if (await cancelled())
     return { status: "cancelled", filesGenerated, omitted };
+  stage("schema", "started");
   await writeSchema(input);
   filesGenerated.push(input.template.conventions.prismaSchemaPath);
 
   if (await cancelled())
     return { status: "cancelled", filesGenerated, omitted };
   await runMigrate(input);
+  stage("schema", "completed");
 
   if (await cancelled())
     return { status: "cancelled", filesGenerated, omitted };
+  stage("api", "started");
   const contractsResult = await freezeContracts({
     projectId: input.projectId,
     buildId: input.buildId,
@@ -245,6 +260,10 @@ export async function runBackendPhase(
     specs,
     contractsPath: input.template.conventions.contractsPath,
     provider: input.provider,
+    onCode: input.onCode
+      ? (event) =>
+          input.onCode!(input.template.conventions.contractsPath, event)
+      : undefined,
   });
   if (contractsResult.omitted) omitted.push(contractsResult.path);
   else filesGenerated.push(contractsResult.path);
@@ -274,10 +293,14 @@ export async function runBackendPhase(
       onDegrade: input.onDegrade
         ? (step) => input.onDegrade!(routePath, step)
         : undefined,
+      onCode: input.onCode
+        ? (event) => input.onCode!(routePath, event)
+        : undefined,
     });
     if (result.omitted) omitted.push(routePath);
     else filesGenerated.push(routePath);
   }
+  stage("api", "completed");
 
   return {
     status: "completed",

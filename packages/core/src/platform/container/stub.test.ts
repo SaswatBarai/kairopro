@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createStubContainerRuntime } from "./stub";
+import { createStubContainerRuntime, hostEnvForCommands } from "./stub";
 import { getContainerRuntime } from "./index";
 import type { ExecInput } from "./runtime";
 
@@ -117,5 +117,93 @@ describe("StubContainerRuntime — production guard", () => {
     } finally {
       process.env.NODE_ENV = previous;
     }
+  });
+});
+
+describe("stub command environment", () => {
+  it("never exposes the platform's secrets to a command", async () => {
+    process.env.DATABASE_URL = "postgresql://platform-secret";
+    process.env.ANTHROPIC_API_KEY = "sk-secret";
+    try {
+      const runtime = createStubContainerRuntime();
+      const result = await runtime.exec(
+        execInput({
+          cmd: 'echo "db=${DATABASE_URL:-unset} key=${ANTHROPIC_API_KEY:-unset}"',
+        }),
+      );
+      expect(result.stdout.trim()).toBe("db=unset key=unset");
+    } finally {
+      delete process.env.DATABASE_URL;
+      delete process.env.ANTHROPIC_API_KEY;
+    }
+  });
+
+  it("still passes what a command needs to run, and explicit env wins", async () => {
+    const runtime = createStubContainerRuntime();
+    const result = await runtime.exec(
+      execInput({
+        cmd: 'test -n "$PATH" && echo "db=$DATABASE_URL"',
+        env: { DATABASE_URL: "postgresql://the-project-db" },
+      }),
+    );
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("db=postgresql://the-project-db");
+  });
+
+  it("allowlists by name, so a new secret is excluded by default", () => {
+    const env = hostEnvForCommands({
+      PATH: "/bin",
+      HOME: "/home/u",
+      LC_ALL: "C",
+      https_proxy: "http://proxy",
+      npm_config_registry: "https://registry",
+      DATABASE_URL: "x",
+      KAIROPRO_ENCRYPTION_KEY: "x",
+      NEXTAUTH_SECRET: "x",
+      SOME_FUTURE_TOKEN: "x",
+      npm_config_user_agent: "pnpm",
+    });
+    expect(Object.keys(env).sort()).toEqual(
+      ["HOME", "LC_ALL", "PATH", "https_proxy", "npm_config_registry"].sort(),
+    );
+  });
+});
+
+describe("stub provisioned environment", () => {
+  it("applies the env given at provision to every command in that container", async () => {
+    const runtime = createStubContainerRuntime();
+    const { containerId } = await runtime.provision({
+      projectId: "prj_env",
+      image: "img",
+      env: { DATABASE_URL: "postgresql://project-db" },
+    });
+
+    const inside = await runtime.exec({
+      containerId,
+      cmd: 'echo "$DATABASE_URL"',
+    });
+    const other = await runtime.exec({
+      containerId: "stub-someone-else",
+      cmd: 'echo "${DATABASE_URL:-unset}"',
+    });
+
+    expect(inside.stdout.trim()).toBe("postgresql://project-db");
+    expect(other.stdout.trim()).toBe("unset");
+  });
+
+  it("forgets a container's env once it is destroyed", async () => {
+    const runtime = createStubContainerRuntime();
+    const { containerId } = await runtime.provision({
+      projectId: "prj_gone",
+      image: "img",
+      env: { X_TEST: "1" },
+    });
+    await runtime.destroy(containerId);
+
+    const result = await runtime.exec({
+      containerId,
+      cmd: 'echo "${X_TEST:-unset}"',
+    });
+    expect(result.stdout.trim()).toBe("unset");
   });
 });

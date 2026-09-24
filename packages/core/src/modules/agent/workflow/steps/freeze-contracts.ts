@@ -2,7 +2,11 @@ import type { RequestContext } from "../../../../lib/context";
 import type { ContainerRuntime } from "../../../../platform/container/runtime";
 import type { WorkspaceStore } from "../../../../platform/workspace/store";
 import type { LLMProvider } from "../../llm/provider";
-import { generateFile, type GenerateFileResult } from "./generate-code";
+import {
+  generateFile,
+  type CodeStreamEvent,
+  type GenerateFileResult,
+} from "./generate-code";
 
 /**
  * freeze-contracts workflow step (Phase 16 / AI-6): writes the single
@@ -28,6 +32,7 @@ export interface FreezeContractsInput {
   /** `template.json`'s `conventions.contractsPath` — never hardcoded here. */
   contractsPath: string;
   provider?: LLMProvider;
+  onCode?: (event: CodeStreamEvent) => void;
 }
 
 /**
@@ -73,5 +78,6 @@ export async function freezeContracts(
     containerId: input.containerId,
     cwd: input.cwd,
     provider: input.provider,
+    onCode: input.onCode,
   });
 }

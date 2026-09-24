@@ -5,7 +5,11 @@ import type { LLMProvider } from "../llm/provider";
 import type { DegradationLevel } from "../recovery/degradation";
 import { renderConventions, type TemplateManifest } from "../template";
 import type { AppStructurePage } from "../validators/app-structure";
-import { generateFile } from "../workflow/steps/generate-code";
+import {
+  generateFile,
+  type CodeStreamEvent,
+} from "../workflow/steps/generate-code";
+import type { OnStage } from "./stages";
 import {
   renderSpecsForPrompt,
   type ApprovedSpecs,
@@ -40,6 +44,10 @@ export interface RunFrontendPhaseInput {
     unit: string,
     step: { level: DegradationLevel; message: string },
   ) => void;
+  /** Live view of each file as it is written, tagged with its path. */
+  onCode?: (unit: string, event: CodeStreamEvent) => void;
+  /** Marks the `pages` and `auth` stages starting and finishing. */
+  onStage?: OnStage;
 }
 
 export type FrontendPhaseResult =
@@ -95,6 +103,9 @@ export async function runFrontendPhase(
     return input.checkCancelled();
   };
 
+  const stage = input.onStage ?? (() => {});
+
+  stage("pages", "started");
   for (const page of input.specs.appStructure.pages) {
     if (await cancelled())
       return { status: "cancelled", filesGenerated, omitted };
@@ -117,13 +128,18 @@ export async function runFrontendPhase(
       onDegrade: input.onDegrade
         ? (step) => input.onDegrade!(pagePath, step)
         : undefined,
+      onCode: input.onCode
+        ? (event) => input.onCode!(pagePath, event)
+        : undefined,
     });
     if (result.omitted) omitted.push(pagePath);
     else filesGenerated.push(pagePath);
   }
+  stage("pages", "completed");
 
   if (await cancelled())
     return { status: "cancelled", filesGenerated, omitted };
+  stage("auth", "started");
   const authPath = input.template.conventions.authConfigPath;
   const authResult = await generateFile({
     path: authPath,
@@ -142,9 +158,13 @@ export async function runFrontendPhase(
     onDegrade: input.onDegrade
       ? (step) => input.onDegrade!(authPath, step)
       : undefined,
+    onCode: input.onCode
+      ? (event) => input.onCode!(authPath, event)
+      : undefined,
   });
   if (authResult.omitted) omitted.push(authPath);
   else filesGenerated.push(authPath);
+  stage("auth", "completed");
 
   return { status: "completed", filesGenerated, omitted };
 }

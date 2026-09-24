@@ -18,7 +18,11 @@ vi.mock("../../../build/build.repository", () => ({
 
 import { retrieve } from "../../context/retrieve";
 import { runTypecheck } from "../../validators/typecheck";
-import { CodeGenerationError, generateFile } from "./generate-code";
+import {
+  CodeGenerationError,
+  generateFile,
+  type CodeStreamEvent,
+} from "./generate-code";
 
 const ctx: RequestContext = { userId: "u1", orgId: "o1" };
 
@@ -281,5 +285,118 @@ describe("generateFile (AI-6, repair via AI-7 fix-loop)", () => {
       "src/lib/x.ts",
       'import x from "~/lib/x";',
     );
+  });
+});
+
+/** A provider whose `stream` delivers each scripted answer in three chunks,
+ * the way the real one does. `complete` must never be used when streaming. */
+function streamingProvider(...contents: string[]): LLMProvider {
+  const queue = [...contents];
+  return {
+    name: "fake",
+    complete: vi.fn(),
+    stream: vi.fn(async (_input, onEvent) => {
+      const content = queue.shift() ?? contents.at(-1)!;
+      const third = Math.ceil(content.length / 3);
+      for (let i = 0; i < content.length; i += third) {
+        onEvent({ delta: content.slice(i, i + third) });
+      }
+      return result(content);
+    }),
+  };
+}
+
+const typeError = {
+  file: "src/lib/x.ts",
+  line: 1,
+  column: 1,
+  code: "TS2322",
+  message: "bad",
+};
+
+describe("generateFile live code stream", () => {
+  it("emits reset, the text as it arrives, then done — without calling complete()", async () => {
+    vi.mocked(runTypecheck).mockResolvedValue([]);
+    const events: CodeStreamEvent[] = [];
+    const provider = streamingProvider("export const x = 1;");
+
+    await generateFile({
+      ...baseInput,
+      workspace: fakeWorkspace() as never,
+      provider,
+      onCode: (e) => events.push(e),
+    });
+
+    expect(events[0]).toEqual({ type: "reset" });
+    expect(events.at(-1)).toEqual({ type: "done", omitted: false });
+    const text = events
+      .filter((e) => e.type === "delta")
+      .map((e) => (e as { text: string }).text)
+      .join("");
+    expect(text).toBe("export const x = 1;");
+    expect(events.filter((e) => e.type === "delta").length).toBeGreaterThan(1);
+    expect(provider.complete).not.toHaveBeenCalled();
+  });
+
+  it("resets and rewrites the file when a repair is needed", async () => {
+    vi.mocked(runTypecheck)
+      .mockResolvedValueOnce([typeError])
+      .mockResolvedValue([]);
+    const events: CodeStreamEvent[] = [];
+    const provider = streamingProvider("const x: string = 1;", "const x = 1;");
+
+    await generateFile({
+      ...baseInput,
+      workspace: fakeWorkspace() as never,
+      provider,
+      onCode: (e) => events.push(e),
+    });
+
+    const types = events.map((e) => e.type);
+    expect(types.filter((t) => t === "reset")).toHaveLength(2);
+    expect(types.filter((t) => t === "done")).toHaveLength(1);
+    expect(types.at(-1)).toBe("done");
+    // The second attempt's text follows the second reset.
+    const afterLastReset = events.slice(
+      types.lastIndexOf("reset") + 1,
+    ) as Array<{ type: string; text?: string }>;
+    expect(
+      afterLastReset
+        .filter((e) => e.type === "delta")
+        .map((e) => e.text)
+        .join(""),
+    ).toBe("const x = 1;");
+  });
+
+  it("reports an omitted unit as done with omitted: true", async () => {
+    vi.mocked(runTypecheck).mockResolvedValue([typeError]);
+    const events: CodeStreamEvent[] = [];
+
+    const outcome = await generateFile({
+      ...baseInput,
+      concern: "layout",
+      workspace: fakeWorkspace() as never,
+      provider: streamingProvider("v"),
+      maxDistinctApproaches: 1,
+      maxFixAttempts: 10,
+      onCode: (e) => events.push(e),
+    });
+
+    expect(outcome.omitted).toBe(true);
+    expect(events.at(-1)).toEqual({ type: "done", omitted: true });
+  });
+
+  it("does not stream at all when no onCode is given", async () => {
+    vi.mocked(runTypecheck).mockResolvedValue([]);
+    const provider = providerReturning("export const x = 1;");
+
+    await generateFile({
+      ...baseInput,
+      workspace: fakeWorkspace() as never,
+      provider,
+    });
+
+    expect(provider.stream).not.toHaveBeenCalled();
+    expect(provider.complete).toHaveBeenCalledTimes(1);
   });
 });

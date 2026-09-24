@@ -52,6 +52,17 @@ export class CodeGenerationError extends ProviderError {
   }
 }
 
+/** What a caller watching a file being written sees, in order: `reset`
+ * before every generation attempt (the first, and each repair — discard
+ * whatever was shown), `delta` text as the model produces it, and one
+ * `done` when the file is final. `omitted` means the unit was skipped and
+ * no file exists. Deltas are the model's raw text: it may include a
+ * wrapping code fence, which the final written file does not. */
+export type CodeStreamEvent =
+  | { type: "reset" }
+  | { type: "delta"; text: string }
+  | { type: "done"; omitted: boolean };
+
 export interface GenerateFileInput {
   /** Workspace-relative path of the file to write. */
   path: string;
@@ -79,6 +90,8 @@ export interface GenerateFileInput {
   /** Fired once per degradation step — the seam a caller wires to an
    * internal build event. */
   onDegrade?: (step: { level: DegradationLevel; message: string }) => void;
+  /** Live view of the file being written — see `CodeStreamEvent`. */
+  onCode?: (event: CodeStreamEvent) => void;
 }
 
 export interface GenerateFileResult {
@@ -123,6 +136,12 @@ export async function generateFile(
 ): Promise<GenerateFileResult> {
   const provider = input.provider ?? getLLMProvider();
   const refs = { projectId: input.projectId, buildId: input.buildId };
+  const stream = input.onCode
+    ? {
+        onAttemptStart: () => input.onCode!({ type: "reset" }),
+        onDelta: (text: string) => input.onCode!({ type: "delta", text }),
+      }
+    : undefined;
 
   async function attempt(step: {
     task: string;
@@ -147,6 +166,7 @@ export async function generateFile(
         ctx: input.ctx,
         refs,
         validate: validateNonEmpty,
+        stream,
       });
     } else {
       const retrieved = await retrieve(
@@ -176,6 +196,7 @@ export async function generateFile(
         ctx: input.ctx,
         refs,
         validate: validateNonEmpty,
+        stream,
       });
     }
 
@@ -207,6 +228,7 @@ export async function generateFile(
   });
 
   if (result.status === "succeeded") {
+    input.onCode?.({ type: "done", omitted: false });
     return {
       path: input.path,
       fixAttempts: result.attempts,
@@ -215,6 +237,7 @@ export async function generateFile(
     };
   }
   if (result.status === "omitted") {
+    input.onCode?.({ type: "done", omitted: true });
     return {
       path: input.path,
       fixAttempts: result.attempts,

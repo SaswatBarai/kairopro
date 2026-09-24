@@ -32,6 +32,41 @@ function assertDevelopment(): void {
   }
 }
 
+/**
+ * The environment a stubbed command runs with. The stub executes generated
+ * code directly on the host, so inheriting `process.env` would hand it the
+ * platform's own secrets — most dangerously `DATABASE_URL`: a generated
+ * project's `prisma db push --accept-data-loss` would run against the
+ * platform's database and drop its tables. So this is an allowlist of what
+ * a command needs to run at all (a shell, node, npm, the network), and
+ * anything else must be passed explicitly through `ExecInput.env`.
+ */
+const HOST_ENV_ALLOWLIST = [
+  /^PATH$/,
+  /^HOME$/,
+  /^USER$/,
+  /^LOGNAME$/,
+  /^SHELL$/,
+  /^TERM$/,
+  /^TZ$/,
+  /^TMPDIR$/,
+  /^LANG$/,
+  /^LC_/,
+  /^NVM_/,
+  /^(HTTPS?|NO|ALL)_PROXY$/i,
+  /^npm_config_(registry|cache|proxy|https_proxy|strict_ssl|cafile)$/i,
+];
+
+export function hostEnvForCommands(
+  source: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (HOST_ENV_ALLOWLIST.some((re) => re.test(key))) env[key] = value;
+  }
+  return env;
+}
+
 export function createStubContainerRuntime(): ContainerRuntime {
   assertDevelopment();
 
@@ -40,6 +75,9 @@ export function createStubContainerRuntime(): ContainerRuntime {
   // in dev/test — tracked here purely in memory, keyed by the fake id
   // `provision` hands back.
   const managed = new Map<string, string>(); // containerId -> projectId
+  // Like a real container, the env given at provision time applies to every
+  // command run in it — so callers set `DATABASE_URL` once, not per exec.
+  const provisionedEnv = new Map<string, Record<string, string>>();
 
   async function run(
     input: ExecInput,
@@ -55,7 +93,11 @@ export function createStubContainerRuntime(): ContainerRuntime {
       // stdio pipes open and stall `close` forever otherwise).
       const child = spawn("sh", ["-lc", input.cmd], {
         cwd,
-        env: { ...process.env, ...input.env },
+        env: {
+          ...hostEnvForCommands(),
+          ...provisionedEnv.get(input.containerId),
+          ...input.env,
+        },
         detached: true,
       });
 
@@ -114,6 +156,7 @@ export function createStubContainerRuntime(): ContainerRuntime {
       // as opaque.
       const containerId = `stub-${input.projectId}`;
       managed.set(containerId, input.projectId);
+      if (input.env) provisionedEnv.set(containerId, input.env);
       return { containerId, previewUrl: "" };
     },
     exec: (input) => run(input),
@@ -128,6 +171,7 @@ export function createStubContainerRuntime(): ContainerRuntime {
     async destroy(containerId: string) {
       assertDevelopment();
       managed.delete(containerId);
+      provisionedEnv.delete(containerId);
     },
     async list(): Promise<ManagedContainer[]> {
       assertDevelopment();

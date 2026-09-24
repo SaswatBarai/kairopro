@@ -9,7 +9,11 @@ import { runBackendPhase } from "../agent/phases/backend";
 import { runFrontendPhase } from "../agent/phases/frontend";
 import { runTestAuthoringPhase } from "../agent/phases/test-authoring";
 import type { DegradationLevel } from "../agent/recovery/degradation";
-import { loadTemplate, renderConventions, type TemplateManifest } from "../agent/template";
+import {
+  loadTemplate,
+  renderConventions,
+  type TemplateManifest,
+} from "../agent/template";
 import { scaffoldProject } from "../agent/workflow/steps/scaffold";
 import {
   loadApprovedSpecs,
@@ -32,6 +36,8 @@ import {
   type BuildRow,
 } from "./build.repository";
 import { encodeEventContent } from "./sse/encode";
+import { ensureAppDatabase } from "../../platform/app-database";
+import { createCodeStream } from "./code-stream";
 import { emitLog } from "./logs";
 import { runWorkflow, type BuildStep, type BuildStepContext } from "./workflow";
 
@@ -177,9 +183,13 @@ export function buildSteps(
     {
       name: "provision",
       async run({ buildId, state }) {
+        // The project's own database — its migration and tests run against
+        // this, never the platform's `DATABASE_URL`.
+        const databaseUrl = await ensureAppDatabase(project.id);
         const container = await runtime.provision({
           projectId: project.id,
           image: APP_RUNTIME_IMAGE,
+          env: { DATABASE_URL: databaseUrl },
         });
         state.containerId = container.containerId;
         await updateBuildRow(buildId, {
@@ -230,36 +240,45 @@ export function buildSteps(
 
         const checkCancelled = makeCheckCancelled(buildId);
         const onDegrade = makeOnDegrade(buildId);
+        const codeStream = createCodeStream(buildId);
 
-        const backendResult = await runBackendPhase({
-          projectId,
-          buildId,
-          ctx: stepCtx,
-          workspace: workspaceStore,
-          runtime,
-          containerId,
-          cwd: workspacePath,
-          template,
-          specs,
-          checkCancelled,
-          onDegrade,
-        });
-        if (backendResult.status === "cancelled") return;
+        let backendResult: Awaited<ReturnType<typeof runBackendPhase>>;
+        let frontendResult: Awaited<ReturnType<typeof runFrontendPhase>>;
+        try {
+          backendResult = await runBackendPhase({
+            projectId,
+            buildId,
+            ctx: stepCtx,
+            workspace: workspaceStore,
+            runtime,
+            containerId,
+            cwd: workspacePath,
+            template,
+            specs,
+            checkCancelled,
+            onDegrade,
+            onCode: codeStream.onCode,
+          });
+          if (backendResult.status === "cancelled") return;
 
-        const frontendResult = await runFrontendPhase({
-          projectId,
-          buildId,
-          ctx: stepCtx,
-          workspace: workspaceStore,
-          runtime,
-          containerId,
-          cwd: workspacePath,
-          template,
-          specs,
-          checkCancelled,
-          onDegrade,
-        });
-        if (frontendResult.status === "cancelled") return;
+          frontendResult = await runFrontendPhase({
+            projectId,
+            buildId,
+            ctx: stepCtx,
+            workspace: workspaceStore,
+            runtime,
+            containerId,
+            cwd: workspacePath,
+            template,
+            specs,
+            checkCancelled,
+            onDegrade,
+            onCode: codeStream.onCode,
+          });
+          if (frontendResult.status === "cancelled") return;
+        } finally {
+          await codeStream.drain();
+        }
 
         const filesGenerated = [
           ...backendResult.filesGenerated,
@@ -270,7 +289,9 @@ export function buildSteps(
           buildId,
           "STDOUT",
           `Generated ${filesGenerated.length} file(s)` +
-            (omitted.length > 0 ? `, omitted ${omitted.length}: ${omitted.join(", ")}` : ""),
+            (omitted.length > 0
+              ? `, omitted ${omitted.length}: ${omitted.join(", ")}`
+              : ""),
         );
       },
     },
@@ -300,20 +321,27 @@ export function buildSteps(
           template.conventions.contractsPath,
         );
 
-        const authoringResult = await runTestAuthoringPhase({
-          projectId,
-          buildId,
-          ctx: stepCtx,
-          workspace: workspaceStore,
-          runtime,
-          containerId,
-          cwd: workspacePath,
-          template,
-          specs,
-          contractsContent,
-          checkCancelled,
-          onDegrade,
-        });
+        const codeStream = createCodeStream(buildId);
+        let authoringResult: Awaited<ReturnType<typeof runTestAuthoringPhase>>;
+        try {
+          authoringResult = await runTestAuthoringPhase({
+            projectId,
+            buildId,
+            ctx: stepCtx,
+            workspace: workspaceStore,
+            runtime,
+            containerId,
+            cwd: workspacePath,
+            template,
+            specs,
+            contractsContent,
+            checkCancelled,
+            onDegrade,
+            onCode: codeStream.onCode,
+          });
+        } finally {
+          await codeStream.drain();
+        }
         if (authoringResult.status === "cancelled") return;
 
         await emitLog(
@@ -411,7 +439,11 @@ async function checkpointCancelled(
 
 function serializeError(cause: unknown): Prisma.InputJsonValue {
   if (cause instanceof Error) {
-    return { name: cause.name, message: cause.message, stack: cause.stack ?? null };
+    return {
+      name: cause.name,
+      message: cause.message,
+      stack: cause.stack ?? null,
+    };
   }
   return { value: String(cause) };
 }
@@ -450,7 +482,10 @@ export async function executeBuild(
       return;
     }
 
-    await updateBuildRow(buildId, { status: "SUCCEEDED", finishedAt: new Date() });
+    await updateBuildRow(buildId, {
+      status: "SUCCEEDED",
+      finishedAt: new Date(),
+    });
     await emitUsage("BUILD", 1, ctx, { projectId: project.id, buildId });
     await emitLog(
       buildId,
@@ -462,7 +497,8 @@ export async function executeBuild(
     await createInternalErrorRow({
       buildId,
       step: "build",
-      errorType: cause instanceof Error ? cause.constructor.name : "UnknownError",
+      errorType:
+        cause instanceof Error ? cause.constructor.name : "UnknownError",
       message: cause instanceof Error ? cause.message : String(cause),
       detail: serializeError(cause),
     }).catch((writeCause) => {

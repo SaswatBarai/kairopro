@@ -24,6 +24,8 @@ import {
   updateProject as updateProjectRow,
   type ProjectWithActivity,
 } from "./project.repository";
+import { dropAppDatabase } from "../../platform/app-database";
+import { logger } from "../../platform/logger";
 import { purgeProjectUploads } from "../input/input.service";
 import { createVersionRow } from "../version/version.repository";
 import { createWorkspace, destroyWorkspace } from "./workspace";
@@ -176,6 +178,11 @@ export async function deleteProject(
     throw new NotFoundError({ message: "Project not found" });
   }
   await destroyWorkspace(projectId);
+  await dropAppDatabase(projectId).catch((err) => {
+    // Most projects never built, so there is often nothing to drop; a stuck
+    // drop must not block deleting the project itself.
+    logger.warn({ err, projectId }, "failed to drop the project's database");
+  });
   await purgeProjectUploads(projectId);
   await deleteProjectRow(projectId);
 }
