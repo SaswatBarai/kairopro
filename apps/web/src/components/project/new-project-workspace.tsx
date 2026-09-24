@@ -48,8 +48,6 @@ const TEMPLATES = [
   },
 ];
 
-const DEFAULT_REQUIREMENTS = TEMPLATES[0]?.text ?? "";
-
 interface AttachedFile {
   id: string;
   name: string;
@@ -74,7 +72,11 @@ export function NewProjectWorkspace() {
   const deleteInputMutation = useDeleteInputMutation(existingProjectId ?? "");
   const hydratedRef = useRef(false);
 
-  const [requirements, setRequirements] = useState(DEFAULT_REQUIREMENTS);
+  // Starts empty on purpose: this text is submitted as a real project input
+  // and drives the generated PRD, so pre-filling it with a template meant
+  // any user who didn't notice and clear it silently got a PRD for the
+  // template app instead of their own. Templates below are opt-in chips.
+  const [requirements, setRequirements] = useState("");
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);

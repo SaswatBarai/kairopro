@@ -18,6 +18,7 @@ import {
 import { FadeIn } from "@/components/landing/fade-in";
 import { NoProjectEmptyState } from "@/components/project/no-project-empty-state";
 import { Button } from "@/components/ui/button";
+import { markSpecGenerationStarted } from "@/lib/queries/specs";
 import { cn } from "@/lib/utils";
 
 interface QuestionOption {
@@ -143,6 +144,14 @@ export function ClarificationForm() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error?.message ?? "Failed to generate specs");
       }
+      // Server clock, not `Date.now()`: spec timestamps are stamped
+      // server-side, so this is what the spec views compare against to tell
+      // this run's specs from the previous run's.
+      const serverDate = Date.parse(res.headers.get("date") ?? "");
+      markSpecGenerationStarted(
+        projectId,
+        Number.isNaN(serverDate) ? Date.now() : serverDate,
+      );
       router.push(specUrl);
     } catch (err: unknown) {
       setError(

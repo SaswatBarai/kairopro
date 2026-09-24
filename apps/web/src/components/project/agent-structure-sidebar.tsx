@@ -95,8 +95,8 @@ export function AgentStructureSidebar() {
     if (stream) stream.scrollTop = stream.scrollHeight;
   }, [messages]);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const text = input.trim();
     if (!text) return;
 
@@ -123,6 +123,13 @@ export function AgentStructureSidebar() {
         },
       ]);
     }, 450);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSubmit();
+    }
   };
 
   return (
@@ -165,7 +172,7 @@ export function AgentStructureSidebar() {
                 <div className="text-[10px] uppercase tracking-wider text-zinc-500">
                   {message.label}
                 </div>
-                <div className="max-w-[85%] rounded-lg rounded-tr-none bg-brand-purple px-3 py-2 text-left text-xs text-white">
+                <div className="max-w-[85%] whitespace-pre-wrap rounded-lg rounded-tr-none bg-brand-purple px-3 py-2 text-left text-xs text-white">
                   {message.text}
                 </div>
               </div>
@@ -186,31 +193,44 @@ export function AgentStructureSidebar() {
         })}
       </div>
 
-      <div className="space-y-2 rounded-b-lg border-t border-white/[0.08] bg-brand-dark p-3">
-        <form
-          className="relative rounded-md border border-white/[0.08] bg-brand-surface-muted transition-colors focus-within:border-brand-purple"
-          onSubmit={onSubmit}
-        >
+      <div className="space-y-2.5 rounded-b-lg border-t border-white/[0.08] bg-brand-dark p-3">
+        <form className="flex flex-col gap-2.5" onSubmit={onSubmit}>
           <Textarea
             aria-label="Feedback and instruction input"
-            className="min-h-0 resize-none rounded-none border-0 bg-transparent p-2.5 pr-8 text-xs text-zinc-200 shadow-none outline-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
+            className="min-h-[70px] resize-none rounded-md border border-white/[0.08] bg-brand-surface-muted p-2.5 text-xs text-zinc-200 outline-none focus-visible:border-brand-purple focus-visible:ring-1 focus-visible:ring-brand-purple dark:bg-brand-surface-muted"
             placeholder="Ask for a change (e.g. add export route)..."
             rows={2}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
-          <button
-            aria-label="Send message"
-            className="absolute bottom-2 right-2 cursor-pointer rounded-[3px] bg-white/[0.06] p-1 text-zinc-400 transition-colors hover:bg-brand-purple hover:text-white"
-            type="submit"
-          >
-            <ArrowUp className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 font-mono-tech text-[10px] text-zinc-400">
+              <span className="rounded border border-white/[0.08] bg-white/[0.06] px-1.5 py-0.5 font-medium text-zinc-300">
+                Enter
+              </span>
+              <span>send</span>
+              <span className="text-zinc-600">•</span>
+              <span className="rounded border border-white/[0.08] bg-white/[0.06] px-1.5 py-0.5 font-medium text-zinc-300">
+                Shift + Enter
+              </span>
+              <span>newline</span>
+            </div>
+            <button
+              aria-label="Send message"
+              className="flex items-center gap-1.5 rounded-md bg-brand-purple px-3 py-1.5 font-mono-tech text-xs font-medium text-white transition-colors hover:bg-brand-purple/85 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={!input.trim()}
+              type="submit"
+            >
+              <span>Send</span>
+              <ArrowUp className="h-3.5 w-3.5" strokeWidth={2.5} />
+            </button>
+          </div>
+          <p className="text-[10px] leading-tight text-zinc-500">
+            Changes here will re-generate route topology and component manifest
+            before build.
+          </p>
         </form>
-        <p className="text-[10px] leading-tight text-zinc-500">
-          Changes here will re-generate route topology and component manifest
-          before build.
-        </p>
       </div>
     </FadeIn>
   );

@@ -81,8 +81,8 @@ export function AgentReviewSidebar() {
     if (stream) stream.scrollTop = stream.scrollHeight;
   }, [messages]);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const text = input.trim();
     if (!text) return;
 
@@ -109,6 +109,13 @@ export function AgentReviewSidebar() {
         },
       ]);
     }, 450);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSubmit();
+    }
   };
 
   return (
@@ -149,7 +156,7 @@ export function AgentReviewSidebar() {
                 <span className="font-mono-tech text-[10px] text-zinc-400">
                   {message.label}
                 </span>
-                <div className="max-w-[85%] rounded-lg bg-brand-purple p-2 text-xs text-white shadow-sm">
+                <div className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-brand-purple p-2 text-xs text-white shadow-sm">
                   {message.text}
                 </div>
               </div>
@@ -174,27 +181,45 @@ export function AgentReviewSidebar() {
         })}
       </div>
 
-      <div className="mt-auto flex flex-col gap-2 bg-brand-surface-muted p-3">
-        <form className="relative flex items-center" onSubmit={onSubmit}>
-          <input
-            className="w-full rounded-[3px] bg-brand-dark py-2 pl-3 pr-10 text-xs text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:bg-white/[0.06]"
+      <div className="mt-auto flex flex-col gap-2.5 bg-brand-surface-muted p-3">
+        <form className="flex flex-col gap-2.5" onSubmit={onSubmit}>
+          <textarea
+            aria-label="Ask for a change"
+            className="w-full resize-none rounded-md border border-white/[0.1] bg-brand-dark px-3 py-2 font-mono-tech text-xs text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-brand-purple focus:ring-1 focus:ring-brand-purple"
             placeholder="Ask for a change (e.g. add tags to Task)..."
-            type="text"
+            rows={2}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
-          <button
-            className="absolute right-1.5 flex cursor-pointer items-center justify-center p-1 text-brand-purple transition-colors hover:text-brand-purple-light"
-            title="Submit directive to agent"
-            type="submit"
-          >
-            <ArrowUp className="h-[18px] w-[18px]" />
-          </button>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 font-mono-tech text-[10px] text-zinc-400">
+              <span className="rounded border border-white/[0.08] bg-white/[0.06] px-1.5 py-0.5 font-medium text-zinc-300">
+                Enter
+              </span>
+              <span>send</span>
+              <span className="text-zinc-600">•</span>
+              <span className="rounded border border-white/[0.08] bg-white/[0.06] px-1.5 py-0.5 font-medium text-zinc-300">
+                Shift + Enter
+              </span>
+              <span>newline</span>
+            </div>
+            <button
+              aria-label="Send message"
+              className="flex items-center gap-1.5 rounded-md bg-brand-purple px-3 py-1.5 font-mono-tech text-xs font-medium text-white transition-colors hover:bg-brand-purple/85 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={!input.trim()}
+              title="Submit directive to agent"
+              type="submit"
+            >
+              <span>Send</span>
+              <ArrowUp className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <p className="font-mono-tech text-[10px] leading-tight text-zinc-400">
+            Changes here will re-generate the Prisma schema and migration DDL
+            before Gate 3 approval.
+          </p>
         </form>
-        <p className="font-mono-tech text-[10px] leading-tight text-zinc-400">
-          Changes here will re-generate the Prisma schema and migration DDL
-          before Gate 3 approval.
-        </p>
       </div>
     </FadeIn>
   );

@@ -27,6 +27,18 @@ describe("NewProjectWorkspace component (C1 / FE-5 input step)", () => {
     expect(charCounter).toBeInTheDocument();
   });
 
+  it("starts empty with Generate disabled — no pre-filled template text", () => {
+    // The text is submitted as a real project input and drives the PRD, so
+    // a pre-filled template would silently leak into generated specs.
+    renderWithClient(<NewProjectWorkspace />);
+
+    expect(screen.getByLabelText(/Application requirements/i)).toHaveValue("");
+    expect(document.getElementById("char-counter")).toHaveTextContent(
+      "0 chars",
+    );
+    expect(document.getElementById("generate-prd-btn")).toBeDisabled();
+  });
+
   it("updates character count when typing requirements", async () => {
     const user = userEvent.setup();
     renderWithClient(<NewProjectWorkspace />);

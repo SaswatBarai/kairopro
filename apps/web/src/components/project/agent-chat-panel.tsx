@@ -49,8 +49,8 @@ export function AgentChatPanel() {
     if (stream) stream.scrollTop = stream.scrollHeight;
   }, [messages]);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const text = input.trim();
     if (!text) return;
 
@@ -77,6 +77,13 @@ export function AgentChatPanel() {
         },
       ]);
     }, 450);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSubmit();
+    }
   };
 
   return (
@@ -115,7 +122,7 @@ export function AgentChatPanel() {
           if (message.kind === "user") {
             return (
               <div className="flex flex-col items-end" key={message.id}>
-                <div className="max-w-[85%] rounded-[3px] bg-white/[0.06] px-2 py-1.5 text-xs text-zinc-100">
+                <div className="max-w-[85%] whitespace-pre-wrap rounded-[3px] bg-white/[0.06] px-2 py-1.5 text-xs text-zinc-100">
                   {message.text}
                 </div>
                 <span className="mt-0.5 font-mono-tech text-[10px] text-zinc-600">
@@ -144,25 +151,44 @@ export function AgentChatPanel() {
       </div>
 
       <div className="border-t border-white/[0.08] bg-brand-surface-muted p-3">
-        <form className="flex flex-col gap-1" id="chatForm" onSubmit={onSubmit}>
-          <div className="relative">
-            <textarea
-              className="w-full resize-none rounded-[3px] border border-white/[0.1] bg-brand-dark px-2 py-1 font-mono-tech text-[11px] text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-brand-purple"
-              id="chatInput"
-              placeholder="Ask for a change..."
-              rows={3}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-            />
+        <form
+          className="flex flex-col gap-2.5"
+          id="chatForm"
+          onSubmit={onSubmit}
+        >
+          <textarea
+            aria-label="Ask for a change"
+            className="w-full resize-none rounded-md border border-white/[0.1] bg-brand-dark px-3 py-2 font-mono-tech text-xs text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-brand-purple focus:ring-1 focus:ring-brand-purple"
+            id="chatInput"
+            placeholder="Ask for a change..."
+            rows={3}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 font-mono-tech text-[10px] text-zinc-400">
+              <span className="rounded border border-white/[0.08] bg-white/[0.06] px-1.5 py-0.5 font-medium text-zinc-300">
+                Enter
+              </span>
+              <span>send</span>
+              <span className="text-zinc-600">•</span>
+              <span className="rounded border border-white/[0.08] bg-white/[0.06] px-1.5 py-0.5 font-medium text-zinc-300">
+                Shift + Enter
+              </span>
+              <span>newline</span>
+            </div>
             <button
               aria-label="Send request"
-              className="absolute bottom-2.5 right-2 flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/[0.06] text-brand-purple-light transition-colors hover:bg-white/[0.1]"
+              className="flex items-center gap-1.5 rounded-md bg-brand-purple px-3 py-1.5 font-mono-tech text-xs font-medium text-white transition-all hover:bg-brand-purple/85 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={!input.trim()}
               type="submit"
             >
-              <Send className="h-4 w-4" />
+              <span>Send</span>
+              <Send className="h-3.5 w-3.5" />
             </button>
           </div>
-          <p className="font-mono-tech text-[10px] leading-tight text-zinc-400">
+          <p className="font-mono-tech text-[10px] leading-tight text-zinc-500">
             Changes here will update the PRD and underlying schema before
             approval.
           </p>

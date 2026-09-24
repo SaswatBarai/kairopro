@@ -1,0 +1,16 @@
+========================================
+KairoNotes API & Requirements Specification
+========================================
+
+Requirement 1: Note Creation & Markdown Support
+- Notes support full Markdown content formatting.
+- Default note state on creation: untitled, empty body, not pinned, active (not archived).
+
+Requirement 2: Search & Filter Performance
+- Full-text search must match terms in title or content body.
+- Filtering by folder, tag, or pin status must return within 150ms.
+
+Requirement 3: Limits & Constraints
+- Maximum note content length: 100,000 characters.
+- Maximum tags per note: 10 tags.
+- Maximum folder depth: 3 levels.
