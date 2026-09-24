@@ -9,6 +9,7 @@ import { renderConventions, type TemplateManifest } from "../template";
 import type { AppStructureEndpoint } from "../validators/app-structure";
 import type { PrdContent } from "../validators/prd";
 import { freezeContracts } from "../workflow/steps/freeze-contracts";
+import { generateAuthConfig } from "../workflow/steps/generate-auth";
 import {
   generateFile,
   type CodeStreamEvent,
@@ -53,7 +54,7 @@ export interface RunBackendPhaseInput {
    * path. The schema is copied from the approved spec, not generated, so it
    * has no stream. */
   onCode?: (unit: string, event: CodeStreamEvent) => void;
-  /** Marks the `schema` and `api` stages starting and finishing. */
+  /** Marks the `schema`, `auth` and `api` stages starting and finishing. */
   onStage?: OnStage;
 }
 
@@ -244,6 +245,37 @@ export async function runBackendPhase(
     return { status: "cancelled", filesGenerated, omitted };
   await runMigrate(input);
   stage("schema", "completed");
+
+  // Auth before contracts and routes: routes import their session helpers
+  // from this module, and a route generated while it is missing can't pass
+  // the type check (the fix loop can rewrite a route, not create the module
+  // it imports).
+  if (await cancelled())
+    return { status: "cancelled", filesGenerated, omitted };
+  stage("auth", "started");
+  const authPath = input.template.conventions.authConfigPath;
+  const authResult = await generateAuthConfig({
+    projectId: input.projectId,
+    buildId: input.buildId,
+    ctx: input.ctx,
+    workspace: input.workspace,
+    runtime: input.runtime,
+    containerId: input.containerId,
+    cwd: input.cwd,
+    template: input.template,
+    conventions,
+    specs,
+    provider: input.provider,
+    onDegrade: input.onDegrade
+      ? (step) => input.onDegrade!(authPath, step)
+      : undefined,
+    onCode: input.onCode
+      ? (event) => input.onCode!(authPath, event)
+      : undefined,
+  });
+  if (authResult.omitted) omitted.push(authPath);
+  else filesGenerated.push(authPath);
+  stage("auth", "completed");
 
   if (await cancelled())
     return { status: "cancelled", filesGenerated, omitted };

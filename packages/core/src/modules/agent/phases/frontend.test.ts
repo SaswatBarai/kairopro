@@ -36,6 +36,7 @@ const template: TemplateManifest = {
     libDir: "src/lib",
     contractsPath: "src/lib/contracts.ts",
     authConfigPath: "src/lib/auth.ts",
+    prismaClientPath: "src/lib/prisma.ts",
     prismaSchemaPath: "prisma/schema.prisma",
     styling: "tailwindcss",
     validation: "zod",
@@ -100,7 +101,7 @@ beforeEach(() => {
 });
 
 describe("runFrontendPhase (AI-6) — generation order", () => {
-  it("generates a page per app-structure page, then auth configuration last", async () => {
+  it("generates a page per app-structure page, and nothing else", async () => {
     const calls: string[] = [];
     vi.mocked(generateFile).mockImplementation(async (input) => {
       calls.push(input.path);
@@ -126,8 +127,9 @@ describe("runFrontendPhase (AI-6) — generation order", () => {
     expect(calls).toEqual([
       "src/app/tasks/page.tsx",
       "src/app/tasks/[id]/page.tsx",
-      "src/lib/auth.ts",
     ]);
+    // Auth is generated in the backend phase, before the routes that import it.
+    expect(calls).not.toContain("src/lib/auth.ts");
   });
 
   it("maps a :param route segment to Next.js's [param] convention", async () => {
@@ -145,26 +147,7 @@ describe("runFrontendPhase (AI-6) — generation order", () => {
     expect(paths).toContain("src/app/tasks/[id]/page.tsx");
   });
 
-  it("the auth task references every persona from the PRD", async () => {
-    await runFrontendPhase({
-      projectId: "p1",
-      ctx,
-      workspace: fakeWorkspace(),
-      runtime: {} as never,
-      containerId: "c1",
-      template,
-      specs,
-    });
-
-    const authCall = vi
-      .mocked(generateFile)
-      .mock.calls.find((c) => c[0].path === "src/lib/auth.ts")!;
-    expect(authCall[0].task).toContain("next-auth");
-    // Conventions/specs text passed through unchanged, not re-derived.
-    expect(authCall[0].specs).toContain("Overview");
-  });
-
-  it("tags pages as layout (degradable) and auth configuration as authorization (never-degradable)", async () => {
+  it("tags pages as layout (degradable)", async () => {
     await runFrontendPhase({
       projectId: "p1",
       ctx,
@@ -179,11 +162,6 @@ describe("runFrontendPhase (AI-6) — generation order", () => {
       .mocked(generateFile)
       .mock.calls.find((c) => c[0].path === "src/app/tasks/page.tsx")!;
     expect(pageCall[0].concern).toBe("layout");
-
-    const authCall = vi
-      .mocked(generateFile)
-      .mock.calls.find((c) => c[0].path === "src/lib/auth.ts")!;
-    expect(authCall[0].concern).toBe("authorization");
   });
 
   it("tracks an omitted unit separately from files actually generated", async () => {
@@ -211,7 +189,7 @@ describe("runFrontendPhase (AI-6) — generation order", () => {
 });
 
 describe("runFrontendPhase (AI-6) — cancel", () => {
-  it("stops at the next file boundary once cancelled, skipping auth configuration", async () => {
+  it("stops at the next file boundary once cancelled", async () => {
     let calls = 0;
     const checkCancelled = vi.fn().mockImplementation(async () => {
       calls += 1;

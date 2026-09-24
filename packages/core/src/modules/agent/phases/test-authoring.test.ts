@@ -42,6 +42,7 @@ const template: TemplateManifest = {
     libDir: "src/lib",
     contractsPath: "src/lib/contracts.ts",
     authConfigPath: "src/lib/auth.ts",
+    prismaClientPath: "src/lib/prisma.ts",
     prismaSchemaPath: "prisma/schema.prisma",
     styling: "tailwindcss",
     validation: "zod",

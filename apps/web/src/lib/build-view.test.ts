@@ -209,6 +209,21 @@ describe("steps", () => {
   });
 });
 
+describe("step order", () => {
+  it("lists sign-in before the API routes, the order they are built in", () => {
+    const ids = stepStates(initialBuildView()).map((s) => s.id);
+    expect(ids).toEqual([
+      "environment",
+      "database",
+      "auth",
+      "api",
+      "pages",
+      "tests",
+      "finish",
+    ]);
+  });
+});
+
 describe("outcome", () => {
   it("records success and cancellation from `done`", () => {
     seq = 0;

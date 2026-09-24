@@ -12,6 +12,14 @@ vi.mock("../../usage/usage.service", () => ({ emit: vi.fn() }));
 vi.mock("../workflow/steps/generate-data-model", () => ({
   validatePrismaSchema: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock("../workflow/steps/generate-auth", () => ({
+  generateAuthConfig: vi.fn().mockResolvedValue({
+    path: "src/lib/auth.ts",
+    fixAttempts: 1,
+    level: "full",
+    omitted: false,
+  }),
+}));
 vi.mock("../workflow/steps/freeze-contracts", () => ({
   freezeContracts: vi.fn().mockResolvedValue({
     path: "src/lib/contracts.ts",
@@ -31,6 +39,7 @@ vi.mock("../workflow/steps/generate-code", () => ({
 
 import { validatePrismaSchema } from "../workflow/steps/generate-data-model";
 import { freezeContracts } from "../workflow/steps/freeze-contracts";
+import { generateAuthConfig } from "../workflow/steps/generate-auth";
 import { generateFile } from "../workflow/steps/generate-code";
 import { runBackendPhase } from "./backend";
 
@@ -49,6 +58,7 @@ const template: TemplateManifest = {
     libDir: "src/lib",
     contractsPath: "src/lib/contracts.ts",
     authConfigPath: "src/lib/auth.ts",
+    prismaClientPath: "src/lib/prisma.ts",
     prismaSchemaPath: "prisma/schema.prisma",
     styling: "tailwindcss",
     validation: "zod",
@@ -125,6 +135,12 @@ beforeEach(() => {
   vi.mocked(validatePrismaSchema).mockResolvedValue(
     "model Task { id String @id }",
   );
+  vi.mocked(generateAuthConfig).mockResolvedValue({
+    path: "src/lib/auth.ts",
+    fixAttempts: 1,
+    level: "full",
+    omitted: false,
+  });
   vi.mocked(freezeContracts).mockResolvedValue({
     path: "src/lib/contracts.ts",
     fixAttempts: 1,
@@ -140,7 +156,7 @@ beforeEach(() => {
 });
 
 describe("runBackendPhase (AI-6) — generation order", () => {
-  it("enforces schema → migrate → freeze-contracts → API routes, in that order", async () => {
+  it("enforces schema → migrate → auth → freeze-contracts → API routes, in that order", async () => {
     const calls: string[] = [];
     const workspace = fakeWorkspace();
     (
@@ -155,6 +171,15 @@ describe("runBackendPhase (AI-6) — generation order", () => {
         return { exitCode: 0, stdout: "", stderr: "" };
       },
     );
+    vi.mocked(generateAuthConfig).mockImplementation(async () => {
+      calls.push("auth");
+      return {
+        path: "src/lib/auth.ts",
+        fixAttempts: 1,
+        level: "full",
+        omitted: false,
+      };
+    });
     vi.mocked(freezeContracts).mockImplementation(async () => {
       calls.push("freeze-contracts");
       return {
@@ -186,8 +211,70 @@ describe("runBackendPhase (AI-6) — generation order", () => {
 
     expect(calls[0]).toBe("schema:write");
     expect(calls[1]).toBe("migrate");
-    expect(calls[2]).toBe("freeze-contracts");
-    expect(calls.slice(3).every((c) => c.startsWith("route:"))).toBe(true);
+    // Routes import their session helpers from the auth module, so it has
+    // to exist before the first route is generated and type-checked.
+    expect(calls[2]).toBe("auth");
+    expect(calls[3]).toBe("freeze-contracts");
+    expect(calls.slice(4).every((c) => c.startsWith("route:"))).toBe(true);
+  });
+
+  it("writes the auth configuration, and reports it among the generated files", async () => {
+    const result = await runBackendPhase({
+      projectId: "p1",
+      ctx,
+      workspace: fakeWorkspace(),
+      runtime: fakeRuntime(),
+      containerId: "c1",
+      template,
+      specs,
+    });
+
+    expect(generateAuthConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: "p1", template }),
+    );
+    expect(result.filesGenerated).toContain("src/lib/auth.ts");
+  });
+
+  it("halts when the auth configuration can't be generated, before any route", async () => {
+    vi.mocked(generateAuthConfig).mockRejectedValue(new Error("auth halted"));
+
+    await expect(
+      runBackendPhase({
+        projectId: "p1",
+        ctx,
+        workspace: fakeWorkspace(),
+        runtime: fakeRuntime(),
+        containerId: "c1",
+        template,
+        specs,
+      }),
+    ).rejects.toThrow("auth halted");
+    expect(freezeContracts).not.toHaveBeenCalled();
+    expect(generateFile).not.toHaveBeenCalled();
+  });
+
+  it("reports the auth stage between schema and api", async () => {
+    const stages: string[] = [];
+
+    await runBackendPhase({
+      projectId: "p1",
+      ctx,
+      workspace: fakeWorkspace(),
+      runtime: fakeRuntime(),
+      containerId: "c1",
+      template,
+      specs,
+      onStage: (stage, status) => stages.push(`${stage}:${status}`),
+    });
+
+    expect(stages).toEqual([
+      "schema:started",
+      "schema:completed",
+      "auth:started",
+      "auth:completed",
+      "api:started",
+      "api:completed",
+    ]);
   });
 
   it("a schema validation failure halts before migrate, freeze-contracts, or any route", async () => {
@@ -372,7 +459,7 @@ describe("runBackendPhase (AI-6) — cancel", () => {
     let calls = 0;
     const checkCancelled = vi.fn().mockImplementation(async () => {
       calls += 1;
-      return calls > 3; // cancel right after schema/migrate/contracts boundaries
+      return calls > 4; // cancel right after schema/migrate/auth/contracts boundaries
     });
 
     const result = await runBackendPhase({
@@ -389,6 +476,7 @@ describe("runBackendPhase (AI-6) — cancel", () => {
     expect(result.status).toBe("cancelled");
     expect(generateFile).not.toHaveBeenCalled();
     expect(result.filesGenerated).toContain("prisma/schema.prisma");
+    expect(result.filesGenerated).toContain("src/lib/auth.ts");
     expect(result.filesGenerated).toContain("src/lib/contracts.ts");
   });
 

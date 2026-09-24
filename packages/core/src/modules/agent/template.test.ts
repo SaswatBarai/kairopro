@@ -30,6 +30,7 @@ describe("renderConventions (AI-6)", () => {
         libDir: "app/lib",
         contractsPath: "app/lib/contracts.ts",
         authConfigPath: "app/lib/auth.ts",
+        prismaClientPath: "app/lib/prisma.ts",
         prismaSchemaPath: "db/schema.prisma",
         styling: "css-modules",
         validation: "yup",

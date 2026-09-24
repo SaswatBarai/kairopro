@@ -16,15 +16,12 @@ import {
 } from "../workflow/steps/generation-context";
 
 /**
- * Frontend phase (Phase 16 / AI-6, repair via Phase 17 / AI-7): pages →
- * auth configuration — the second half of "Generation order enforced:
- * schema → migrate → API routes → pages → auth configuration". Runs after
- * `runBackendPhase`, so the frozen contracts it consumes already exist.
+ * Frontend phase (Phase 16 / AI-6, repair via Phase 17 / AI-7): pages.
+ * Runs after `runBackendPhase`, so the frozen contracts and the auth
+ * configuration it consumes already exist (auth moved to the backend phase:
+ * routes import it, so it has to exist before they are generated).
  *
- * Pages are tagged `"layout"` — presentational, degradable. Auth
- * configuration is tagged `"authorization"` — never degradable; a fix
- * loop that can't get it right halts rather than shipping a simplified
- * permission model.
+ * Pages are tagged `"layout"` — presentational, degradable.
  */
 
 export interface RunFrontendPhaseInput {
@@ -38,7 +35,7 @@ export interface RunFrontendPhaseInput {
   template: TemplateManifest;
   specs: ApprovedSpecs;
   provider?: LLMProvider;
-  /** Checked before every file boundary (each page, then auth config). */
+  /** Checked before every file boundary (each page). */
   checkCancelled?: () => Promise<boolean>;
   onDegrade?: (
     unit: string,
@@ -46,7 +43,7 @@ export interface RunFrontendPhaseInput {
   ) => void;
   /** Live view of each file as it is written, tagged with its path. */
   onCode?: (unit: string, event: CodeStreamEvent) => void;
-  /** Marks the `pages` and `auth` stages starting and finishing. */
+  /** Marks the `pages` stage starting and finishing. */
   onStage?: OnStage;
 }
 
@@ -77,16 +74,6 @@ function pageTask(page: AppStructurePage, pagePath: string): string {
     "frozen contracts module — never redefine them locally. Call the",
     "matching API route(s) named in the App Structure spec for this page's",
     "data, never a shape this spec doesn't name.",
-  ].join("\n");
-}
-
-function authTask(template: TemplateManifest): string {
-  return [
-    `Configure ${template.conventions.auth} and export it from`,
-    `${template.conventions.authConfigPath}. Support the personas and`,
-    "permission matrix described in the PRD above — every role listed",
-    "there must be representable by the configuration you write. Do not",
-    "invent a role or permission the PRD does not describe.",
   ].join("\n");
 }
 
@@ -136,35 +123,6 @@ export async function runFrontendPhase(
     else filesGenerated.push(pagePath);
   }
   stage("pages", "completed");
-
-  if (await cancelled())
-    return { status: "cancelled", filesGenerated, omitted };
-  stage("auth", "started");
-  const authPath = input.template.conventions.authConfigPath;
-  const authResult = await generateFile({
-    path: authPath,
-    task: authTask(input.template),
-    conventions,
-    specs,
-    concern: "authorization",
-    projectId: input.projectId,
-    buildId: input.buildId,
-    ctx: input.ctx,
-    workspace: input.workspace,
-    runtime: input.runtime,
-    containerId: input.containerId,
-    cwd: input.cwd,
-    provider: input.provider,
-    onDegrade: input.onDegrade
-      ? (step) => input.onDegrade!(authPath, step)
-      : undefined,
-    onCode: input.onCode
-      ? (event) => input.onCode!(authPath, event)
-      : undefined,
-  });
-  if (authResult.omitted) omitted.push(authPath);
-  else filesGenerated.push(authPath);
-  stage("auth", "completed");
 
   return { status: "completed", filesGenerated, omitted };
 }

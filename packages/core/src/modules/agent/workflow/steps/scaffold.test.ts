@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -48,6 +48,66 @@ describe("scaffoldProject (AI-6)", () => {
     // Still exactly one commit in history.
     const entries = await log(dir);
     expect(entries).toHaveLength(1);
+  });
+
+  it("copies the Prisma client module every generated route imports", async () => {
+    const result = await scaffoldProject({ workspacePath: dir });
+
+    expect(result.filesCopied).toContain("src/lib/prisma.ts");
+    expect(await readFile(join(dir, "src/lib/prisma.ts"), "utf8")).toContain(
+      "export const prisma",
+    );
+  });
+
+  describe("starting from a clean template", () => {
+    it("removes code left by an earlier build, so it can't break the type check", async () => {
+      await scaffoldProject({ workspacePath: dir });
+      // What a failed build leaves behind: generated files, some broken.
+      await mkdir(join(dir, "src/app/api/auth/signup"), { recursive: true });
+      await writeFile(
+        join(dir, "src/app/api/auth/signup/route.ts"),
+        "Here is the fix: ```",
+      );
+      await writeFile(join(dir, "src/lib/contracts.ts"), "broken");
+
+      await scaffoldProject({ workspacePath: dir });
+
+      expect(existsSync(join(dir, "src/app/api/auth/signup/route.ts"))).toBe(
+        false,
+      );
+      expect(existsSync(join(dir, "src/lib/contracts.ts"))).toBe(false);
+      expect(existsSync(join(dir, "src/app/page.tsx"))).toBe(true);
+    });
+
+    it("restores a template file that was overwritten", async () => {
+      await scaffoldProject({ workspacePath: dir });
+      await writeFile(join(dir, "src/app/page.tsx"), "garbage");
+
+      await scaffoldProject({ workspacePath: dir });
+
+      expect(await readFile(join(dir, "src/app/page.tsx"), "utf8")).not.toBe(
+        "garbage",
+      );
+    });
+
+    it("keeps history and installed dependencies", async () => {
+      const first = await scaffoldProject({ workspacePath: dir });
+      await mkdir(join(dir, "node_modules/left-pad"), { recursive: true });
+      await writeFile(join(dir, "node_modules/left-pad/index.js"), "x");
+      await writeFile(join(dir, "package-lock.json"), "{}");
+
+      await scaffoldProject({ workspacePath: dir });
+
+      expect(existsSync(join(dir, "node_modules/left-pad/index.js"))).toBe(
+        true,
+      );
+      expect(existsSync(join(dir, "package-lock.json"))).toBe(true);
+      const entries = await log(dir, 5);
+      expect(entries.map((e) => e.message)).toContain(
+        "Scaffold nextjs-shadcn template",
+      );
+      expect(first.commitHash).toMatch(/^[0-9a-f]{7}$/);
+    });
   });
 
   it("throws for an unknown template id", async () => {

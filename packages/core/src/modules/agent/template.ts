@@ -20,6 +20,9 @@ export interface TemplateConventions {
   libDir: string;
   contractsPath: string;
   authConfigPath: string;
+  /** The Prisma client singleton the template ships — routes import
+   * `{ prisma }` from it and never construct a client themselves. */
+  prismaClientPath: string;
   prismaSchemaPath: string;
   styling: string;
   validation: string;
@@ -68,6 +71,7 @@ export function renderConventions(manifest: TemplateManifest): string {
     `Lib directory: ${conventions.libDir}`,
     `Shared contracts module: ${conventions.contractsPath}`,
     `Auth configuration module: ${conventions.authConfigPath}`,
+    `Prisma client module: ${conventions.prismaClientPath} (already provided — import { prisma } from it; never construct a PrismaClient anywhere else)`,
     `Prisma schema: ${conventions.prismaSchemaPath}`,
     `Styling: ${conventions.styling}`,
     `Validation library: ${conventions.validation}`,

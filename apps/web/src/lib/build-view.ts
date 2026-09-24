@@ -207,9 +207,10 @@ export const BUILD_STEPS: ReadonlyArray<{
     stages: ["provision", "scaffold"],
   },
   { id: "database", label: "Setting up the database", stages: ["schema"] },
+  // Before the routes that rely on it, which is the order it is built in.
+  { id: "auth", label: "Setting up sign-in", stages: ["auth"] },
   { id: "api", label: "Creating API routes", stages: ["api"] },
   { id: "pages", label: "Building pages", stages: ["pages"] },
-  { id: "auth", label: "Setting up sign-in", stages: ["auth"] },
   { id: "tests", label: "Writing and running tests", stages: ["test"] },
   { id: "finish", label: "Saving your project", stages: ["checkpoint"] },
 ];
