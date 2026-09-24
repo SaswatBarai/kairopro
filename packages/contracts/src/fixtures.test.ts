@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  BuildCodeEventDataSchema,
   ALLOWED_UPLOAD_MIME_TYPES,
   MAX_INPUT_FILES_PER_PROJECT,
   MAX_UPLOAD_BYTES,
@@ -274,6 +275,29 @@ describe("fixtures parse", () => {
         password: "analytical-engine",
       }),
     ).toBeTruthy();
+  });
+});
+
+describe("build code events", () => {
+  it.each([
+    { file: "a.ts", reset: true },
+    { file: "a.ts", content: "export const a = 1;" },
+    { file: "a.ts", content: "whole file", replace: true },
+    { file: "a.ts", done: true, omitted: false },
+    { unit: "src/app/api/x/route.ts", level: "simpler", message: "m" },
+    { unit: "src/lib/a.ts", repair: "fixed" },
+  ])("accepts %j", (data) => {
+    expect(BuildCodeEventDataSchema.parse(data)).toEqual(data);
+  });
+
+  it.each([
+    {},
+    { file: "a.ts" },
+    { file: "a.ts", content: 1 },
+    { file: "a.ts", content: "x", replace: false },
+    { file: 1, reset: true },
+  ])("rejects %j", (data) => {
+    expect(BuildCodeEventDataSchema.safeParse(data).success).toBe(false);
   });
 });
 
