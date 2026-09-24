@@ -18,6 +18,7 @@
 export const WORKFLOW_PHASES = [
   "pm-questions",
   "prd",
+  "revise-prd",
   "design",
   "data-model",
   "app-structure",
@@ -34,6 +35,7 @@ const DEFAULT_MODEL = "claude-haiku-4-5";
 const MODEL_BY_PHASE: Record<WorkflowPhase, string> = {
   "pm-questions": DEFAULT_MODEL,
   prd: DEFAULT_MODEL,
+  "revise-prd": DEFAULT_MODEL,
   design: DEFAULT_MODEL,
   "data-model": DEFAULT_MODEL,
   "app-structure": DEFAULT_MODEL,

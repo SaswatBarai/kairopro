@@ -1,82 +1,98 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
-import { Send, Terminal } from "lucide-react";
+import type { SpecType } from "@kairopro/contracts";
+import { Loader2, Send, Terminal } from "lucide-react";
+
+import { useRequestSpecChangeMutation } from "@/lib/queries/specs";
 
 type ChatMessage =
   | { id: number; kind: "system"; text: string }
   | { id: number; kind: "user"; text: string; time: string }
-  | { id: number; kind: "agent"; content: ReactNode; time: string };
+  | {
+      id: number;
+      kind: "agent";
+      text: string;
+      /** Which specs were rewritten, e.g. "PRD v4 · Data model v3". */
+      detail?: string;
+      isError?: boolean;
+      time: string;
+    };
 
-function CodeSpan({ children }: { children: ReactNode }) {
-  return (
-    <span className="rounded bg-white/[0.08] px-1 font-mono-tech text-[11px] text-zinc-100">
-      {children}
-    </span>
-  );
-}
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
+const SPEC_LABELS: Record<SpecType, string> = {
+  PRD: "PRD",
+  DESIGN: "Design",
+  DATA_MODEL: "Data model",
+  APP_STRUCTURE: "App structure",
+};
 
 const INITIAL_MESSAGES: ChatMessage[] = [
-  { id: 0, kind: "system", text: "Agent initialized with PRD-001 schema" },
   {
-    id: 1,
-    kind: "user",
-    text: "Add subtasks to tasks",
-    time: "14:02:18",
-  },
-  {
-    id: 2,
-    kind: "agent",
-    content: (
-      <>
-        Done — added a <CodeSpan>Subtask</CodeSpan> model with a self-reference
-        to <CodeSpan>Task</CodeSpan>. This also adds subtask endpoints to the
-        API.
-      </>
-    ),
-    time: "14:02:22",
+    id: 0,
+    kind: "system",
+    text: "Describe a change to your requirements",
   },
 ];
 
-export function AgentChatPanel() {
+function nowLabel(): string {
+  return new Date().toLocaleTimeString([], { hour12: false });
+}
+
+export function AgentChatPanel({ projectId }: { projectId: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const streamRef = useRef<HTMLDivElement>(null);
+  const nextId = useRef(INITIAL_MESSAGES.length);
+  const changeMutation = useRequestSpecChangeMutation(projectId);
+  const isWorking = changeMutation.isPending;
 
   useEffect(() => {
     const stream = streamRef.current;
     if (stream) stream.scrollTop = stream.scrollHeight;
-  }, [messages]);
+  }, [messages, isWorking]);
+
+  const addMessage = (message: DistributiveOmit<ChatMessage, "id">) => {
+    setMessages((prev) => [
+      ...prev,
+      { ...message, id: nextId.current++ } as ChatMessage,
+    ]);
+  };
 
   const onSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const text = input.trim();
-    if (!text) return;
+    if (!text || isWorking) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { id: prev.length, kind: "user", text, time: "Now" },
-    ]);
+    addMessage({ kind: "user", text, time: nowLabel() });
     setInput("");
 
-    window.setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length,
+    changeMutation.mutate(text, {
+      onSuccess: ({ summary, specs }) => {
+        addMessage({
           kind: "agent",
-          content: (
-            <>
-              Received refinement request:{" "}
-              <CodeSpan>{`"${text.slice(0, 30)}..."`}</CodeSpan>. Schema graph
-              queued for rebuild on gate approval.
-            </>
-          ),
-          time: "Just now",
-        },
-      ]);
-    }, 450);
+          text: summary,
+          detail:
+            specs.length > 0
+              ? `Updated: ${specs
+                  .map((s) => `${SPEC_LABELS[s.type]} v${s.version}`)
+                  .join(" · ")}`
+              : "No spec changes made.",
+          time: nowLabel(),
+        });
+      },
+      onError: (err) => {
+        addMessage({
+          kind: "agent",
+          text: `Couldn't apply that change: ${err.message}`,
+          isError: true,
+          time: nowLabel(),
+        });
+      },
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -94,9 +110,15 @@ export function AgentChatPanel() {
             Request changes
           </h4>
           <div className="mt-0.5 flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
+            <span
+              className={
+                isWorking
+                  ? "h-1.5 w-1.5 animate-pulse rounded-full bg-brand-purple-light"
+                  : "h-1.5 w-1.5 rounded-full bg-zinc-500"
+              }
+            />
             <span className="font-mono-tech text-[10px] text-zinc-400">
-              Kairo Agent standby
+              {isWorking ? "Kairo Agent working" : "Kairo Agent standby"}
             </span>
           </div>
         </div>
@@ -139,8 +161,19 @@ export function AgentChatPanel() {
                   kairo-engine
                 </span>
               </div>
-              <div className="max-w-[90%] rounded-[3px] border border-white/[0.08] bg-brand-surface-muted px-2 py-1 text-xs leading-relaxed text-zinc-400">
-                {message.content}
+              <div
+                className={
+                  message.isError
+                    ? "max-w-[90%] rounded-[3px] border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs leading-relaxed text-red-300"
+                    : "max-w-[90%] rounded-[3px] border border-white/[0.08] bg-brand-surface-muted px-2 py-1 text-xs leading-relaxed text-zinc-400"
+                }
+              >
+                {message.text}
+                {message.detail && (
+                  <div className="mt-1 font-mono-tech text-[10px] text-zinc-500">
+                    {message.detail}
+                  </div>
+                )}
               </div>
               <span className="mt-0.5 font-mono-tech text-[10px] text-zinc-600">
                 {message.time}
@@ -148,6 +181,21 @@ export function AgentChatPanel() {
             </div>
           );
         })}
+
+        {isWorking && (
+          <div className="flex flex-col items-start" role="status">
+            <span className="mb-1 font-mono-tech text-[11px] font-semibold text-brand-purple-light">
+              kairo-engine
+            </span>
+            <div className="flex max-w-[90%] items-center gap-2 rounded-[3px] border border-white/[0.08] bg-brand-surface-muted px-2 py-1 text-xs leading-relaxed text-zinc-400">
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-brand-purple-light" />
+              <span>
+                Revising the PRD and regenerating the data model and app
+                structure. This can take up to a minute.
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="border-t border-white/[0.08] bg-brand-surface-muted p-3">
@@ -158,7 +206,8 @@ export function AgentChatPanel() {
         >
           <textarea
             aria-label="Ask for a change"
-            className="w-full resize-none rounded-md border border-white/[0.1] bg-brand-dark px-3 py-2 font-mono-tech text-xs text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-brand-purple focus:ring-1 focus:ring-brand-purple"
+            className="w-full resize-none rounded-md border border-white/[0.1] bg-brand-dark px-3 py-2 font-mono-tech text-xs text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-brand-purple focus:ring-1 focus:ring-brand-purple disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isWorking}
             id="chatInput"
             placeholder="Ask for a change..."
             rows={3}
@@ -181,7 +230,7 @@ export function AgentChatPanel() {
             <button
               aria-label="Send request"
               className="flex items-center gap-1.5 rounded-md bg-brand-purple px-3 py-1.5 font-mono-tech text-xs font-medium text-white transition-all hover:bg-brand-purple/85 disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={!input.trim()}
+              disabled={!input.trim() || isWorking}
               type="submit"
             >
               <span>Send</span>

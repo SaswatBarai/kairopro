@@ -184,6 +184,33 @@
           "createdAt": { "type": "string", "format": "date-time" }
         }
       },
+      "RequestSpecChangeInput": {
+        "type": "object",
+        "required": ["instruction"],
+        "properties": {
+          "instruction": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 2000,
+            "example": "Add subtasks to tasks"
+          }
+        }
+      },
+      "SpecChangeResult": {
+        "type": "object",
+        "required": ["summary", "specs"],
+        "properties": {
+          "summary": {
+            "type": "string",
+            "description": "What changed, in plain language."
+          },
+          "specs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Spec" },
+            "description": "New spec versions written (PRD, DATA_MODEL, APP_STRUCTURE). Empty when the request changed nothing."
+          }
+        }
+      },
       "ReviseSpecInput": {
         "type": "object",
         "required": ["content"],
@@ -723,6 +750,73 @@
           "202": { "description": "Accepted" },
           "404": {
             "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/specs/change": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Specs"],
+        "summary": "Apply a natural-language change to the PRD and regenerate the data model and app structure",
+        "description": "Synchronous: takes up to about a minute (three sequential LLM calls) and returns once the new versions are written. The design spec is not touched. If the request is not a change to the requirements, nothing is written and `specs` is empty. Nothing is written if any step fails. Requires an existing PRD (run /specs/generate first).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestSpecChangeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Applied (or nothing to apply)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SpecChangeResult" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid instruction",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found, or no PRD generated yet",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "502": {
+            "description": "The model provider failed, or its output failed validation after retries",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }

@@ -1,5 +1,7 @@
+import { isDeepStrictEqual } from "node:util";
+import type { Spec, SpecChangeResult } from "@kairopro/contracts";
 import type { RequestContext } from "../../lib/context";
-import { ProviderError } from "../../lib/errors";
+import { NotFoundError, ProviderError } from "../../lib/errors";
 import { eventBus } from "../../platform/events";
 import { listInputs } from "../input/input.service";
 import {
@@ -10,7 +12,9 @@ import { generateAppStructure } from "../agent/workflow/steps/generate-app-struc
 import { generateDataModel } from "../agent/workflow/steps/generate-data-model";
 import { generateDesign } from "../agent/workflow/steps/generate-design";
 import { generatePmQuestions } from "../agent/workflow/steps/pm-questions";
-import { createSpec } from "./spec.service";
+import { revisePrd } from "../agent/workflow/steps/revise-prd";
+import { PrdContentSchema } from "../agent/validators/prd";
+import { createSpec, listSpecs } from "./spec.service";
 
 /**
  * Real spec generator (Phase 11 / AI-5) — replaces the Phase 6 stub. Runs
@@ -28,6 +32,13 @@ import { createSpec } from "./spec.service";
  */
 export interface SpecGenerator {
   generate(projectId: string, ctx: RequestContext): Promise<void>;
+  /** Applies a natural-language change to the current PRD, then regenerates
+   * the data model and app structure from the revised PRD. */
+  revise(
+    projectId: string,
+    instruction: string,
+    ctx: RequestContext,
+  ): Promise<SpecChangeResult>;
 }
 
 type ProgressStatus = "started" | "completed" | "failed";
@@ -120,6 +131,47 @@ export const RealSpecGenerator: SpecGenerator = {
       generateAppStructure({ prd: prdText, dataModel, ctx, projectId }),
     );
     await createSpec(projectId, "APP_STRUCTURE", appStructure, ctx);
+  },
+
+  async revise(projectId, instruction, ctx) {
+    const currentSpec = (await listSpecs(projectId, ctx)).find(
+      (s) => s.type === "PRD",
+    );
+    if (!currentSpec) {
+      throw new NotFoundError({
+        message: "There is no PRD to change yet — generate the specs first",
+      });
+    }
+    const currentPrd = PrdContentSchema.parse(currentSpec.content);
+
+    const { summary, prd } = await withProgress(projectId, "revise-prd", () =>
+      revisePrd({ currentPrd, instruction, ctx, projectId }),
+    );
+
+    // A request that isn't a requirements change (a question, small talk)
+    // comes back with the PRD untouched — don't burn two more LLM calls and
+    // three new versions to reproduce what already exists.
+    if (isDeepStrictEqual(prd, currentPrd)) {
+      return { summary, specs: [] };
+    }
+
+    // Generate everything before writing anything: a failure in the data
+    // model or app structure must not leave a new PRD sitting next to specs
+    // derived from the old one.
+    const prdText = formatPrdForPrompt(prd);
+    const dataModel = await withProgress(projectId, "data-model", () =>
+      generateDataModel({ prd: prdText, ctx, projectId }),
+    );
+    const appStructure = await withProgress(projectId, "app-structure", () =>
+      generateAppStructure({ prd: prdText, dataModel, ctx, projectId }),
+    );
+
+    const specs: Spec[] = [
+      await createSpec(projectId, "PRD", prd, ctx),
+      await createSpec(projectId, "DATA_MODEL", { schema: dataModel }, ctx),
+      await createSpec(projectId, "APP_STRUCTURE", appStructure, ctx),
+    ];
+    return { summary, specs };
   },
 };
 

@@ -15,7 +15,9 @@ import {
   LoginInputSchema,
   PmQuestionSchema,
   PmQuestionsSchema,
+  RequestSpecChangeInputSchema,
   ReviseSpecInputSchema,
+  SpecChangeResultSchema,
   ProjectListItemSchema,
   ProjectSchema,
   PutCredentialInputSchema,
@@ -205,6 +207,12 @@ describe("fixtures parse", () => {
     expect(
       ReviseSpecInputSchema.parse({ content: taskflowSpec.content }),
     ).toEqual({ content: taskflowSpec.content });
+    expect(
+      RequestSpecChangeInputSchema.parse({ instruction: "  Add subtasks  " }),
+    ).toEqual({ instruction: "Add subtasks" });
+    expect(
+      SpecChangeResultSchema.parse({ summary: "Done.", specs: [taskflowSpec] }),
+    ).toEqual({ summary: "Done.", specs: [taskflowSpec] });
   });
 
   it("parses the demo build, log, and stream event", () => {
@@ -270,6 +278,15 @@ describe("fixtures parse", () => {
 });
 
 describe("invalid fixtures are rejected", () => {
+  it("rejects blank, too-short, and oversized change instructions", () => {
+    for (const instruction of ["", "   ", "ab", "x".repeat(2001)]) {
+      expect(
+        RequestSpecChangeInputSchema.safeParse({ instruction }).success,
+      ).toBe(false);
+    }
+    expect(RequestSpecChangeInputSchema.safeParse({}).success).toBe(false);
+  });
+
   it("rejects an unknown project status and a non-URL", () => {
     expect(
       ProjectSchema.safeParse({ ...taskflow, status: "ARCHIVED" }).success,

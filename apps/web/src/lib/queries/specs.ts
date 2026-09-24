@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Spec, SpecList, SpecType } from "@kairopro/contracts";
+import type {
+  Spec,
+  SpecChangeResult,
+  SpecList,
+  SpecType,
+} from "@kairopro/contracts";
 
 export const SPEC_TYPES: SpecType[] = [
   "PRD",
@@ -84,6 +89,34 @@ function onlyFreshSpecs(
   const startedAt = readGenerationStartedAt(projectId);
   if (startedAt === null) return specs;
   return specs.filter((s) => new Date(s.createdAt).getTime() >= startedAt);
+}
+
+/**
+ * Asks the agent to apply a natural-language change to the PRD. The server
+ * regenerates the data model and app structure to match, which takes up to
+ * a minute — the response only arrives once all of it is written.
+ */
+export function requestSpecChangeRequest(
+  projectId: string,
+  instruction: string,
+): Promise<SpecChangeResult> {
+  return request<SpecChangeResult>(
+    `/api/projects/${encodeURIComponent(projectId)}/specs/change`,
+    { method: "POST", body: JSON.stringify({ instruction }) },
+  );
+}
+
+export function useRequestSpecChangeMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (instruction: string) =>
+      requestSpecChangeRequest(projectId, instruction),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: specsQueryKey(projectId),
+      });
+    },
+  });
 }
 
 /**

@@ -49,6 +49,21 @@ export const ReviseSpecInputSchema = z.object({
   content: z.record(z.string(), z.json()),
 });
 
+/** Natural-language change to the current specs (`POST /specs/change`) —
+ * distinct from `ReviseSpecInputSchema`, which stores caller-supplied
+ * content verbatim. */
+export const RequestSpecChangeInputSchema = z.object({
+  instruction: z.string().trim().min(3).max(2000),
+});
+
+export const SpecChangeResultSchema = z.object({
+  /** What changed, in plain language — shown to the user as the agent's reply. */
+  summary: z.string(),
+  /** The new spec versions written by this change. Empty when the request
+   * asked for nothing that alters the requirements. */
+  specs: SpecListSchema,
+});
+
 export type SpecType = z.infer<typeof SpecTypeSchema>;
 export type SpecStatus = z.infer<typeof SpecStatusSchema>;
 export type Spec = z.infer<typeof SpecSchema>;
@@ -59,3 +74,7 @@ export type AnswerPmQuestionsInput = z.infer<
   typeof AnswerPmQuestionsInputSchema
 >;
 export type ReviseSpecInput = z.infer<typeof ReviseSpecInputSchema>;
+export type RequestSpecChangeInput = z.infer<
+  typeof RequestSpecChangeInputSchema
+>;
+export type SpecChangeResult = z.infer<typeof SpecChangeResultSchema>;

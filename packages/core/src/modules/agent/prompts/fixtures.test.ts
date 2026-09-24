@@ -36,6 +36,7 @@ describe("prompt fixtures (AI-3)", () => {
         "fix",
         "pm-questions",
         "prd",
+        "revise-prd",
         "system",
         "test-gen",
       ].sort(),
