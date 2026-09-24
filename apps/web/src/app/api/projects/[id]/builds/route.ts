@@ -8,12 +8,16 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /** Starts a build. Returns immediately with the new (QUEUED) build — the
  * workflow itself runs in the background (Phase 15 / BE-10). */
-export async function POST(_req: Request, { params }: RouteContext) {
+export async function POST(req: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
     const ctx = await getRequestContext();
     enforceRateLimit("build", ctx.orgId);
-    const build = await startBuild(id, ctx);
+    // `{ resume: true }` reuses the files the last failed build finished.
+    const { resume } = (await req.json().catch(() => ({}))) as {
+      resume?: boolean;
+    };
+    const build = await startBuild(id, ctx, { resume: resume === true });
     return NextResponse.json(build, { status: 202 });
   } catch (err) {
     return toErrorResponse(err);

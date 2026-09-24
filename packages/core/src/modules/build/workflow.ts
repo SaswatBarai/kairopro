@@ -35,7 +35,10 @@ export interface RunWorkflowInput {
    * a checkpoint (a git commit) so the workspace is left consistent. Passed
    * the name of the step that was about to run, for the checkpoint commit
    * message ("Checkpoint: cancelled during {step}"). */
-  onCancelled: (stepCtx: BuildStepContext, nextStepName: string) => Promise<void>;
+  onCancelled: (
+    stepCtx: BuildStepContext,
+    nextStepName: string,
+  ) => Promise<void>;
 }
 
 export type WorkflowOutcome = "completed" | "cancelled";

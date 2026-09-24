@@ -80,3 +80,40 @@ export function createInternalErrorRow(data: {
 }): Promise<InternalErrorRow> {
   return db.internalError.create({ data });
 }
+
+/** Files an earlier build of this project finished writing (their `code`
+ * stream reached `done`, not omitted) — what "resume" reuses. Reads the
+ * project's most recent finished build other than `exceptBuildId`. */
+export async function findCompletedFiles(
+  projectId: string,
+  exceptBuildId: string,
+): Promise<Set<string>> {
+  const previous = await db.build.findFirst({
+    where: {
+      projectId,
+      id: { not: exceptBuildId },
+      status: { in: ["FAILED", "CANCELLED"] },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  const files = new Set<string>();
+  if (!previous) return files;
+  const logs = await db.buildLog.findMany({
+    where: { buildId: previous.id, content: { contains: '"done":true' } },
+    select: { content: true },
+  });
+  for (const { content } of logs) {
+    try {
+      const { event, data } = JSON.parse(content) as {
+        event?: string;
+        data?: { file?: string; done?: boolean; omitted?: boolean };
+      };
+      if (event === "code" && data?.done && !data.omitted && data.file) {
+        files.add(data.file);
+      }
+    } catch {
+      // not a JSON event row
+    }
+  }
+  return files;
+}

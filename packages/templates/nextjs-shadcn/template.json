@@ -17,6 +17,7 @@
     "validation": "zod",
     "orm": "prisma",
     "auth": "next-auth",
-    "testFramework": "vitest"
+    "testFramework": "vitest",
+    "uiComponents": ["button", "input", "textarea", "label", "badge", "card"]
   }
 }

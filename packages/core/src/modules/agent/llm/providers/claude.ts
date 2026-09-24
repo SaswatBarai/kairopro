@@ -31,7 +31,7 @@ import type {
  * `client.models.retrieve("claude-haiku-4-5")`, which reports
  * `max_tokens: 64000`. A caller can still override via
  * `LLMCompleteInput.maxTokens`. */
-const DEFAULT_MAX_TOKENS = 64000;
+const DEFAULT_MAX_TOKENS = Number(process.env.LLM_MAX_TOKENS) || 64000;
 /** Only used for the timeout-classification error message below. The SDK
  * itself is NOT given this as a fixed client timeout — with
  * `DEFAULT_MAX_TOKENS` now at 64000, a hardcoded short timeout would race

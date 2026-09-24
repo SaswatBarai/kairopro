@@ -37,7 +37,8 @@ interface BuildResultProps {
   status: "SUCCEEDED" | "FAILED" | "CANCELLED";
   build: Build | undefined;
   view: BuildViewState;
-  onRetry: () => void;
+  /** `resume` keeps the files the last build finished. */
+  onRetry: (resume: boolean) => void;
   retrying: boolean;
   retryError: string | null;
 }
@@ -219,15 +220,29 @@ export function BuildResult({
                   className="inline-flex cursor-pointer items-center gap-2 rounded-[3px] bg-brand-purple px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-purple/85 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={retrying}
                   type="button"
-                  onClick={onRetry}
+                  onClick={() => onRetry(written.length > 0)}
                 >
                   {retrying ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <RotateCcw className="h-4 w-4" />
                   )}
-                  {status === "CANCELLED" ? "Start build again" : "Try again"}
+                  {written.length > 0
+                    ? `Continue from file ${written.length + 1}`
+                    : status === "CANCELLED"
+                      ? "Start build again"
+                      : "Try again"}
                 </button>
+                {written.length > 0 && (
+                  <button
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-[3px] border border-white/[0.12] bg-brand-surface-muted px-4 py-2 text-sm text-zinc-100 transition-colors hover:bg-white/[0.08] disabled:opacity-60"
+                    disabled={retrying}
+                    type="button"
+                    onClick={() => onRetry(false)}
+                  >
+                    Start over
+                  </button>
+                )}
                 <Link
                   className="inline-flex items-center gap-2 rounded-[3px] border border-white/[0.12] bg-brand-surface-muted px-4 py-2 text-sm text-zinc-100 transition-colors hover:bg-white/[0.08]"
                   href={`/projects/new/app-structure?projectId=${encodeURIComponent(projectId)}`}

@@ -1,3 +1,4 @@
+import { isReusableFile } from "../resume";
 import type { RequestContext } from "../../../../lib/context";
 import { ProviderError } from "../../../../lib/errors";
 import type { ContainerRuntime } from "../../../../platform/container/runtime";
@@ -84,6 +85,11 @@ export interface GenerateFileInput {
   /** Container-side working directory `tsc` runs from — the generated
    * project's root. */
   cwd?: string;
+  /** Workspace files (e.g. the contracts module) the file must agree with.
+   * Their current contents go into every attempt's prompt — without them
+   * the model guesses shapes (`null` vs `undefined`) and fails the type
+   * check on them. Missing files are skipped. */
+  contextFiles?: string[];
   provider?: LLMProvider;
   maxFixAttempts?: number;
   maxDistinctApproaches?: number;
@@ -134,6 +140,21 @@ function formatTypecheckErrors(errors: TypecheckError[]): string {
 export async function generateFile(
   input: GenerateFileInput,
 ): Promise<GenerateFileResult> {
+  if (isReusableFile(input.path)) {
+    const existing = await input.workspace
+      .readFile(input.projectId, input.path)
+      .catch(() => null);
+    if (existing !== null) {
+      input.onCode?.({ type: "done", omitted: false, content: existing });
+      return {
+        path: input.path,
+        fixAttempts: 0,
+        level: "full",
+        omitted: false,
+      };
+    }
+  }
+
   const provider = input.provider ?? getLLMProvider();
   const refs = { projectId: input.projectId, buildId: input.buildId };
   // What the last attempt actually saved — the file as it is on disk.
@@ -149,6 +170,19 @@ export async function generateFile(
     task: string;
     previousFailure?: string;
   }): Promise<AttemptOutcome<true>> {
+    const pinned: string[] = [];
+    for (const file of input.contextFiles ?? []) {
+      try {
+        const text = await input.workspace.readFile(input.projectId, file);
+        pinned.push(`--- ${file} ---\n${text}`);
+      } catch {
+        // not written yet
+      }
+    }
+    const pinnedBlock = pinned.length
+      ? `\n\n# Existing files this must match exactly\n\n${pinned.join("\n\n")}`
+      : "";
+
     let raw: string;
     if (step.previousFailure === undefined) {
       raw = await completeWithValidator({
@@ -161,7 +195,7 @@ export async function generateFile(
             content: renderPrompt("code-gen", {
               conventions: input.conventions,
               specs: input.specs,
-              task: step.task,
+              task: step.task + pinnedBlock,
             }),
           },
         ],
@@ -178,6 +212,7 @@ export async function generateFile(
       );
       const context = [
         retrieved.summary,
+        ...pinned,
         ...retrieved.files.map((f) => `--- ${f.path} ---\n${f.contents}`),
       ].join("\n\n");
 

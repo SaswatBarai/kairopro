@@ -30,7 +30,10 @@ export const WORKFLOW_PHASES = [
 
 export type WorkflowPhase = (typeof WORKFLOW_PHASES)[number];
 
-const DEFAULT_MODEL = "claude-haiku-4-5";
+/** `LLM_MODEL` swaps the model for every phase — e.g. `deepseek-chat` when
+ * `ANTHROPIC_BASE_URL` points the Anthropic SDK at an Anthropic-compatible
+ * endpoint. Unset, it is Claude Haiku 4.5. */
+const DEFAULT_MODEL = process.env.LLM_MODEL || "claude-haiku-4-5";
 
 const MODEL_BY_PHASE: Record<WorkflowPhase, string> = {
   "pm-questions": DEFAULT_MODEL,

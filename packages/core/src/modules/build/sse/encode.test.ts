@@ -21,12 +21,14 @@ describe("toStreamEvent (BE-10)", () => {
   });
 
   it("maps STDOUT/STDERR to terminal with a stream discriminator", () => {
-    expect(
-      toStreamEvent({ seq: 2, type: "STDOUT", content: "hello" }),
-    ).toEqual({ seq: 2, event: "terminal", data: { stream: "stdout", line: "hello" } });
-    expect(
-      toStreamEvent({ seq: 3, type: "STDERR", content: "oops" }),
-    ).toEqual({ seq: 3, event: "terminal", data: { stream: "stderr", line: "oops" } });
+    expect(toStreamEvent({ seq: 2, type: "STDOUT", content: "hello" })).toEqual(
+      { seq: 2, event: "terminal", data: { stream: "stdout", line: "hello" } },
+    );
+    expect(toStreamEvent({ seq: 3, type: "STDERR", content: "oops" })).toEqual({
+      seq: 3,
+      event: "terminal",
+      data: { stream: "stderr", line: "oops" },
+    });
   });
 
   it("maps CHECKPOINT to checkpoint, parsing JSON content", () => {

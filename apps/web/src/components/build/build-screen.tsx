@@ -103,8 +103,8 @@ export function BuildScreen({ projectId }: { projectId: string }) {
         retrying={startMutation.isPending}
         status={status}
         view={view}
-        onRetry={() =>
-          startMutation.mutate(undefined, {
+        onRetry={(resume) =>
+          startMutation.mutate(resume, {
             onSuccess: (next) =>
               router.push(
                 `/projects/${encodeURIComponent(projectId)}/build?buildId=${encodeURIComponent(next.id)}`,

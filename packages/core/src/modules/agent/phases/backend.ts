@@ -314,6 +314,10 @@ export async function runBackendPhase(
       conventions,
       specs,
       concern: concernForRouteGroup(endpoints, input.specs.prd),
+      contextFiles: [
+        input.template.conventions.contractsPath,
+        input.template.conventions.authConfigPath,
+      ],
       projectId: input.projectId,
       buildId: input.buildId,
       ctx: input.ctx,

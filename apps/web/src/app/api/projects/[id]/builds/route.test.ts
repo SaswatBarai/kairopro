@@ -40,10 +40,11 @@ describe("POST /api/projects/[id]/builds", () => {
     expect(res.status).toBe(202);
     const json = await res.json();
     expect(json.status).toBe("QUEUED");
-    expect(startBuild).toHaveBeenCalledWith("prj-1", {
-      userId: "user-1",
-      orgId: "org-1",
-    });
+    expect(startBuild).toHaveBeenCalledWith(
+      "prj-1",
+      { userId: "user-1", orgId: "org-1" },
+      { resume: false },
+    );
   });
 
   it("returns 409 when a build is already active for the project", async () => {

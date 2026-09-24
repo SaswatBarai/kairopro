@@ -55,6 +55,9 @@ export function authTask(template: TemplateManifest): string {
     "The session and JWT types are already augmented in",
     "src/types/next-auth.d.ts (session.user.id, user.role, token.id,",
     "token.role): use them, do not redeclare them or cast around them.",
+    "Any extra claim the PRD needs (a workspace id, say) is allowed by the",
+    "index signature on User, JWT and Session.user — read it as `unknown`",
+    'and narrow it (`typeof x === "string"`), never `as` a fixed shape.',
     "Hash passwords with `bcryptjs` (installed); never import `bcrypt`.",
     "Use only packages already listed in package.json.",
   ].join("\n");

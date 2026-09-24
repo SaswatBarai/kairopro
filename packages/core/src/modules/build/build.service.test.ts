@@ -476,6 +476,7 @@ describe("buildSteps — generate step (BE-10 orchestration of AI-6/AI-7)", () =
     expect(scaffoldProject).toHaveBeenCalledWith({
       workspacePath: "/workspaces/prj1",
       templateId: "nextjs-shadcn",
+      resume: false,
     });
     expect(loadTemplate).toHaveBeenCalledWith("nextjs-shadcn");
     expect(loadApprovedSpecs).toHaveBeenCalledWith("prj1", ctx);

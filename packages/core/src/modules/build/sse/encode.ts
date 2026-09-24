@@ -64,7 +64,11 @@ export interface BuildLogLike {
 export function toStreamEvent(log: BuildLogLike): BuildStreamEvent {
   switch (log.type) {
     case "STEP":
-      return { seq: log.seq, event: "status", data: safeParseJson(log.content) };
+      return {
+        seq: log.seq,
+        event: "status",
+        data: safeParseJson(log.content),
+      };
     case "STDOUT":
       return {
         seq: log.seq,

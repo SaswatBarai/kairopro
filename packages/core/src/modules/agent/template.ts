@@ -19,6 +19,9 @@ export interface TemplateConventions {
   componentsDir: string;
   libDir: string;
   contractsPath: string;
+  /** UI primitives the skeleton ships in `componentsDir/ui` — the only ones
+   * that exist; a page importing any other fails the type check. */
+  uiComponents?: string[];
   authConfigPath: string;
   /** The Prisma client singleton the template ships — routes import
    * `{ prisma }` from it and never construct a client themselves. */
@@ -73,6 +76,12 @@ export function renderConventions(manifest: TemplateManifest): string {
     `Auth configuration module: ${conventions.authConfigPath}`,
     `Prisma client module: ${conventions.prismaClientPath} (already provided — import { prisma } from it; never construct a PrismaClient anywhere else)`,
     `Prisma schema: ${conventions.prismaSchemaPath}`,
+    ...(conventions.uiComponents?.length
+      ? [
+          `UI components (already provided — import from "${conventions.importAlias}components/ui/<name>"; nothing else exists there, so build anything more from plain Tailwind elements): ${conventions.uiComponents.join(", ")}`,
+          `Class-name helper: import { cn } from "${conventions.importAlias}lib/utils"`,
+        ]
+      : []),
     `Styling: ${conventions.styling}`,
     `Validation library: ${conventions.validation}`,
     `ORM: ${conventions.orm}`,

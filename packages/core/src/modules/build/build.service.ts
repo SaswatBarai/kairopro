@@ -1,3 +1,4 @@
+import { runWithReusableFiles } from "../agent/workflow/resume";
 import type { Build, BuildList } from "@kairopro/contracts";
 import type { Prisma, Project as ProjectRow } from "@kairopro/db";
 import type { RequestContext } from "../../lib/context";
@@ -30,6 +31,7 @@ import {
   createBuildRow,
   createInternalErrorRow,
   findActiveBuild,
+  findCompletedFiles,
   findBuildById,
   findBuildWithProject,
   listBuildsByProject,
@@ -93,9 +95,34 @@ async function requireBuildAccess(
   return row;
 }
 
+// Two starts for one project can arrive in the same instant (a double click,
+// React strict-mode effects). Without this both pass the active-build check
+// and two builds fight over one workspace. In-process only — a multi-instance
+// deployment needs a DB-level guard.
+const starting = new Set<string>();
+
 export async function startBuild(
   projectId: string,
   ctx: RequestContext,
+  options: { resume?: boolean } = {},
+): Promise<Build> {
+  if (starting.has(projectId)) {
+    throw new ConflictError({
+      message: "A build is already running for this project",
+    });
+  }
+  starting.add(projectId);
+  try {
+    return await startBuildUnlocked(projectId, ctx, options);
+  } finally {
+    starting.delete(projectId);
+  }
+}
+
+async function startBuildUnlocked(
+  projectId: string,
+  ctx: RequestContext,
+  options: { resume?: boolean },
 ): Promise<Build> {
   const project = await requireProjectAccess(projectId, ctx);
 
@@ -122,7 +149,7 @@ export async function startBuild(
   const row = await createBuildRow(projectId);
   await touchProjectActivity(projectId);
   await advanceProjectStatus(projectId, "BUILDING", ctx);
-  void executeBuild(row.id, project, ctx).catch((cause) => {
+  void executeBuild(row.id, project, ctx, options.resume).catch((cause) => {
     // executeBuild already turns every failure it can see into a FAILED
     // build + InternalError row; this only catches a crash outside that
     // handling (e.g. the DB itself is unreachable).
@@ -210,6 +237,7 @@ function makeOnStage(buildId: string): OnStage {
 export function buildSteps(
   runtime: ReturnType<typeof getContainerRuntime>,
   project: ProjectRow,
+  resume = false,
 ): BuildStep[] {
   return [
     {
@@ -259,6 +287,7 @@ export function buildSteps(
         const scaffolded = await scaffoldProject({
           workspacePath,
           templateId: project.templateId,
+          resume,
         });
         onStage("scaffold", "completed");
         await emitLog(
@@ -358,6 +387,10 @@ export function buildSteps(
           template.conventions.contractsPath,
         );
 
+        const schemaContent = await workspaceStore
+          .readFile(projectId, "prisma/schema.prisma")
+          .catch(() => "");
+
         const codeStream = createCodeStream(buildId);
         let authoringResult: Awaited<ReturnType<typeof runTestAuthoringPhase>>;
         try {
@@ -372,6 +405,7 @@ export function buildSteps(
             template,
             specs,
             contractsContent,
+            schemaContent,
             checkCancelled,
             onDegrade,
             onCode: codeStream.onCode,
@@ -492,22 +526,28 @@ export async function executeBuild(
   buildId: string,
   project: ProjectRow,
   ctx: RequestContext,
+  resume = false,
 ): Promise<void> {
   const log = withCorrelation(logger, { projectId: project.id, buildId });
   await updateBuildRow(buildId, { status: "RUNNING", startedAt: new Date() });
 
   const runtime = getContainerRuntime();
-  const steps = buildSteps(runtime, project);
+  const steps = buildSteps(runtime, project, resume);
+  const reusable = resume
+    ? await findCompletedFiles(project.id, buildId)
+    : new Set<string>();
 
   try {
-    const outcome = await runWorkflow({
-      buildId,
-      projectId: project.id,
-      ctx,
-      steps,
-      onCancelled: (stepCtx, nextStepName) =>
-        checkpointCancelled(stepCtx, nextStepName, project),
-    });
+    const outcome = await runWithReusableFiles(reusable, () =>
+      runWorkflow({
+        buildId,
+        projectId: project.id,
+        ctx,
+        steps,
+        onCancelled: (stepCtx, nextStepName) =>
+          checkpointCancelled(stepCtx, nextStepName, project),
+      }),
+    );
 
     if (outcome === "cancelled") {
       await revertProjectToDraft(project.id, ctx);

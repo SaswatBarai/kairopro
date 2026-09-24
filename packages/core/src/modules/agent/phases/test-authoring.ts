@@ -1,3 +1,4 @@
+import { isReusableFile } from "../workflow/resume";
 import type { RequestContext } from "../../../lib/context";
 import type { ContainerRuntime } from "../../../platform/container/runtime";
 import type { WorkspaceStore } from "../../../platform/workspace/store";
@@ -315,6 +316,9 @@ export interface GenerateTestFileInput {
   conventions: string;
   specs: string;
   contracts: string;
+  /** Contents of `prisma/schema.prisma`, read by the caller — this module
+   * never reads the workspace itself (AI-8). Empty when unavailable. */
+  schema?: string;
   concern: ConcernCategory;
   projectId: string;
   buildId?: string | null;
@@ -350,6 +354,21 @@ export interface GenerateTestFileResult {
 export async function generateTestFile(
   input: GenerateTestFileInput,
 ): Promise<GenerateTestFileResult> {
+  if (isReusableFile(input.path)) {
+    const existing = await input.workspace
+      .readFile(input.projectId, input.path)
+      .catch(() => null);
+    if (existing !== null) {
+      input.onCode?.({ type: "done", omitted: false, content: existing });
+      return {
+        path: input.path,
+        fixAttempts: 0,
+        level: "full",
+        omitted: false,
+      };
+    }
+  }
+
   const provider = input.provider ?? getLLMProvider();
   const refs = { projectId: input.projectId, buildId: input.buildId };
   let lastWritten = "";
@@ -364,6 +383,14 @@ export async function generateTestFile(
     task: string;
     previousFailure?: string;
   }): Promise<AttemptOutcome<true>> {
+    // The Prisma schema is the data model the specs already describe, not
+    // implementation code — without it tests invent model names
+    // (`prisma.team`) that the generated client doesn't have.
+    const schema = input.schema ?? "";
+    const schemaBlock = schema
+      ? `\n\n# Database schema (the only Prisma models that exist)\n\n${schema}`
+      : "";
+
     let raw: string;
     if (step.previousFailure === undefined) {
       raw = await completeWithValidator({
@@ -377,7 +404,7 @@ export async function generateTestFile(
               conventions: input.conventions,
               specs: input.specs,
               contracts: input.contracts,
-              task: step.task,
+              task: step.task + schemaBlock,
             }),
           },
         ],
@@ -399,10 +426,16 @@ export async function generateTestFile(
               conventions: input.conventions,
               error: step.previousFailure,
               // Deliberately not `retrieve()` output: a compile-repair of a
-              // *test* file must never see implementation code, so this is
-              // always this fixed string, never a workspace read.
-              context:
-                "(test-authoring: no implementation context is ever provided for a repair)",
+              // *test* file must never see implementation code. What it
+              // needs to repair is the file itself, the frozen
+              // contracts and the data model.
+              context: [
+                `--- ${input.path} (current) ---\n${lastWritten}`,
+                `--- contracts ---\n${input.contracts}`,
+                schema && `--- prisma/schema.prisma ---\n${schema}`,
+              ]
+                .filter(Boolean)
+                .join("\n\n"),
             }),
           },
         ],
@@ -476,6 +509,8 @@ export interface RunTestAuthoringPhaseInput {
    * never by this phase, so there is one place to audit for "did this ever
    * touch the workspace beyond writing tests." */
   contractsContent: string;
+  /** `prisma/schema.prisma`, read by the caller. */
+  schemaContent?: string;
   provider?: LLMProvider;
   checkCancelled?: () => Promise<boolean>;
   onDegrade?: (
@@ -524,6 +559,7 @@ export async function runTestAuthoringPhase(
       conventions,
       specs: specsText,
       contracts: input.contractsContent,
+      schema: input.schemaContent,
       concern: testCase.concern,
       projectId: input.projectId,
       buildId: input.buildId,

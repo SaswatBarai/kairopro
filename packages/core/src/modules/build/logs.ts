@@ -38,7 +38,9 @@ export async function appendLog(
   for (let attempt = 0; attempt < MAX_SEQ_RETRIES; attempt++) {
     const seq = await nextSeq(buildId);
     try {
-      return await db.buildLog.create({ data: { buildId, seq, type, content } });
+      return await db.buildLog.create({
+        data: { buildId, seq, type, content },
+      });
     } catch (cause) {
       if (!isUniqueConstraintError(cause)) throw cause;
       // Lost the race for this seq — retry with a freshly read one.

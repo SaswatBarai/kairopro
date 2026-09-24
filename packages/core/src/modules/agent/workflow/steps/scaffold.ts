@@ -19,6 +19,8 @@ const DEFAULT_TEMPLATE_ID = "nextjs-shadcn";
 export interface ScaffoldInput {
   workspacePath: string;
   templateId?: string;
+  /** Keep the workspace's existing files — see `resume.ts`. */
+  resume?: boolean;
 }
 
 export interface ScaffoldResult {
@@ -73,10 +75,12 @@ export async function scaffoldProject(
   const skeletonDir = resolveSkeletonDir(templateId);
 
   await initRepo(input.workspacePath); // idempotent — a no-op if already a repo
-  await resetToEmpty(input.workspacePath);
+  // Resuming keeps what the failed build wrote; the skeleton only fills in
+  // files that are missing (e.g. ones a newer template added).
+  if (!input.resume) await resetToEmpty(input.workspacePath);
   await fs.cp(skeletonDir, input.workspacePath, {
     recursive: true,
-    force: true,
+    force: !input.resume,
   });
   const filesCopied = await listFilesRecursive(skeletonDir);
 
