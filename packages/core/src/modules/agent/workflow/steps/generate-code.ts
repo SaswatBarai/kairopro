@@ -61,7 +61,7 @@ export class CodeGenerationError extends ProviderError {
 export type CodeStreamEvent =
   | { type: "reset" }
   | { type: "delta"; text: string }
-  | { type: "done"; omitted: boolean };
+  | { type: "done"; omitted: boolean; content?: string };
 
 export interface GenerateFileInput {
   /** Workspace-relative path of the file to write. */
@@ -136,6 +136,8 @@ export async function generateFile(
 ): Promise<GenerateFileResult> {
   const provider = input.provider ?? getLLMProvider();
   const refs = { projectId: input.projectId, buildId: input.buildId };
+  // What the last attempt actually saved — the file as it is on disk.
+  let lastWritten = "";
   const stream = input.onCode
     ? {
         onAttemptStart: () => input.onCode!({ type: "reset" }),
@@ -187,6 +189,7 @@ export async function generateFile(
           {
             role: "user",
             content: renderPrompt("fix", {
+              path: input.path,
               conventions: input.conventions,
               error: step.previousFailure,
               context,
@@ -201,6 +204,7 @@ export async function generateFile(
     }
 
     await input.workspace.writeFile(input.projectId, input.path, raw);
+    lastWritten = raw;
 
     const errors = await runTypecheck({
       runtime: input.runtime,
@@ -228,7 +232,7 @@ export async function generateFile(
   });
 
   if (result.status === "succeeded") {
-    input.onCode?.({ type: "done", omitted: false });
+    input.onCode?.({ type: "done", omitted: false, content: lastWritten });
     return {
       path: input.path,
       fixAttempts: result.attempts,

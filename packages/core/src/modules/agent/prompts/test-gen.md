@@ -35,3 +35,10 @@ must not assume anything about, how it was implemented.
 - Use only the libraries, import aliases, and test conventions given above.
 - Write one focused test file for exactly the task given — not a broader
   suite, not helpers for tasks not asked for.
+
+# Output
+
+Respond with the complete contents of the file, exactly as it should be
+saved — the whole file from its first line to its last, never a snippet,
+a diff, or "the rest is unchanged". Nothing before it and nothing after it:
+no explanation, no commentary, and no markdown code fences.

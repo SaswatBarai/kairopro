@@ -211,6 +211,22 @@
           }
         }
       },
+      "ProjectFileContent": {
+        "type": "object",
+        "required": ["path", "size", "content", "reason"],
+        "properties": {
+          "path": { "type": "string" },
+          "size": { "type": "integer", "description": "Bytes." },
+          "content": {
+            "type": ["string", "null"],
+            "description": "UTF-8 text, or null when it can't be shown."
+          },
+          "reason": {
+            "type": ["string", "null"],
+            "enum": ["binary", "too-large", null]
+          }
+        }
+      },
       "ReviseSpecInput": {
         "type": "object",
         "required": ["content"],
@@ -733,6 +749,88 @@
         }
       }
     },
+    "/api/projects/{id}/files": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Projects"],
+        "summary": "List a project's generated files",
+        "description": "Workspace-relative paths, sorted. Dependency and build-output folders (node_modules, .git, .next, dist, coverage) are left out.",
+        "responses": {
+          "200": {
+            "description": "File paths",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/files/content": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "path",
+          "in": "query",
+          "required": true,
+          "description": "Workspace-relative path, as returned by the list.",
+          "schema": { "type": "string" },
+          "example": "src/app/page.tsx"
+        }
+      ],
+      "get": {
+        "tags": ["Projects"],
+        "summary": "Read one generated file",
+        "description": "Text content plus size. A binary file, or one over 512 KB, comes back with `content: null` and a `reason` instead of its bytes. A path that escapes the project's workspace is rejected.",
+        "responses": {
+          "200": {
+            "description": "The file",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProjectFileContent" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing path, or a path outside the workspace",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or file not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/specs/generate": {
       "parameters": [
         {
@@ -955,7 +1053,7 @@
             }
           },
           "409": {
-            "description": "A build is already running",
+            "description": "A build is already running, or a spec isn't approved yet (the message lists which)",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }

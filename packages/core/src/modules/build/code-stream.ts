@@ -92,6 +92,8 @@ export function createFenceStripper() {
 interface FileState {
   stripper: ReturnType<typeof createFenceStripper>;
   pending: string;
+  /** Everything shown for this attempt so far, sent or not yet. */
+  shown: string;
   timer: ReturnType<typeof setTimeout> | null;
 }
 
@@ -148,7 +150,12 @@ export function createCodeStream(
   function stateFor(file: string): FileState {
     let state = files.get(file);
     if (!state) {
-      state = { stripper: createFenceStripper(), pending: "", timer: null };
+      state = {
+        stripper: createFenceStripper(),
+        pending: "",
+        shown: "",
+        timer: null,
+      };
       files.set(file, state);
     }
     return state;
@@ -162,6 +169,7 @@ export function createCodeStream(
         files.set(file, {
           stripper: createFenceStripper(),
           pending: "",
+          shown: "",
           timer: null,
         });
         send({ file, reset: true });
@@ -170,7 +178,9 @@ export function createCodeStream(
 
       if (event.type === "delta") {
         const state = stateFor(file);
-        state.pending += state.stripper.push(event.text);
+        const visible = state.stripper.push(event.text);
+        state.pending += visible;
+        state.shown += visible;
         if (state.pending.length >= FLUSH_CHARS) flush(file);
         else if (state.pending && !state.timer) {
           state.timer = setTimeout(() => flush(file), FLUSH_MS);
@@ -179,8 +189,19 @@ export function createCodeStream(
       }
 
       const state = stateFor(file);
-      state.pending += state.stripper.end();
+      const tail = state.stripper.end();
+      state.pending += tail;
+      state.shown += tail;
       flush(file);
+      // The screen must end up showing the file that was saved. If the two
+      // differ — a chatty reply had its prose stripped, say — send the saved
+      // text once, replacing whatever was streamed.
+      if (
+        event.content !== undefined &&
+        event.content.trim() !== state.shown.trim()
+      ) {
+        send({ file, content: event.content, replace: true });
+      }
       send({ file, done: true, omitted: event.omitted });
       files.delete(file);
     },

@@ -1,21 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import {
-  Check,
-  CheckCircle2,
-  Globe,
-  Info,
-  Loader2,
-  Lock,
-  Terminal,
-  X,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { ExternalLink, GitBranch, Loader2 } from "lucide-react";
+import type { GithubExportResult } from "@kairopro/contracts";
 
-import { cn } from "@/lib/utils";
-import { useProjectStore } from "@/stores";
+import {
+  useGithubExportMutation,
+  useGithubStatusQuery,
+} from "@/lib/queries/deploy";
+import { ModalShell } from "./modal-shell";
 
 export function GithubMark({ className }: { className?: string }) {
   return (
@@ -34,327 +27,199 @@ export function GithubMark({ className }: { className?: string }) {
   );
 }
 
-type ExportPhase = "idle" | "pushing" | "created";
-
 interface ExportModalProps {
   open: boolean;
+  projectId: string;
   onClose: () => void;
   onExported: (message: string) => void;
 }
 
-function slugify(name: string): string {
-  return (
-    name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "project"
-  );
-}
-
-export function ExportModal({ open, onClose, onExported }: ExportModalProps) {
-  const activeProjectName = useProjectStore((s) => s.activeProjectName);
-  const [repoName, setRepoName] = useState(() =>
-    slugify(activeProjectName ?? "project"),
-  );
-  const [visibility, setVisibility] = useState<"private" | "public">("private");
-  const [readme, setReadme] = useState(true);
-  const [phase, setPhase] = useState<ExportPhase>("idle");
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const clearTimers = () => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-  };
+/**
+ * Pushes the project to a GitHub repository. There is no OAuth flow yet, so
+ * connecting means giving a GitHub username and a personal access token; once
+ * connected, later pushes need nothing. The token goes straight to the
+ * server — it is never kept in the browser.
+ */
+export function ExportModal({
+  open,
+  projectId,
+  onClose,
+  onExported,
+}: ExportModalProps) {
+  const status = useGithubStatusQuery(projectId, open);
+  const exportToGithub = useGithubExportMutation(projectId);
+  const [login, setLogin] = useState("");
+  const [token, setToken] = useState("");
+  const [result, setResult] = useState<GithubExportResult | null>(null);
 
   useEffect(() => {
     if (open) {
-      setPhase("idle");
-      setRepoName(slugify(activeProjectName ?? "project"));
+      setLogin("");
+      setToken("");
+      setResult(null);
+      exportToGithub.reset();
     }
-    return clearTimers;
-  }, [open, activeProjectName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && phase === "idle") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, phase, onClose]);
+  const connected = status.data?.connected === true;
+  const canSubmit =
+    !exportToGithub.isPending &&
+    !status.isLoading &&
+    (connected || (login.trim() !== "" && token.trim() !== ""));
 
-  const dismiss = () => {
-    if (phase !== "idle") return;
-    onClose();
-  };
-
-  const startExport = () => {
-    if (phase !== "idle" || !repoName.trim()) return;
-    setPhase("pushing");
-    timers.current.push(setTimeout(() => setPhase("created"), 1200));
-    timers.current.push(
-      setTimeout(() => {
-        onExported(`Exported to github.com/adalovelace/${repoName}`);
-        onClose();
-      }, 1950),
+  const submit = () => {
+    if (!canSubmit) return;
+    exportToGithub.mutate(
+      connected
+        ? undefined
+        : { githubLogin: login.trim(), accessToken: token.trim() },
+      {
+        onSuccess: (out) => {
+          setToken("");
+          setResult(out);
+          onExported("Exported to GitHub");
+        },
+      },
     );
   };
 
-  const createLabel = (): ReactNode => {
-    if (phase === "pushing")
-      return (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Pushing to GitHub...</span>
-        </>
-      );
-    if (phase === "created")
-      return (
-        <>
-          <CheckCircle2 className="h-4 w-4 text-brand-green" />
-          <span>Repository created</span>
-        </>
-      );
-    return <span>Create repository</span>;
-  };
-
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{
-            opacity: 1,
-            transition: { duration: 0.25, ease: "easeOut" },
-          }}
-          exit={{ opacity: 0, transition: { duration: 0.2 } }}
-          onClick={dismiss}
-          className="fixed inset-0 z-[180] flex items-center justify-center bg-brand-dark/85 p-6 backdrop-blur-[3px]"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              y: 0,
-              transition: { type: "spring", stiffness: 360, damping: 32 },
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.97,
-              y: 6,
-              transition: { duration: 0.18, ease: [0.4, 0, 1, 1] },
-            }}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="export-modal-title"
-            className="flex w-full max-w-[480px] flex-col overflow-hidden rounded-[4px] bg-brand-surface shadow-2xl shadow-black/60"
+    <ModalShell
+      icon={<GitBranch className="h-5 w-5" />}
+      locked={exportToGithub.isPending}
+      open={open}
+      title="Export to GitHub"
+      titleId="export-modal-title"
+      onClose={onClose}
+    >
+      {result ? (
+        <>
+          <p className="text-[13px] leading-relaxed text-zinc-400">
+            Your project is on GitHub, on the{" "}
+            <span className="font-mono-tech text-zinc-200">
+              {result.defaultBranch}
+            </span>{" "}
+            branch.
+          </p>
+          <a
+            className="flex items-center justify-between gap-2 rounded bg-brand-dark px-3 py-2 font-mono-tech text-[13px] text-brand-purple-light hover:underline"
+            href={result.repoUrl}
+            rel="noopener noreferrer"
+            target="_blank"
           >
-            <div className="flex flex-col gap-1 bg-brand-surface p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <GithubMark className="h-5 w-5 text-zinc-100" />
-                  <h2
-                    id="export-modal-title"
-                    className="text-[15px] font-semibold tracking-tight text-zinc-100"
-                  >
-                    Export to GitHub
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  aria-label="Close dialog"
-                  onClick={dismiss}
-                  className="flex h-7 w-7 items-center justify-center rounded text-zinc-300 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
-                >
-                  <X className="h-[18px] w-[18px]" />
-                </button>
-              </div>
-              <p className="text-[12px] leading-4 text-zinc-300">
-                Push this project to a new repository in your GitHub account.
+            <span className="truncate">{result.repoUrl}</span>
+            <ExternalLink className="h-4 w-4 shrink-0" />
+          </a>
+          <div className="flex justify-end">
+            <button
+              className="rounded-[3px] bg-white/[0.06] px-4 py-1.5 text-[13px] text-zinc-100 transition-colors hover:bg-white/[0.1]"
+              type="button"
+              onClick={onClose}
+            >
+              Done
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {status.isLoading ? (
+            <p className="flex items-center gap-2 text-[13px] text-zinc-500">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Checking your GitHub connection…
+            </p>
+          ) : connected ? (
+            <p className="text-[13px] leading-relaxed text-zinc-400">
+              Connected as{" "}
+              <span className="font-mono-tech text-zinc-200">
+                @{status.data?.githubLogin}
+              </span>
+              . This pushes the latest version of your project
+              {status.data?.repoUrl
+                ? " to its repository"
+                : " to a new repository"}
+              .
+            </p>
+          ) : (
+            <>
+              <p className="text-[13px] leading-relaxed text-zinc-400">
+                Connect GitHub with your username and a personal access token
+                that can create repositories (the{" "}
+                <code className="font-mono-tech text-zinc-300">repo</code>{" "}
+                scope).
               </p>
-            </div>
-            <div className="h-px w-full bg-white/[0.08]" />
-
-            <div className="flex flex-col gap-4 bg-brand-surface p-4">
-              <div className="flex items-center justify-between rounded bg-white/[0.03] px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded bg-white/[0.1]">
-                    <Terminal className="h-4 w-4 text-brand-cyan" />
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono-tech text-[12px] font-semibold text-zinc-100">
-                      adalovelace
-                    </span>
-                    <span className="rounded bg-brand-green/10 px-1.5 py-0.5 font-mono-tech text-[10px] font-semibold text-brand-green">
-                      Connected
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="text-[12px] text-zinc-300 transition-colors hover:text-zinc-100 hover:underline"
+              <div className="flex flex-col gap-1.5">
+                <label
+                  className="text-[12px] font-medium text-zinc-300"
+                  htmlFor="gh-login"
                 >
-                  Change
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="repo-name"
-                    className="text-[12px] font-medium text-zinc-100"
-                  >
-                    Repository name
-                  </label>
-                  <span className="font-mono-tech text-[10px] text-zinc-300">
-                    github.com/adalovelace/{repoName || "taskflow"}
-                  </span>
-                </div>
+                  GitHub username
+                </label>
                 <input
-                  id="repo-name"
-                  type="text"
-                  value={repoName}
-                  placeholder="e.g. taskflow-service"
+                  autoComplete="off"
+                  className="rounded bg-brand-dark px-3 py-2 font-mono-tech text-[13px] text-zinc-100 outline-none focus:ring-1 focus:ring-brand-purple-light"
+                  id="gh-login"
                   spellCheck={false}
-                  onChange={(e) =>
-                    setRepoName(
-                      e.target.value.toLowerCase().replace(/[^a-z0-9-_.]/g, ""),
-                    )
-                  }
-                  className="h-9 w-full rounded bg-brand-dark px-3 font-mono-tech text-[12px] text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:bg-white/[0.03]"
+                  value={login}
+                  onChange={(e) => setLogin(e.target.value)}
                 />
               </div>
-
-              <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-medium text-zinc-100">
-                  Visibility
-                </span>
-                <div
-                  role="radiogroup"
-                  aria-label="Repository visibility"
-                  className="grid grid-cols-2 gap-1 rounded bg-white/[0.03] p-1"
+              <div className="flex flex-col gap-1.5">
+                <label
+                  className="text-[12px] font-medium text-zinc-300"
+                  htmlFor="gh-token"
                 >
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={visibility === "private"}
-                    onClick={() => setVisibility("private")}
-                    className={cn(
-                      "flex items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[12px] font-medium transition-colors",
-                      visibility === "private"
-                        ? "bg-white/[0.1] text-white"
-                        : "text-zinc-300 hover:text-zinc-100",
-                    )}
-                  >
-                    <Lock
-                      className={cn(
-                        "h-[15px] w-[15px]",
-                        visibility === "private" && "text-brand-purple-light",
-                      )}
-                    />
-                    Private
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={visibility === "public"}
-                    onClick={() => setVisibility("public")}
-                    className={cn(
-                      "flex items-center justify-center gap-1.5 rounded px-2 py-1.5 text-[12px] font-medium transition-colors",
-                      visibility === "public"
-                        ? "bg-white/[0.1] text-white"
-                        : "text-zinc-300 hover:text-zinc-100",
-                    )}
-                  >
-                    <Globe
-                      className={cn(
-                        "h-[15px] w-[15px]",
-                        visibility === "public" && "text-brand-purple-light",
-                      )}
-                    />
-                    Public
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 pt-1">
-                <label className="relative flex cursor-pointer select-none items-center">
-                  <input
-                    type="checkbox"
-                    id="readme-toggle"
-                    checked={readme}
-                    onChange={(e) => setReadme(e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="flex h-4 w-4 items-center justify-center rounded bg-brand-dark transition-colors peer-checked:bg-brand-purple">
-                    <Check className="h-3.5 w-3.5 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
-                  </div>
+                  Personal access token
                 </label>
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="readme-toggle"
-                    className="cursor-pointer text-[12px] text-zinc-100"
-                  >
-                    Include a README with setup instructions
-                  </label>
-                  <span className="pt-0.5 font-mono-tech text-[11px] text-zinc-300">
-                    Initial commit with 34 files • Next.js 14, PostgreSQL
-                  </span>
-                </div>
+                <input
+                  autoComplete="off"
+                  className="rounded bg-brand-dark px-3 py-2 font-mono-tech text-[13px] text-zinc-100 outline-none focus:ring-1 focus:ring-brand-purple-light"
+                  id="gh-token"
+                  type="password"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submit()}
+                />
               </div>
+            </>
+          )}
 
-              <div className="flex items-start gap-1.5 rounded bg-white/[0.03] p-2">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
-                <p className="text-[12px] leading-relaxed text-zinc-300">
-                  This creates a new {visibility} repository. Existing
-                  repositories are never overwritten.
-                </p>
-              </div>
-            </div>
-            <div className="h-px w-full bg-white/[0.08]" />
+          {exportToGithub.error && (
+            <p
+              className="rounded-[3px] bg-white/[0.04] px-3 py-2 text-[12px] text-zinc-300"
+              role="alert"
+            >
+              {exportToGithub.error.message}
+            </p>
+          )}
 
-            <div className="flex items-center justify-end gap-2 bg-brand-surface px-4 py-3">
-              <button
-                type="button"
-                onClick={dismiss}
-                className="rounded px-3 py-1.5 text-[12px] text-zinc-300 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={startExport}
-                disabled={phase !== "idle" || !repoName.trim()}
-                className={cn(
-                  "flex min-w-[168px] items-center justify-center gap-1.5 rounded px-4 py-1.5 text-[13px] font-semibold text-white transition-colors",
-                  phase === "idle" && repoName.trim()
-                    ? "cursor-pointer bg-brand-purple hover:bg-brand-purple/85"
-                    : "cursor-default bg-brand-purple/60",
-                )}
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={phase}
-                    initial={{ y: 6, opacity: 0 }}
-                    animate={{
-                      y: 0,
-                      opacity: 1,
-                      transition: { duration: 0.2, ease: "easeOut" },
-                    }}
-                    exit={{ y: -6, opacity: 0, transition: { duration: 0.12 } }}
-                    className="flex items-center gap-1.5"
-                  >
-                    {createLabel()}
-                  </motion.div>
-                </AnimatePresence>
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              className="rounded-[3px] px-3 py-1.5 text-[13px] text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-zinc-100 disabled:opacity-50"
+              disabled={exportToGithub.isPending}
+              type="button"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              className="flex items-center gap-2 rounded-[3px] bg-brand-purple px-4 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-purple/85 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!canSubmit}
+              type="button"
+              onClick={submit}
+            >
+              {exportToGithub.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              {exportToGithub.isPending
+                ? "Pushing…"
+                : connected
+                  ? "Push to GitHub"
+                  : "Connect and push"}
+            </button>
+          </div>
+        </>
       )}
-    </AnimatePresence>
+    </ModalShell>
   );
 }

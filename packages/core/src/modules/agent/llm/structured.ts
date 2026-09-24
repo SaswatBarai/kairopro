@@ -140,12 +140,41 @@ function parseJson(
   }
 }
 
+/** Lines that begin real content (code, frontmatter, a schema) rather than a
+ * sentence — a response opening with one of these is not "prose then code". */
+const CONTENT_START =
+  /^(import|export|const|let|var|function|async|class|interface|type|enum|declare|model|datasource|generator|namespace|module|use|\/\/|\/\*|["'`{}<@#\-\[(])/;
+
+/**
+ * Pulls the code out of a chatty reply — "Here is the fix:", one fenced
+ * block, "This works because…" — where the model added prose around what it
+ * was asked for. Returns null unless the reply really is prose followed by a
+ * fenced block: a response that opens with content (a `---` frontmatter, an
+ * `import`, a schema keyword) is left alone, since a file may legitimately
+ * contain fences of its own (a template literal, a markdown body).
+ */
+function extractFromProse(text: string): string | null {
+  const firstLine = text.split("\n", 1)[0]!.trim();
+  if (firstLine === "" || CONTENT_START.test(firstLine)) return null;
+
+  const blocks = [
+    ...text.matchAll(/^```[\w-]*[ \t]*\n([\s\S]*?)\n```[ \t]*$/gm),
+  ];
+  if (blocks.length === 0) return null;
+  // Several blocks (a file and, say, a usage example): the file is the big one.
+  const largest = blocks.reduce((a, b) =>
+    b[1]!.length > a[1]!.length ? b : a,
+  );
+  return largest[1]!.trim();
+}
+
 /**
  * Strips a markdown code fence that wraps an *entire* response — Claude
  * reliably does this (```yaml around a DESIGN.md, ```prisma around a
  * schema) even when the prompt says not to, and the validators downstream
  * parse formats that are position-sensitive: YAML frontmatter has to start
- * on line 1, Prisma DSL has to start with a keyword.
+ * on line 1, Prisma DSL has to start with a keyword. Also unwraps a fenced
+ * block out of a reply that surrounds it with prose (see `extractFromProse`).
  *
  * Deliberately conservative — it only unwraps when the opening line is a
  * bare fence (optionally language-tagged) and the very last characters
@@ -154,15 +183,17 @@ function parseJson(
  */
 export function stripCodeFence(text: string): string {
   const trimmed = text.trim();
-  if (!trimmed.startsWith("```") || !trimmed.endsWith("```")) return trimmed;
-
-  const firstNewline = trimmed.indexOf("\n");
-  if (firstNewline === -1) return trimmed;
-
-  const openingLine = trimmed.slice(0, firstNewline).trim();
-  if (!/^```[a-zA-Z0-9_-]*$/.test(openingLine)) return trimmed;
-
-  return trimmed.slice(firstNewline + 1, -3).trim();
+  if (trimmed.startsWith("```") && trimmed.endsWith("```")) {
+    const firstNewline = trimmed.indexOf("\n");
+    if (firstNewline !== -1) {
+      const openingLine = trimmed.slice(0, firstNewline).trim();
+      if (/^```[a-zA-Z0-9_-]*$/.test(openingLine)) {
+        return trimmed.slice(firstNewline + 1, -3).trim();
+      }
+    }
+    return trimmed;
+  }
+  return extractFromProse(trimmed) ?? trimmed;
 }
 
 export interface CompleteWithValidatorInput<T> {

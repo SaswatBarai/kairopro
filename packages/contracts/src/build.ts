@@ -61,7 +61,14 @@ export const BuildStreamEventNameSchema = z.enum([
  */
 export const BuildCodeEventDataSchema = z.union([
   z.object({ file: z.string(), reset: z.literal(true) }),
-  z.object({ file: z.string(), content: z.string() }),
+  // `replace` swaps the file's whole text for `content` instead of appending
+  // to it — sent once, at the end, when the file as saved differs from what
+  // was streamed (prose the model wrapped around it was dropped).
+  z.object({
+    file: z.string(),
+    content: z.string(),
+    replace: z.literal(true).optional(),
+  }),
   z.object({ file: z.string(), done: z.literal(true), omitted: z.boolean() }),
   z.object({ unit: z.string(), level: z.string(), message: z.string() }),
   z.object({ unit: z.string(), repair: z.string() }),

@@ -142,6 +142,49 @@ describe("createCodeStream", () => {
     expect(JSON.stringify(afterLastReset)).not.toContain("broken");
   });
 
+  it("sends the saved file, replacing what was streamed, when the two differ", async () => {
+    const stream = createCodeStream("b1", emit);
+    stream.onCode("f.ts", { type: "reset" });
+    stream.onCode("f.ts", {
+      type: "delta",
+      text: "Here is the fix:\nexport const a = 1;",
+    });
+    stream.onCode("f.ts", {
+      type: "done",
+      omitted: false,
+      content: "export const a = 1;",
+    });
+    await stream.drain();
+
+    const replace = events.find((e) => "replace" in e);
+    expect(replace).toEqual({
+      file: "f.ts",
+      content: "export const a = 1;",
+      replace: true,
+    });
+    // …before the file is closed.
+    expect(events.indexOf(replace!)).toBeLessThan(
+      events.findIndex((e) => "done" in e),
+    );
+  });
+
+  it("does not resend a file that already matches what was saved", async () => {
+    const stream = createCodeStream("b1", emit);
+    stream.onCode("f.ts", { type: "reset" });
+    stream.onCode("f.ts", {
+      type: "delta",
+      text: "```ts\nexport const a = 1;\n```\n",
+    });
+    stream.onCode("f.ts", {
+      type: "done",
+      omitted: false,
+      content: "export const a = 1;",
+    });
+    await stream.drain();
+
+    expect(events.some((e) => "replace" in e)).toBe(false);
+  });
+
   it("marks an omitted unit", async () => {
     const stream = createCodeStream("b1", emit);
     stream.onCode("f.ts", { type: "reset" });

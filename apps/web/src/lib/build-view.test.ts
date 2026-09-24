@@ -135,6 +135,22 @@ describe("code stream", () => {
     expect(s.activeFile).toBe("b.ts");
   });
 
+  it("replaces the whole file when told to, without counting a repair", () => {
+    seq = 0;
+    const s = run([
+      code({ file: "a.ts", reset: true }),
+      code({ file: "a.ts", content: "Here is the fix:\nexport const a = 1;" }),
+      code({ file: "a.ts", content: "export const a = 1;", replace: true }),
+      code({ file: "a.ts", done: true, omitted: false }),
+    ]);
+    expect(s.files["a.ts"]).toEqual({
+      path: "a.ts",
+      text: "export const a = 1;",
+      status: "done",
+      attempts: 1,
+    });
+  });
+
   it("marks an omitted unit", () => {
     seq = 0;
     const s = run([

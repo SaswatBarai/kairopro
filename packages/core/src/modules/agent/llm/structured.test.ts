@@ -259,6 +259,40 @@ describe("stripCodeFence (AI-5)", () => {
     expect(stripCodeFence("  model User {}  ")).toBe("model User {}");
   });
 
+  it("pulls a fenced block out of a chatty reply, dropping the prose around it", () => {
+    const reply =
+      'The failure is a missing import. Here is the corrected file:\n\n```ts\nimport { z } from "zod";\nexport const a = z.string();\n```\n\nThis adds the import.';
+    expect(stripCodeFence(reply)).toBe(
+      'import { z } from "zod";\nexport const a = z.string();',
+    );
+  });
+
+  it("takes the largest block when a reply has several", () => {
+    const reply =
+      "Fixed:\n```ts\nexport const a = 1;\nexport const b = 2;\nexport const c = 3;\n```\nUsage:\n```ts\nimport { a } from './x';\n```";
+    expect(stripCodeFence(reply)).toBe(
+      "export const a = 1;\nexport const b = 2;\nexport const c = 3;",
+    );
+  });
+
+  it("leaves a file alone even if it contains a fenced block of its own", () => {
+    const file =
+      "export const doc = `\n```ts\nconst x = 1;\n```\n`;\nexport default doc;";
+    expect(stripCodeFence(file)).toBe(file);
+  });
+
+  it("leaves a DESIGN.md alone: frontmatter first, fenced examples in the body", () => {
+    const design =
+      "---\ncolor: {}\n---\n\n## Usage\n\n```css\n.a { color: red; }\n```\n";
+    expect(stripCodeFence(design)).toBe(design.trim());
+  });
+
+  it("leaves prose with no fenced block as it is", () => {
+    expect(stripCodeFence("Sorry, I can't do that.")).toBe(
+      "Sorry, I can't do that.",
+    );
+  });
+
   it("is idempotent", () => {
     const once = stripCodeFence("```prisma\nmodel User {}\n```");
     expect(stripCodeFence(once)).toBe(once);

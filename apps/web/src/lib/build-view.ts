@@ -155,7 +155,8 @@ export function applyBuildEvent(
         };
       }
       if ("content" in d) {
-        return withFile(next, { ...file, text: file.text + d.content });
+        const text = d.replace ? d.content : file.text + d.content;
+        return withFile(next, { ...file, text });
       }
       return withFile(next, {
         ...file,

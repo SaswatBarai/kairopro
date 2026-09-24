@@ -32,3 +32,10 @@ other stacks.
   the most conservative reading (the one that rejects more, assumes less)
   and leave a one-line comment saying why — never guess silently on a rule
   that touches authorization, money, or data integrity.
+
+# Output
+
+Respond with the complete contents of the file, exactly as it should be
+saved — the whole file from its first line to its last, never a snippet,
+a diff, or "the rest is unchanged". Nothing before it and nothing after it:
+no explanation, no commentary, and no markdown code fences.

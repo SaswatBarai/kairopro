@@ -352,6 +352,7 @@ export async function generateTestFile(
 ): Promise<GenerateTestFileResult> {
   const provider = input.provider ?? getLLMProvider();
   const refs = { projectId: input.projectId, buildId: input.buildId };
+  let lastWritten = "";
   const stream = input.onCode
     ? {
         onAttemptStart: () => input.onCode!({ type: "reset" }),
@@ -394,6 +395,7 @@ export async function generateTestFile(
           {
             role: "user",
             content: renderPrompt("fix", {
+              path: input.path,
               conventions: input.conventions,
               error: step.previousFailure,
               // Deliberately not `retrieve()` output: a compile-repair of a
@@ -412,6 +414,7 @@ export async function generateTestFile(
     }
 
     await input.workspace.writeFile(input.projectId, input.path, raw);
+    lastWritten = raw;
 
     const errors = await runTypecheck({
       runtime: input.runtime,
@@ -439,7 +442,7 @@ export async function generateTestFile(
   });
 
   if (result.status === "succeeded") {
-    input.onCode?.({ type: "done", omitted: false });
+    input.onCode?.({ type: "done", omitted: false, content: lastWritten });
     return {
       path: input.path,
       fixAttempts: result.attempts,

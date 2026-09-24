@@ -328,7 +328,11 @@ describe("generateFile live code stream", () => {
     });
 
     expect(events[0]).toEqual({ type: "reset" });
-    expect(events.at(-1)).toEqual({ type: "done", omitted: false });
+    expect(events.at(-1)).toEqual({
+      type: "done",
+      omitted: false,
+      content: "export const x = 1;",
+    });
     const text = events
       .filter((e) => e.type === "delta")
       .map((e) => (e as { text: string }).text)
@@ -336,6 +340,24 @@ describe("generateFile live code stream", () => {
     expect(text).toBe("export const x = 1;");
     expect(events.filter((e) => e.type === "delta").length).toBeGreaterThan(1);
     expect(provider.complete).not.toHaveBeenCalled();
+  });
+
+  it("closes with the content that was actually saved", async () => {
+    vi.mocked(runTypecheck).mockResolvedValue([]);
+    const events: CodeStreamEvent[] = [];
+
+    await generateFile({
+      ...baseInput,
+      workspace: fakeWorkspace() as never,
+      provider: streamingProvider("```ts\nexport const x = 1;\n```"),
+      onCode: (e) => events.push(e),
+    });
+
+    expect(events.at(-1)).toEqual({
+      type: "done",
+      omitted: false,
+      content: "export const x = 1;",
+    });
   });
 
   it("resets and rewrites the file when a repair is needed", async () => {
@@ -398,5 +420,28 @@ describe("generateFile live code stream", () => {
 
     expect(provider.stream).not.toHaveBeenCalled();
     expect(provider.complete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("generateFile repair prompt", () => {
+  it("names the file and says to return the whole file, nothing else", async () => {
+    vi.mocked(runTypecheck)
+      .mockResolvedValueOnce([typeError])
+      .mockResolvedValue([]);
+    const provider = providerReturning("const x: string = 1;", "const x = 1;");
+
+    await generateFile({
+      ...baseInput,
+      workspace: fakeWorkspace() as never,
+      provider,
+    });
+
+    const fixCall = (provider.complete as unknown as ReturnType<typeof vi.fn>)
+      .mock.calls[1]![0].messages as LLMMessage[];
+    const text = fixCall.map((m) => m.content).join("\n");
+    // The response is written to the file as-is, so it has to be the file.
+    expect(text).toContain("complete corrected contents of `src/lib/x.ts`");
+    expect(text).toMatch(/Never a\s+diff/);
+    expect(text).toMatch(/no markdown\s+code fences/);
   });
 });

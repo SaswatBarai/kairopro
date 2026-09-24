@@ -374,6 +374,9 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
 
       <DeployModal
         open={deployOpen}
+        projectId={projectId}
+        projectName={project?.name ?? "this project"}
+        subdomain={project?.subdomain ?? null}
         onClose={() => setDeployOpen(false)}
         onDeployed={setDeployedUrl}
       />
@@ -382,15 +385,11 @@ export function WorkspaceApp({ projectId, initialProject }: WorkspaceAppProps) {
         open={deployedUrl !== null}
         url={deployedUrl ?? ""}
         onClose={() => setDeployedUrl(null)}
-        onOpenLogs={() => {
-          setDeployedUrl(null);
-          setSandboxMode("terminal");
-          setSandboxExpanded(true);
-        }}
       />
 
       <ExportModal
         open={exportOpen}
+        projectId={projectId}
         onClose={() => setExportOpen(false)}
         onExported={flashSaved}
       />

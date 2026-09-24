@@ -237,6 +237,7 @@ export async function repairFromTestFailure(
         {
           role: "user",
           content: renderPrompt("fix", {
+            path: input.implementationPath,
             conventions: input.conventions,
             error,
             context,
