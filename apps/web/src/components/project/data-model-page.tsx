@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 
 import { DashboardAppShell } from "@/components/dashboard/dashboard-app-shell";
-import { AgentReviewSidebar } from "@/components/project/agent-review-sidebar";
+import { AgentChatPanel } from "@/components/project/agent-chat-panel";
 import { DataModelGateBar } from "@/components/project/data-model-gate-bar";
 import { NoProjectEmptyState } from "@/components/project/no-project-empty-state";
 import { SchemaCanvas } from "@/components/project/schema-canvas";
@@ -36,7 +36,10 @@ export function DataModelPage() {
           <div className="mx-auto w-full max-w-[1440px] px-6 py-4">
             <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-12">
               <SchemaCanvas spec={dataModelSpec} isLoading={isLoading} />
-              <AgentReviewSidebar />
+              <AgentChatPanel
+                className="xl:sticky xl:top-[92px] xl:col-span-4"
+                projectId={projectId}
+              />
             </div>
           </div>
         </>

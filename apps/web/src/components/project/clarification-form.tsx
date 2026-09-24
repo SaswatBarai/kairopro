@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowRight,
   Building2,
   Check,
@@ -302,7 +303,17 @@ export function ClarificationForm() {
               <span>{error}</span>
             </div>
           )}
-          <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="flex w-full flex-col-reverse items-center justify-center gap-3 sm:flex-row">
+            <Button
+              asChild
+              className="h-10 w-full gap-2 px-6 sm:w-auto"
+              variant="outline"
+            >
+              <Link href={`/projects/new?projectId=${projectId}`}>
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to requirements</span>
+              </Link>
+            </Button>
             <Button
               className="h-10 w-full gap-2 px-6 sm:w-auto"
               disabled={isGenerating}

@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowRight,
   Check,
   CheckCheck,
@@ -113,6 +115,16 @@ export function AppStructureGateBar({
               {error instanceof Error ? error.message : "Failed to start build"}
             </span>
           )}
+          <Button
+            asChild
+            className="h-9 gap-2 rounded-md px-4 text-xs font-semibold"
+            variant="outline"
+          >
+            <Link href={`/projects/new/data-model?projectId=${projectId}`}>
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Link>
+          </Button>
           <Button
             className={cn(
               "h-9 gap-2 rounded-md px-4 text-xs font-semibold",

@@ -1,7 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowRight, CheckCheck, RefreshCw } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCheck,
+  RefreshCw,
+} from "lucide-react";
 import type { Spec } from "@kairopro/contracts";
 
 import { Button } from "@/components/ui/button";
@@ -21,16 +28,20 @@ export function SpecGateBar({ spec }: SpecGateBarProps) {
   const isApproved = spec?.status === "APPROVED";
   const canApprove = Boolean(spec) && !isApproved && !approveMutation.isPending;
 
+  const goNext = () => {
+    router.push(
+      projectId
+        ? `/projects/new/data-model?projectId=${projectId}`
+        : "/projects/new/data-model",
+    );
+  };
+
   const onApprove = () => {
-    if (!spec || !canApprove) return;
-    approveMutation.mutate(spec.id, {
-      onSuccess: () => {
-        const nextUrl = projectId
-          ? `/projects/new/data-model?projectId=${projectId}`
-          : "/projects/new/data-model";
-        router.push(nextUrl);
-      },
-    });
+    if (!spec || approveMutation.isPending) return;
+    // Already approved (e.g. after going Back to review): nothing to
+    // approve again, just move on.
+    if (isApproved) return goNext();
+    approveMutation.mutate(spec.id, { onSuccess: goNext });
   };
 
   return (
@@ -82,6 +93,22 @@ export function SpecGateBar({ spec }: SpecGateBarProps) {
                 : "Failed to approve"}
             </span>
           )}
+          {isApproved && (
+            <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <CheckCheck className="h-3.5 w-3.5" />
+              Approved
+            </span>
+          )}
+          <Button
+            asChild
+            className="h-9 gap-1.5 rounded-[3px] px-3"
+            variant="outline"
+          >
+            <Link href={`/projects/new/questions?projectId=${projectId}`}>
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Link>
+          </Button>
           <Button
             className={cn(
               "h-9 gap-1.5 rounded-[3px] px-3",
@@ -94,8 +121,8 @@ export function SpecGateBar({ spec }: SpecGateBarProps) {
           >
             {isApproved ? (
               <>
-                <span>Gate 1 Approved</span>
-                <CheckCheck className="h-4 w-4" />
+                <span>Continue to data model</span>
+                <ArrowRight className="h-4 w-4" />
               </>
             ) : approveMutation.isPending ? (
               <>

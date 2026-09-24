@@ -9,12 +9,14 @@ import {
   Copy,
   Ellipsis,
   ExternalLink,
+  FileText,
   Play,
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { resumeSetupHref, SETUP_ENTRY } from "@/lib/setup-progress";
 import { cn } from "@/lib/utils";
 import { useProjectStore } from "@/stores";
 
@@ -215,7 +217,11 @@ export function ProjectCard({
             <button
               className="flex h-7 cursor-pointer items-center gap-1 rounded-[3px] border border-brand-cyan/30 bg-brand-surface-muted px-2 text-xs text-brand-cyan transition-colors hover:bg-white/[0.08]"
               type="button"
-              onClick={() => handleSelectProject("/projects/new/build")}
+              onClick={() =>
+                handleSelectProject(
+                  `/projects/new/build?projectId=${project.id}`,
+                )
+              }
             >
               <span>View live build</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -238,11 +244,20 @@ export function ProjectCard({
                 </button>
               )}
               <button
-                className="flex h-7 cursor-pointer items-center gap-1.5 rounded-[3px] border border-white/[0.1] bg-brand-surface-muted px-3 text-xs text-zinc-100 transition-colors hover:bg-white/[0.08]"
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[3px] text-zinc-400 transition-colors hover:bg-brand-surface-muted hover:text-zinc-100"
+                title="Edit requirements (first step)"
                 type="button"
                 onClick={() =>
-                  handleSelectProject(`/projects/new?projectId=${project.id}`)
+                  handleSelectProject(`${SETUP_ENTRY}?projectId=${project.id}`)
                 }
+              >
+                <FileText className="h-4 w-4" />
+              </button>
+              <button
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded-[3px] border border-white/[0.1] bg-brand-surface-muted px-3 text-xs text-zinc-100 transition-colors hover:bg-white/[0.08]"
+                title="Resume where you left off"
+                type="button"
+                onClick={() => handleSelectProject(resumeSetupHref(project.id))}
               >
                 <Play className="h-3.5 w-3.5 text-zinc-500" />
                 <span>Continue setup</span>

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import { useSpecsQuery } from "@/lib/queries/specs";
+import { useSpecChatStore } from "@/stores/use-spec-chat-store";
 import { AgentChatPanel } from "./agent-chat-panel";
 
 const PROJECT = "prj-1";
@@ -49,6 +50,10 @@ function send(text: string) {
 }
 
 beforeEach(() => {
+  // The chat store is a process-wide singleton (that's the point: pages
+  // share it), so each test starts from an empty one.
+  useSpecChatStore.setState({ messages: {}, pending: {} });
+  localStorage.clear();
   fetchMock = vi.fn();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -230,5 +235,75 @@ describe("AgentChatPanel — requesting a change", () => {
     await waitFor(() =>
       expect(specListCalls().length).toBeGreaterThanOrEqual(2),
     );
+  });
+});
+
+describe("AgentChatPanel — one conversation across wizard steps", () => {
+  const changeResponse = () =>
+    jsonResponse({ summary: "Added subtasks.", specs: [spec("PRD", 4)] });
+
+  it("shows the same history when another step's panel mounts", async () => {
+    fetchMock.mockResolvedValue(changeResponse());
+    const first = renderPanel();
+    send("Add subtasks to tasks");
+    await screen.findByText("Added subtasks.");
+    first.unmount();
+
+    // e.g. moving from the spec step to the data-model step
+    renderPanel();
+
+    expect(screen.getByText("Add subtasks to tasks")).toBeInTheDocument();
+    expect(screen.getByText("Added subtasks.")).toBeInTheDocument();
+  });
+
+  it("keeps each project's conversation separate", async () => {
+    fetchMock.mockResolvedValue(changeResponse());
+    const first = renderPanel();
+    send("Add subtasks to tasks");
+    await screen.findByText("Added subtasks.");
+    first.unmount();
+
+    const client = new QueryClient();
+    render(
+      <QueryClientProvider client={client}>
+        <AgentChatPanel projectId="prj-other" />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByText("Add subtasks to tasks")).not.toBeInTheDocument();
+  });
+
+  it("delivers the reply even if the user changed pages mid-request", async () => {
+    let respond!: (r: Response) => void;
+    fetchMock.mockReturnValue(
+      new Promise<Response>((resolve) => {
+        respond = resolve;
+      }),
+    );
+    const first = renderPanel();
+    send("Add subtasks to tasks");
+    first.unmount();
+
+    // The next step's panel shows the request still in flight...
+    renderPanel();
+    expect(await screen.findByRole("status")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ask for a change/i)).toBeDisabled();
+
+    // ...and the reply lands there when it arrives.
+    respond(changeResponse());
+    expect(await screen.findByText("Added subtasks.")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("persists the conversation so a reload keeps it", async () => {
+    fetchMock.mockResolvedValue(changeResponse());
+    renderPanel();
+    send("Add subtasks to tasks");
+    await screen.findByText("Added subtasks.");
+
+    const saved = JSON.parse(localStorage.getItem("kairopro-spec-chat")!);
+    expect(saved.state.messages[PROJECT]).toHaveLength(2);
+    // An in-flight flag must not outlive the page that owned the request.
+    expect(saved.state.pending).toBeUndefined();
   });
 });

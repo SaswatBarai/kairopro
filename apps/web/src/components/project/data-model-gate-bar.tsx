@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowRight,
   Check,
   CheckCheck,
@@ -28,16 +30,20 @@ export function DataModelGateBar({ spec, prdApproved }: DataModelGateBarProps) {
   const isApproved = spec?.status === "APPROVED";
   const canApprove = Boolean(spec) && !isApproved && !approveMutation.isPending;
 
+  const goNext = () => {
+    router.push(
+      projectId
+        ? `/projects/new/app-structure?projectId=${projectId}`
+        : "/projects/new/app-structure",
+    );
+  };
+
   const onApprove = () => {
-    if (!spec || !canApprove) return;
-    approveMutation.mutate(spec.id, {
-      onSuccess: () => {
-        const nextUrl = projectId
-          ? `/projects/new/app-structure?projectId=${projectId}`
-          : "/projects/new/app-structure";
-        router.push(nextUrl);
-      },
-    });
+    if (!spec || approveMutation.isPending) return;
+    // Already approved (e.g. after going Back to review): nothing to
+    // approve again, just move on.
+    if (isApproved) return goNext();
+    approveMutation.mutate(spec.id, { onSuccess: goNext });
   };
 
   return (
@@ -98,6 +104,22 @@ export function DataModelGateBar({ spec, prdApproved }: DataModelGateBarProps) {
                 : "Failed to approve"}
             </span>
           )}
+          {isApproved && (
+            <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <CheckCheck className="h-3.5 w-3.5" />
+              Approved
+            </span>
+          )}
+          <Button
+            asChild
+            className="h-9 gap-2 rounded-[3px] px-4 font-medium"
+            variant="outline"
+          >
+            <Link href={`/projects/new/spec?projectId=${projectId}`}>
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Link>
+          </Button>
           <Button
             className={cn(
               "h-9 gap-2 rounded-[3px] px-4 font-medium",
@@ -109,8 +131,8 @@ export function DataModelGateBar({ spec, prdApproved }: DataModelGateBarProps) {
           >
             {isApproved ? (
               <>
-                <span>Gate 2 Approved</span>
-                <CheckCheck className="h-4 w-4" />
+                <span>Continue to app structure</span>
+                <ArrowRight className="h-4 w-4" />
               </>
             ) : approveMutation.isPending ? (
               <>

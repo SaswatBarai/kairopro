@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 
 import { DashboardAppShell } from "@/components/dashboard/dashboard-app-shell";
-import { AgentStructureSidebar } from "@/components/project/agent-structure-sidebar";
+import { AgentChatPanel } from "@/components/project/agent-chat-panel";
 import { AppStructureGateBar } from "@/components/project/app-structure-gate-bar";
 import { ArchitectureSurface } from "@/components/project/architecture-surface";
 import { NoProjectEmptyState } from "@/components/project/no-project-empty-state";
@@ -40,7 +40,10 @@ export function AppStructurePage() {
               spec={appStructureSpec}
               isLoading={isLoading}
             />
-            <AgentStructureSidebar />
+            <AgentChatPanel
+              className="w-full shrink-0 lg:w-[360px]"
+              projectId={projectId}
+            />
           </div>
         </>
       )}

@@ -1,98 +1,32 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { SpecType } from "@kairopro/contracts";
 import { Loader2, Send, Terminal } from "lucide-react";
 
-import { useRequestSpecChangeMutation } from "@/lib/queries/specs";
+import { useSpecChat } from "@/components/project/use-spec-chat";
+import { cn } from "@/lib/utils";
 
-type ChatMessage =
-  | { id: number; kind: "system"; text: string }
-  | { id: number; kind: "user"; text: string; time: string }
-  | {
-      id: number;
-      kind: "agent";
-      text: string;
-      /** Which specs were rewritten, e.g. "PRD v4 · Data model v3". */
-      detail?: string;
-      isError?: boolean;
-      time: string;
-    };
-
-type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
-  ? Omit<T, K>
-  : never;
-
-const SPEC_LABELS: Record<SpecType, string> = {
-  PRD: "PRD",
-  DESIGN: "Design",
-  DATA_MODEL: "Data model",
-  APP_STRUCTURE: "App structure",
-};
-
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: 0,
-    kind: "system",
-    text: "Describe a change to your requirements",
-  },
-];
-
-function nowLabel(): string {
-  return new Date().toLocaleTimeString([], { hour12: false });
+interface AgentChatPanelProps {
+  projectId: string;
+  className?: string;
 }
 
-export function AgentChatPanel({ projectId }: { projectId: string }) {
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+export function AgentChatPanel({ projectId, className }: AgentChatPanelProps) {
+  const { messages, isWorking, send } = useSpecChat(projectId);
   const [input, setInput] = useState("");
   const streamRef = useRef<HTMLDivElement>(null);
-  const nextId = useRef(INITIAL_MESSAGES.length);
-  const changeMutation = useRequestSpecChangeMutation(projectId);
-  const isWorking = changeMutation.isPending;
 
   useEffect(() => {
     const stream = streamRef.current;
     if (stream) stream.scrollTop = stream.scrollHeight;
   }, [messages, isWorking]);
 
-  const addMessage = (message: DistributiveOmit<ChatMessage, "id">) => {
-    setMessages((prev) => [
-      ...prev,
-      { ...message, id: nextId.current++ } as ChatMessage,
-    ]);
-  };
-
   const onSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const text = input.trim();
     if (!text || isWorking) return;
-
-    addMessage({ kind: "user", text, time: nowLabel() });
+    send(text);
     setInput("");
-
-    changeMutation.mutate(text, {
-      onSuccess: ({ summary, specs }) => {
-        addMessage({
-          kind: "agent",
-          text: summary,
-          detail:
-            specs.length > 0
-              ? `Updated: ${specs
-                  .map((s) => `${SPEC_LABELS[s.type]} v${s.version}`)
-                  .join(" · ")}`
-              : "No spec changes made.",
-          time: nowLabel(),
-        });
-      },
-      onError: (err) => {
-        addMessage({
-          kind: "agent",
-          text: `Couldn't apply that change: ${err.message}`,
-          isError: true,
-          time: nowLabel(),
-        });
-      },
-    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -103,7 +37,12 @@ export function AgentChatPanel({ projectId }: { projectId: string }) {
   };
 
   return (
-    <div className="flex h-[680px] flex-col rounded-lg border border-white/[0.08] bg-brand-surface shadow-lg">
+    <div
+      className={cn(
+        "flex h-[680px] flex-col rounded-lg border border-white/[0.08] bg-brand-surface shadow-lg",
+        className,
+      )}
+    >
       <div className="flex items-center justify-between border-b border-white/[0.08] bg-brand-surface-muted px-3 py-2">
         <div>
           <h4 className="text-sm font-semibold text-zinc-100">
@@ -130,17 +69,12 @@ export function AgentChatPanel({ projectId }: { projectId: string }) {
         id="chatStream"
         ref={streamRef}
       >
+        <div className="text-center">
+          <span className="rounded-[3px] bg-white/[0.06] px-2 py-0.5 font-mono-tech text-[10px] text-zinc-500">
+            Describe a change to your requirements
+          </span>
+        </div>
         {messages.map((message) => {
-          if (message.kind === "system") {
-            return (
-              <div className="text-center" key={message.id}>
-                <span className="rounded-[3px] bg-white/[0.06] px-2 py-0.5 font-mono-tech text-[10px] text-zinc-500">
-                  {message.text}
-                </span>
-              </div>
-            );
-          }
-
           if (message.kind === "user") {
             return (
               <div className="flex flex-col items-end" key={message.id}>

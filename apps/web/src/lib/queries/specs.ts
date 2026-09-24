@@ -106,19 +106,6 @@ export function requestSpecChangeRequest(
   );
 }
 
-export function useRequestSpecChangeMutation(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (instruction: string) =>
-      requestSpecChangeRequest(projectId, instruction),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: specsQueryKey(projectId),
-      });
-    },
-  });
-}
-
 /**
  * Polls while any of the four gate specs hasn't landed yet — there is no
  * SSE feed for spec-generation progress (docs/FRONTEND_INTEGRATION_PLAN.md
